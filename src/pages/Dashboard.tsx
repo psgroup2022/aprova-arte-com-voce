@@ -149,7 +149,7 @@ export const Dashboard = () => {
         {/* Header */}
         <div className="bg-white p-4 flex justify-between items-center shadow-sm sticky top-0 z-20">
           <h1 className="text-xl font-semibold text-slate-800">
-            Painel de Revisão Criativa
+            🇧🇷 Painel de Revisão Criativa
           </h1>
           <div className="flex items-center space-x-3">
             <Button variant="outline" size="sm" className="flex items-center space-x-1">
