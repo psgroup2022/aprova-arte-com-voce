@@ -124,8 +124,11 @@ export const VisualizarPautaV2 = () => {
           .from('comentarios_pontuais')
           .insert({
             pauta_id: id!,
+            arquivo_id: 'geral',
             comentario,
-            criado_por: 'cliente'
+            criado_por: 'cliente',
+            x_coordenada: 0,
+            y_coordenada: 0
           });
       }
       
@@ -221,6 +224,11 @@ export const VisualizarPautaV2 = () => {
       comentario.arquivo_id = pendingPin.arquivoId;
       comentario.x_coordenada = Math.round(pendingPin.x);
       comentario.y_coordenada = Math.round(pendingPin.y);
+    } else {
+      // Para comentários gerais, usar valores padrão
+      comentario.arquivo_id = 'geral';
+      comentario.x_coordenada = 0;
+      comentario.y_coordenada = 0;
     }
 
     addComentarioMutation.mutate(comentario);
@@ -240,8 +248,11 @@ export const VisualizarPautaV2 = () => {
     
     addComentarioMutation.mutate({
       pauta_id: id!,
+      arquivo_id: 'legenda',
       comentario: `[LEGENDA] ${newComment}`,
-      criado_por: 'cliente'
+      criado_por: 'cliente',
+      x_coordenada: 0,
+      y_coordenada: 0
     });
   };
 
@@ -449,7 +460,7 @@ export const VisualizarPautaV2 = () => {
               ))}
 
               {/* Comentários gerais */}
-              {comentarios.filter(c => !c.arquivo_id && !c.comentario.startsWith('[LEGENDA]')).map((comentario) => (
+              {comentarios.filter(c => c.arquivo_id === 'geral' || (!c.arquivo_id && !c.comentario.startsWith('[LEGENDA]'))).map((comentario) => (
                 <div key={comentario.id} className="mb-4 bg-white rounded-lg shadow-sm p-4">
                   <div className="flex items-start mb-2">
                     <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-500 text-white text-xs font-bold mr-2">
