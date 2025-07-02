@@ -105,7 +105,7 @@ export const VisualizarPautaV2 = () => {
       const updateData: any = { status };
       
       if (status === 'aprovada') {
-        updateData.aprovado_por = 'cliente'; // Em um sistema real, seria o ID do usuário
+        updateData.aprovado_por = null; // Temporariamente null para testes
         updateData.data_aprovacao = new Date().toISOString();
       }
 
