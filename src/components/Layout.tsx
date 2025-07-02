@@ -1,6 +1,6 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { AppSidebar } from "./AppSidebar";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,29 +19,11 @@ export const Layout = ({ children }: LayoutProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link to="/" className="text-2xl font-bold text-primary">
-                ApprovalHub
-              </Link>
-              <span className="text-sm text-muted-foreground">
-                Sistema de Aprovação de Pautas
-              </span>
-            </div>
-            <Link to="/criar-pauta">
-              <Button variant="hero" size="lg">
-                Nova Pauta
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background flex">
+      <AppSidebar />
+      <div className="flex-1 ml-16">
         {children}
-      </main>
+      </div>
     </div>
   );
 };
