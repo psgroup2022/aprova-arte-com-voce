@@ -3,10 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { usePauta } from "@/hooks/usePautas";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { 
   X, Mail, Send, Expand, Download, Play, 
   VolumeX, Check, Edit3, Hash, AtSign, 
-  Image as ImageIcon, HelpCircle, Video, Type
+  Image as ImageIcon, HelpCircle, Video, Type,
+  Loader2
 } from "lucide-react";
 
 interface Comment {
@@ -34,32 +38,57 @@ export const VisualizarPautaV2 = () => {
   const [newComment, setNewComment] = useState("");
   const [selectedApproval, setSelectedApproval] = useState<string>("");
 
-  // Mock data
-  const pautaData = {
-    titulo: "Promoção Coleção de Verão",
-    tipo: "Feed Instagram",
-    dataVencimento: "15 Jul, 2023",
-    artes: [
-      {
-        id: "1",
-        tipo: "image",
-        url: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7",
-        alt: "Post do instagram mostrando coleção de moda de verão com fundo de praia e modelos usando roupas de verão"
-      },
-      {
-        id: "2", 
-        tipo: "video",
-        url: "",
-        alt: "Vídeo promocional da coleção de verão"
-      },
-      {
-        id: "3",
-        tipo: "image", 
-        url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158",
-        alt: "Post do instagram mostrando coleção de acessórios de verão com fundo de praia e close-up de óculos de sol, chapéus e bolsas"
-      }
-    ],
-    legenda: "Se prepare para o verão com nossa nova coleção! Deslize para ver nossas peças favoritas que vão te manter estilosa durante toda a temporada. ☀️👙🕶️ #VibesVerao #NovaColecao"
+  // Buscar dados reais da pauta
+  const { data: pauta, isLoading: pautaLoading } = usePauta(id!);
+  
+  // Buscar arquivos da pauta
+  const { data: arquivos = [], isLoading: arquivosLoading } = useQuery({
+    queryKey: ['pauta-arquivos', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from('pauta_arquivos')
+        .select('*')
+        .eq('pauta_id', id)
+        .order('ordem', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  if (pautaLoading || arquivosLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Carregando pauta...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!pauta) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <p>Pauta não encontrada</p>
+          <Button onClick={() => navigate("/")} className="mt-4">
+            Voltar ao Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Sem prazo definido";
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
   };
 
   const [comments] = useState<Comment[]>([
@@ -152,8 +181,8 @@ export const VisualizarPautaV2 = () => {
             <X className="w-5 h-5" />
           </button>
           <div className="flex flex-col">
-            <h1 className="text-xl font-semibold text-slate-800">{pautaData.titulo}</h1>
-            <p className="text-sm text-gray-500">{pautaData.tipo} • Vence {pautaData.dataVencimento}</p>
+            <h1 className="text-xl font-semibold text-slate-800">{pauta.titulo}</h1>
+            <p className="text-sm text-gray-500">Cliente: {pauta.cliente} • Vence {formatDate(pauta.data_prazo)}</p>
           </div>
         </div>
         <div className="flex space-x-3">
@@ -173,77 +202,91 @@ export const VisualizarPautaV2 = () => {
         {/* Assets Preview Section */}
         <div className="w-full md:w-3/5 bg-gray-50 p-6 overflow-y-auto">
           <div className="max-w-3xl mx-auto">
-            {pautaData.artes.map((arte, index) => (
-              <div key={arte.id} className="mb-12">
-                <div className="mb-2 flex justify-between items-center">
-                  <h3 className="text-sm font-medium text-slate-700">
-                    {arte.tipo === 'video' ? 'Vídeo' : 'Imagem'} {index + 1} de {pautaData.artes.length}
-                  </h3>
-                  <div className="flex space-x-2">
-                    <button className="text-gray-500 hover:text-gray-700">
-                      <Expand className="w-4 h-4" />
-                    </button>
-                    <button className="text-gray-500 hover:text-gray-700">
-                      <Download className="w-4 h-4" />
-                    </button>
+            {arquivos.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">Nenhum arquivo foi enviado para esta pauta.</p>
+              </div>
+            ) : (
+              arquivos.map((arquivo, index) => (
+                <div key={arquivo.id} className="mb-12">
+                  <div className="mb-2 flex justify-between items-center">
+                    <h3 className="text-sm font-medium text-slate-700">
+                      {arquivo.tipo === 'video' ? 'Vídeo' : arquivo.tipo === 'imagem' ? 'Imagem' : 'Documento'} {index + 1} de {arquivos.length}
+                    </h3>
+                    <div className="flex space-x-2">
+                      <button className="text-gray-500 hover:text-gray-700">
+                        <Expand className="w-4 h-4" />
+                      </button>
+                      <button 
+                        className="text-gray-500 hover:text-gray-700"
+                        onClick={() => window.open(arquivo.url, '_blank')}
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="relative bg-white rounded-lg shadow-sm overflow-hidden">
+                    {arquivo.tipo === 'video' ? (
+                      <div className="relative bg-gray-900 aspect-video flex items-center justify-center">
+                        <video 
+                          src={arquivo.url} 
+                          controls 
+                          className="w-full h-full"
+                          preload="metadata"
+                        />
+                      </div>
+                    ) : arquivo.tipo === 'imagem' ? (
+                      <div className="relative">
+                        <img 
+                          className="w-full h-auto cursor-pointer" 
+                          src={arquivo.url} 
+                          alt={arquivo.nome_arquivo}
+                          onClick={(e) => handleImageClick(e, index)}
+                        />
+                        
+                        {/* Comment Pins */}
+                        {comments
+                          .filter(comment => comment.assetType === 'image' && comment.assetIndex === index && comment.pinNumber)
+                          .map((comment) => (
+                            <div 
+                              key={comment.id}
+                              className="absolute h-6 w-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold -ml-3 -mt-3"
+                              style={{
+                                top: comment.pinNumber === 1 ? '30%' : '45%',
+                                left: comment.pinNumber === 1 ? '25%' : '70%'
+                              }}
+                            >
+                              {comment.pinNumber}
+                            </div>
+                          ))
+                        }
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center">
+                        <p className="text-gray-600 mb-2">{arquivo.nome_arquivo}</p>
+                        <button 
+                          onClick={() => window.open(arquivo.url, '_blank')}
+                          className="text-blue-600 hover:text-blue-700 underline"
+                        >
+                          Baixar arquivo
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-                
-                <div className="relative bg-white rounded-lg shadow-sm overflow-hidden">
-                  {arte.tipo === 'video' ? (
-                    <div className="relative bg-gray-900 aspect-video flex items-center justify-center">
-                      <div className="absolute inset-0 opacity-70 bg-gradient-to-r from-gray-900 to-transparent"></div>
-                      <button className="relative z-10 w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                        <Play className="w-6 h-6 text-white" />
-                      </button>
-                      <div className="absolute bottom-4 left-4 flex items-center space-x-3">
-                        <button className="text-white">
-                          <VolumeX className="w-4 h-4" />
-                        </button>
-                        <div className="w-32 h-1 bg-white bg-opacity-30 rounded-full">
-                          <div className="w-1/3 h-full bg-white rounded-full"></div>
-                        </div>
-                        <span className="text-white text-xs">0:12 / 0:45</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <img 
-                        className="w-full h-auto cursor-pointer" 
-                        src={arte.url} 
-                        alt={arte.alt}
-                        onClick={(e) => handleImageClick(e, index)}
-                      />
-                      
-                      {/* Comment Pins */}
-                      {comments
-                        .filter(comment => comment.assetType === 'image' && comment.assetIndex === index && comment.pinNumber)
-                        .map((comment) => (
-                          <div 
-                            key={comment.id}
-                            className="absolute h-6 w-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold -ml-3 -mt-3"
-                            style={{
-                              top: comment.pinNumber === 1 ? '30%' : '45%',
-                              left: comment.pinNumber === 1 ? '25%' : '70%'
-                            }}
-                          >
-                            {comment.pinNumber}
-                          </div>
-                        ))
-                      }
-                    </div>
-                  )}
+              ))
+            )}
+            
+            {/* Description/Caption Preview */}
+            {pauta.descricao && (
+              <div className="mb-12 bg-white rounded-lg shadow-sm p-5 border border-gray-200">
+                <h3 className="text-sm font-medium text-slate-700 mb-3">Descrição</h3>
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <p className="text-gray-700 whitespace-pre-wrap">{pauta.descricao}</p>
                 </div>
               </div>
-            ))}
-            
-            {/* Caption Preview */}
-            <div className="mb-12 bg-white rounded-lg shadow-sm p-5 border border-gray-200">
-              <h3 className="text-sm font-medium text-slate-700 mb-3">Legenda</h3>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <p className="text-gray-700">{pautaData.legenda}</p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
         
