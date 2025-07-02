@@ -10,6 +10,7 @@ export const useComentarios = (pautaId: string) => {
   const [newComment, setNewComment] = useState("");
   const [showAddComment, setShowAddComment] = useState(false);
   const [pendingPin, setPendingPin] = useState<PendingPin | null>(null);
+  const [editingComment, setEditingComment] = useState<{ id: string; text: string } | null>(null);
 
   const addComentarioMutation = useMutation({
     mutationFn: async (comentario: any) => {
@@ -84,11 +85,80 @@ export const useComentarios = (pautaId: string) => {
     console.log('Estado atualizado - showAddComment:', true);
   };
 
+  const editComentarioMutation = useMutation({
+    mutationFn: async ({ id, comentario }: { id: string; comentario: string }) => {
+      const { data, error } = await supabase
+        .from('comentarios_pontuais')
+        .update({ comentario })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comentarios', pautaId] });
+      toast({ title: "Comentário atualizado com sucesso!" });
+      setEditingComment(null);
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Erro ao atualizar comentário", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const deleteComentarioMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('comentarios_pontuais')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comentarios', pautaId] });
+      toast({ title: "Comentário excluído com sucesso!" });
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Erro ao excluir comentário", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const handleEditComment = (id: string, currentText: string) => {
+    setEditingComment({ id, text: currentText });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingComment || !editingComment.text.trim()) return;
+    
+    editComentarioMutation.mutate({
+      id: editingComment.id,
+      comentario: editingComment.text
+    });
+  };
+
+  const handleDeleteComment = (id: string) => {
+    deleteComentarioMutation.mutate(id);
+  };
+
   const cancelComment = () => {
     console.log('Cancelando comentário');
     setShowAddComment(false);
     setPendingPin(null);
     setNewComment("");
+  };
+
+  const cancelEdit = () => {
+    setEditingComment(null);
   };
 
   return {
@@ -97,9 +167,17 @@ export const useComentarios = (pautaId: string) => {
     showAddComment,
     setShowAddComment,
     pendingPin,
+    editingComment,
+    setEditingComment,
     addComentarioMutation,
+    editComentarioMutation,
+    deleteComentarioMutation,
     handleAddComment,
     handleImageClick,
-    cancelComment
+    handleEditComment,
+    handleSaveEdit,
+    handleDeleteComment,
+    cancelComment,
+    cancelEdit
   };
 };

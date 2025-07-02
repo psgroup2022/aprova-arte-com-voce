@@ -22,10 +22,16 @@ export const VisualizarPauta = () => {
     showAddComment,
     setShowAddComment,
     pendingPin,
+    editingComment,
+    setEditingComment,
     addComentarioMutation,
     handleAddComment,
     handleImageClick,
-    cancelComment
+    handleEditComment,
+    handleSaveEdit,
+    handleDeleteComment,
+    cancelComment,
+    cancelEdit
   } = useComentarios(id!);
 
   const { selectedApproval, handleApprovalClick } = useAprovacao(id!);
@@ -70,10 +76,16 @@ export const VisualizarPauta = () => {
             newComment={newComment}
             pendingPin={pendingPin}
             isPending={addComentarioMutation.isPending}
+            editingComment={editingComment}
             onNewCommentChange={setNewComment}
             onShowAddComment={() => setShowAddComment(true)}
             onAddComment={handleAddComment}
             onCancelComment={cancelComment}
+            onEditComment={handleEditComment}
+            onSaveEdit={handleSaveEdit}
+            onDeleteComment={handleDeleteComment}
+            onCancelEdit={cancelEdit}
+            setEditingComment={setEditingComment}
           />
         </div>
       </div>

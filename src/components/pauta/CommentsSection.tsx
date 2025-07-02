@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Plus, Loader2, Image as ImageIcon, AtSign } from "lucide-react";
+import { MessageCircle, Plus, Loader2, Image as ImageIcon, AtSign, Edit, Trash2, Save, X } from "lucide-react";
 import { ComentarioPontual, PendingPin } from "@/types/comentario";
 
 interface CommentsSectionProps {
@@ -10,10 +10,16 @@ interface CommentsSectionProps {
   newComment: string;
   pendingPin: PendingPin | null;
   isPending: boolean;
+  editingComment: { id: string; text: string } | null;
   onNewCommentChange: (value: string) => void;
   onShowAddComment: () => void;
   onAddComment: () => void;
   onCancelComment: () => void;
+  onEditComment: (id: string, text: string) => void;
+  onSaveEdit: () => void;
+  onDeleteComment: (id: string) => void;
+  onCancelEdit: () => void;
+  setEditingComment: (value: { id: string; text: string } | null) => void;
 }
 
 export const CommentsSection = ({
@@ -22,10 +28,16 @@ export const CommentsSection = ({
   newComment,
   pendingPin,
   isPending,
+  editingComment,
   onNewCommentChange,
   onShowAddComment,
   onAddComment,
-  onCancelComment
+  onCancelComment,
+  onEditComment,
+  onSaveEdit,
+  onDeleteComment,
+  onCancelEdit,
+  setEditingComment
 }: CommentsSectionProps) => {
   return (
     <div className="flex-grow overflow-y-auto bg-gray-50">
@@ -41,10 +53,53 @@ export const CommentsSection = ({
               </div>
               <div className="flex-grow">
                 <h4 className="font-medium text-slate-800">Comentário na imagem</h4>
-                <p className="text-sm text-gray-700 mt-1">{comentario.comentario}</p>
-                <span className="text-xs text-gray-500">
-                  {new Date(comentario.created_at).toLocaleString('pt-BR')}
-                </span>
+                {editingComment?.id === comentario.id ? (
+                  <div className="mt-2">
+                    <Textarea
+                      value={editingComment.text}
+                      onChange={(e) => setEditingComment({ ...editingComment, text: e.target.value })}
+                      className="w-full text-sm mb-2"
+                      rows={3}
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={onSaveEdit}>
+                        <Save className="w-3 h-3 mr-1" />
+                        Salvar
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={onCancelEdit}>
+                        <X className="w-3 h-3 mr-1" />
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-700 mt-1">{comentario.comentario}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-gray-500">
+                        {new Date(comentario.created_at).toLocaleString('pt-BR')}
+                      </span>
+                      <div className="flex gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => onEditComment(comentario.id, comentario.comentario)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => onDeleteComment(comentario.id)}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -59,10 +114,53 @@ export const CommentsSection = ({
               </div>
               <div className="flex-grow">
                 <h4 className="font-medium text-slate-800">Comentário geral</h4>
-                <p className="text-sm text-gray-700 mt-1">{comentario.comentario}</p>
-                <span className="text-xs text-gray-500">
-                  {new Date(comentario.created_at).toLocaleString('pt-BR')}
-                </span>
+                {editingComment?.id === comentario.id ? (
+                  <div className="mt-2">
+                    <Textarea
+                      value={editingComment.text}
+                      onChange={(e) => setEditingComment({ ...editingComment, text: e.target.value })}
+                      className="w-full text-sm mb-2"
+                      rows={3}
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={onSaveEdit}>
+                        <Save className="w-3 h-3 mr-1" />
+                        Salvar
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={onCancelEdit}>
+                        <X className="w-3 h-3 mr-1" />
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-700 mt-1">{comentario.comentario}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-gray-500">
+                        {new Date(comentario.created_at).toLocaleString('pt-BR')}
+                      </span>
+                      <div className="flex gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => onEditComment(comentario.id, comentario.comentario)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => onDeleteComment(comentario.id)}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
