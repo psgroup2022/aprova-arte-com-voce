@@ -82,15 +82,6 @@ export const VisualizarPautaV2 = () => {
     );
   }
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "Sem prazo definido";
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
   const [comments] = useState<Comment[]>([
     {
       id: "1",
@@ -109,43 +100,17 @@ export const VisualizarPautaV2 = () => {
           timestamp: "1 hora atrás"
         }
       ]
-    },
-    {
-      id: "2", 
-      pinNumber: 2,
-      assetType: "image",
-      assetIndex: 0,
-      title: "Imagem 1 - Exibição do produto",
-      content: "As cores estão um pouco desbotadas aqui. Podemos realçar a vibração para combinar com as cores da nossa marca?",
-      timestamp: "1 hora atrás",
-      replies: []
-    },
-    {
-      id: "3",
-      assetType: "video",
-      assetIndex: 1,
-      title: "Feedback do vídeo",
-      content: "A transição aos 0:12 está um pouco abrupta. Podemos suavizá-la? Além disso, o volume da música deve ser reduzido ligeiramente durante a narração.",
-      timestamp: "30 minutos atrás", 
-      replies: [
-        {
-          id: "3-1",
-          author: "Maria Santos",
-          avatar: "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg",
-          content: "Boa observação. Vou ajustar a transição e os níveis de áudio na próxima revisão.",
-          timestamp: "15 minutos atrás"
-        }
-      ]
-    },
-    {
-      id: "4",
-      assetType: "caption",
-      title: "Feedback da legenda",
-      content: "Vamos adicionar nossa hashtag da campanha de verão #EssenciaisVerao à legenda também.",
-      timestamp: "45 minutos atrás",
-      replies: []
     }
   ]);
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Sem prazo definido";
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
 
   const handleApprovalClick = (type: string) => {
     setSelectedApproval(type);
