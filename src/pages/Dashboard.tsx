@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 
 export const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { pautas, isLoading, error } = usePautas();
+  const { pautas, isLoading, error, deletePauta, isDeleting } = usePautas();
 
   if (authLoading) {
     return (
@@ -88,6 +88,8 @@ export const Dashboard = () => {
                   prazo: pauta.data_prazo || '',
                   imagens: [] // Será implementado com os arquivos
                 }} 
+                onDelete={() => deletePauta(pauta.id)}
+                isDeleting={isDeleting}
               />
             ))}
           </div>

@@ -1,6 +1,18 @@
 export type PautaStatus = 'rascunho' | 'aguardando_aprovacao' | 'aprovada' | 'rejeitada';
 export type ArquivoTipo = 'imagem' | 'video' | 'documento';
 
+export interface Cliente {
+  id: string;
+  nome: string;
+  email?: string;
+  telefone?: string;
+  empresa?: string;
+  observacoes?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Pauta {
   id: string;
   titulo: string;
@@ -70,4 +82,21 @@ export interface UpdatePautaData {
   observacoes?: string;
   aprovado_por?: string;
   data_aprovacao?: string;
+}
+
+export interface CreateClienteData {
+  nome: string;
+  email?: string;
+  telefone?: string;
+  empresa?: string;
+  observacoes?: string;
+}
+
+export interface UpdateClienteData {
+  nome?: string;
+  email?: string;
+  telefone?: string;
+  empresa?: string;
+  observacoes?: string;
+  ativo?: boolean;
 }

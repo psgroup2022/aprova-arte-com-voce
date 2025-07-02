@@ -2,8 +2,9 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Eye, Image } from "lucide-react";
+import { Calendar, Eye, Image, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface Pauta {
   id: string;
@@ -16,6 +17,8 @@ interface Pauta {
 
 interface PautaCardProps {
   pauta: Pauta;
+  onDelete?: () => void;
+  isDeleting?: boolean;
 }
 
 const statusConfig = {
@@ -41,7 +44,7 @@ const statusConfig = {
   }
 };
 
-export const PautaCard = ({ pauta }: PautaCardProps) => {
+export const PautaCard = ({ pauta, onDelete, isDeleting }: PautaCardProps) => {
   const status = statusConfig[pauta.status];
   
   return (
@@ -104,6 +107,34 @@ export const PautaCard = ({ pauta }: PautaCardProps) => {
             >
               Compartilhar
             </Button>
+            
+            {onDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir Pauta</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja excluir a pauta "{pauta.titulo}"? Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={onDelete}
+                      disabled={isDeleting}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isDeleting ? "Excluindo..." : "Excluir"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </div>
       </CardContent>

@@ -6,14 +6,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Upload, Loader2, X, CloudUpload, Play, Edit, Trash2, HelpCircle, Bell } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, X, CloudUpload, Play, Edit, Trash2, HelpCircle, Bell, Copy, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { usePautas } from "@/hooks/usePautas";
 import { useAuth } from "@/hooks/useAuth";
+import { useClientes } from "@/hooks/useClientes";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ClienteDialog } from "@/components/ClienteDialog";
 
 type PostType = "feed" | "story" | "reel" | "carousel" | "facebook" | "twitter";
+
+interface PostData {
+  legenda: string;
+  hashtags: string;
+  arquivo?: File;
+}
 
 interface FormData {
   titulo: string;
@@ -22,17 +29,16 @@ interface FormData {
   data_prazo: string;
   responsavel: string;
   tags: string[];
-  legenda: string;
-  hashtags: string;
-  cliente: string;
+  cliente_id: string;
   observacoes: string;
+  posts: PostData[];
 }
 
 export const CriarPauta = () => {
   const navigate = useNavigate();
-  const { createPauta, isCreating } = usePautas();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { clientes, isLoading: clientesLoading } = useClientes();
   
   const [formData, setFormData] = useState<FormData>({
     titulo: "",
@@ -41,21 +47,52 @@ export const CriarPauta = () => {
     data_prazo: "",
     responsavel: "",
     tags: [],
-    legenda: "",
-    hashtags: "",
-    cliente: "",
+    cliente_id: "",
     observacoes: "",
+    posts: [{ legenda: "", hashtags: "", arquivo: undefined }],
   });
   
-  const [arquivos, setArquivos] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [newTag, setNewTag] = useState("");
   const [autoSchedule, setAutoSchedule] = useState(false);
   const [notifyTeam, setNotifyTeam] = useState(false);
   const [requireApproval, setRequireApproval] = useState(true);
+  const [approvalLink, setApprovalLink] = useState("");
 
   const handleInputChange = (field: keyof FormData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      
+      // Quando a quantidade muda, ajusta os posts
+      if (field === 'quantidade_materiais') {
+        const quantidade = value as number;
+        const currentPosts = updated.posts;
+        
+        if (quantidade > currentPosts.length) {
+          // Adiciona novos posts
+          const novoPosts = Array(quantidade - currentPosts.length).fill(null).map(() => ({
+            legenda: "",
+            hashtags: "",
+            arquivo: undefined
+          }));
+          updated.posts = [...currentPosts, ...novoPosts];
+        } else if (quantidade < currentPosts.length) {
+          // Remove posts extras
+          updated.posts = currentPosts.slice(0, quantidade);
+        }
+      }
+      
+      return updated;
+    });
+  };
+
+  const handlePostChange = (index: number, field: keyof PostData, value: string | File) => {
+    setFormData(prev => ({
+      ...prev,
+      posts: prev.posts.map((post, i) => 
+        i === index ? { ...post, [field]: value } : post
+      )
+    }));
   };
 
   const addTag = () => {
@@ -89,18 +126,20 @@ export const CriarPauta = () => {
     return 'document';
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setArquivos(prev => [...prev, ...files]);
+  const handleFileSelect = (postIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handlePostChange(postIndex, 'arquivo', file);
+    }
   };
 
-  const removeFile = (index: number) => {
-    setArquivos(prev => prev.filter((_, i) => i !== index));
+  const removeFile = (postIndex: number) => {
+    handlePostChange(postIndex, 'arquivo', undefined as any);
   };
 
   const uploadFile = async (file: File, pautaId: string, ordem: number = 0) => {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${pautaId}/${Date.now()}.${fileExt}`;
+    const fileName = `${pautaId}/${Date.now()}_${ordem}.${fileExt}`;
     
     const { error: uploadError } = await supabase.storage
       .from('pauta-arquivos')
@@ -114,11 +153,9 @@ export const CriarPauta = () => {
       .from('pauta-arquivos')
       .getPublicUrl(fileName);
 
-    // Determinar tipo do arquivo
     const tipo = file.type.startsWith('image/') ? 'imagem' : 
                  file.type.startsWith('video/') ? 'video' : 'documento';
 
-    // Salvar registro do arquivo no banco
     const { error: dbError } = await supabase
       .from('pauta_arquivos')
       .insert({
@@ -151,6 +188,10 @@ export const CriarPauta = () => {
     }
   };
 
+  const openLink = (url: string) => {
+    window.open(url, '_blank');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -163,10 +204,21 @@ export const CriarPauta = () => {
       return;
     }
 
-    if (!formData.titulo || !formData.cliente || !formData.legenda) {
+    if (!formData.titulo || !formData.cliente_id) {
       toast({
         title: "Erro", 
-        description: "Título, cliente e legenda são obrigatórios",
+        description: "Título e cliente são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar se todos os posts têm legenda
+    const postsValidos = formData.posts.every(post => post.legenda.trim());
+    if (!postsValidos) {
+      toast({
+        title: "Erro",
+        description: "Todos os posts devem ter legenda",
         variant: "destructive",
       });
       return;
@@ -175,13 +227,17 @@ export const CriarPauta = () => {
     try {
       setUploading(true);
       
-      // Criar pauta diretamente com supabase para evitar duplicação
+      // Buscar nome do cliente
+      const clienteSelecionado = clientes.find(c => c.id === formData.cliente_id);
+      const nomeCliente = clienteSelecionado?.nome || formData.cliente_id;
+      
+      // Criar pauta
       const { data: novaPauta, error: pautaError } = await supabase
         .from('pautas')
         .insert({
           titulo: formData.titulo,
-          descricao: formData.legenda,
-          cliente: formData.cliente,
+          descricao: `${formData.posts.length} ${formData.tipo_post === 'carousel' ? 'imagens no carrossel' : 'posts'}\n\n${formData.posts.map((p, i) => `Post ${i + 1}: ${p.legenda}`).join('\n\n')}`,
+          cliente: nomeCliente,
           data_prazo: formData.data_prazo || null,
           observacoes: formData.observacoes || null,
           criado_por: user.id,
@@ -194,34 +250,23 @@ export const CriarPauta = () => {
         throw pautaError;
       }
 
-      // Upload dos arquivos se houver
-      if (arquivos.length > 0) {
-        await Promise.all(
-          arquivos.map((arquivo, index) => uploadFile(arquivo, novaPauta.id, index))
-        );
+      // Upload dos arquivos
+      const uploadPromises = formData.posts
+        .filter(post => post.arquivo)
+        .map((post, index) => uploadFile(post.arquivo!, novaPauta.id, index));
+
+      if (uploadPromises.length > 0) {
+        await Promise.all(uploadPromises);
       }
 
-      // Gerar link de aprovação
-      const approvalLink = `${window.location.origin}/pauta/${novaPauta.id}`;
+      const linkAprovacao = `${window.location.origin}/pauta/${novaPauta.id}`;
+      setApprovalLink(linkAprovacao);
       
       toast({
         title: "Pauta criada com sucesso!",
-        description: "Link de aprovação gerado. Clique para copiar.",
-        action: (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => copyToClipboard(approvalLink)}
-          >
-            Copiar Link
-          </Button>
-        ),
+        description: "Link de aprovação gerado.",
       });
       
-      // Opcional: Abrir link em nova aba para demonstrar
-      console.log("Link de aprovação:", approvalLink);
-      
-      navigate("/");
     } catch (error) {
       console.error("Erro detalhado:", error);
       toast({
@@ -232,6 +277,10 @@ export const CriarPauta = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleClienteCreated = (clienteId: string) => {
+    setFormData(prev => ({ ...prev, cliente_id: clienteId }));
   };
 
   if (!user) {
@@ -349,13 +398,22 @@ export const CriarPauta = () => {
 
                   <div>
                     <Label htmlFor="cliente" className="text-sm font-medium mb-1">Cliente *</Label>
-                    <Input
-                      id="cliente"
-                      value={formData.cliente}
-                      onChange={(e) => handleInputChange("cliente", e.target.value)}
-                      placeholder="Nome do cliente"
-                      required
-                    />
+                    <div className="flex gap-2">
+                      <Select value={formData.cliente_id} onValueChange={(value) => handleInputChange("cliente_id", value)}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Selecione o cliente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {clientes.map((cliente) => (
+                            <SelectItem key={cliente.id} value={cliente.id}>
+                              {cliente.nome}
+                              {cliente.empresa && ` - ${cliente.empresa}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <ClienteDialog onClienteCreated={handleClienteCreated} />
+                    </div>
                   </div>
 
                   <div>
@@ -386,135 +444,22 @@ export const CriarPauta = () => {
                   </div>
                 </div>
 
-                {/* Right Column */}
+                {/* Right Column - Observações */}
                 <div className="space-y-5">
                   <div>
-                    <Label htmlFor="legenda" className="text-sm font-medium mb-1">Legenda/Caption *</Label>
+                    <Label htmlFor="observacoes" className="text-sm font-medium mb-1">
+                      Observações Internas (não visível para o cliente)
+                    </Label>
                     <Textarea
-                      id="legenda"
-                      value={formData.legenda}
-                      onChange={(e) => handleInputChange("legenda", e.target.value)}
-                      placeholder="Digite a legenda do post..."
-                      rows={4}
-                      required
+                      id="observacoes"
+                      value={formData.observacoes}
+                      onChange={(e) => handleInputChange("observacoes", e.target.value)}
+                      placeholder="Adicione observações internas aqui..."
+                      rows={6}
                     />
-                    <div className="flex justify-between mt-1">
-                      <span className="text-xs text-muted-foreground">{formData.legenda.length}/2200 caracteres</span>
-                    </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="hashtags" className="text-sm font-medium mb-1">Hashtags</Label>
-                    <Input
-                      id="hashtags"
-                      value={formData.hashtags}
-                      onChange={(e) => handleInputChange("hashtags", e.target.value)}
-                      placeholder="Digite as hashtags separadas por espaços"
-                      className="pl-7"
-                    />
-                    <span className="absolute left-2 top-2 text-muted-foreground">#</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Assets Upload Section */}
-              <div className="mt-8">
-                <h3 className="text-lg font-medium mb-4">Assets</h3>
-                
-                <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
-                  <div className="max-w-md mx-auto">
-                    <CloudUpload className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <h4 className="text-lg font-medium mb-2">Arraste e solte arquivos aqui</h4>
-                    <p className="text-sm text-muted-foreground mb-4">Envie JPG, PNG, GIF para imagens ou MP4 para vídeos</p>
-                    <div className="flex justify-center">
-                      <Button 
-                        type="button" 
-                        onClick={() => document.getElementById('file-upload')?.click()}
-                        className="flex items-center"
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Selecionar Arquivos
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-4">Tamanho máximo: 100MB</p>
-                  </div>
-                </div>
-
-                <input
-                  type="file"
-                  id="file-upload"
-                  multiple
-                  accept="image/*,video/*,.pdf,.doc,.docx"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-
-                {arquivos.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-sm font-medium mb-3">Arquivos Enviados ({arquivos.length})</h4>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {arquivos.map((arquivo, index) => (
-                        <div key={index} className="border rounded-lg overflow-hidden bg-card">
-                          <div className="relative w-full h-48 bg-muted flex items-center justify-center">
-                            {getFileType(arquivo) === 'image' ? (
-                              <img 
-                                src={URL.createObjectURL(arquivo)} 
-                                alt={arquivo.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : getFileType(arquivo) === 'video' ? (
-                              <Play className="h-12 w-12 text-muted-foreground" />
-                            ) : (
-                              <div className="text-center">
-                                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-                                  <span className="text-primary font-medium">DOC</span>
-                                </div>
-                              </div>
-                            )}
-                            
-                            <div className="absolute top-2 right-2 flex space-x-1">
-                              <Button variant="secondary" size="sm" className="h-7 w-7 p-0">
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                variant="secondary" 
-                                size="sm" 
-                                className="h-7 w-7 p-0"
-                                onClick={() => removeFile(index)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                            
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
-                              <span className="text-white text-sm font-medium">{arquivo.name}</span>
-                            </div>
-                          </div>
-                          
-                          <div className="p-3">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-xs text-muted-foreground">{formatFileSize(arquivo.size)}</span>
-                              {index === 0 && (
-                                <span className="text-xs text-success font-medium">Principal</span>
-                              )}
-                            </div>
-                            <div className="w-full bg-muted rounded-full h-1.5">
-                              <div className="bg-success h-1.5 rounded-full w-full"></div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Additional Options */}
-              <div className="mt-8 border-t pt-6">
-                <h3 className="text-lg font-medium mb-4">Opções Adicionais</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Additional Options */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
@@ -558,40 +503,180 @@ export const CriarPauta = () => {
                       <HelpCircle className="h-4 w-4 text-muted-foreground" />
                     </div>
                   </div>
-
-                  <div>
-                    <Label htmlFor="observacoes" className="text-sm font-medium mb-1">
-                      Observações Internas (não visível para o cliente)
-                    </Label>
-                    <Textarea
-                      id="observacoes"
-                      value={formData.observacoes}
-                      onChange={(e) => handleInputChange("observacoes", e.target.value)}
-                      placeholder="Adicione observações internas aqui..."
-                      rows={3}
-                    />
-                  </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="mt-8 flex justify-end space-x-3">
-                <Button type="button" variant="outline" disabled={isCreating || uploading}>
-                  Salvar como Rascunho
-                </Button>
-                <Button type="button" variant="outline" disabled={isCreating || uploading}>
-                  Visualizar
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isCreating || uploading}
-                  className="flex items-center"
-                >
-                  {(isCreating || uploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Criar e Compartilhar com Cliente
-                  <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
-                </Button>
+              {/* Posts dinamicos */}
+              <div className="mt-8">
+                <h3 className="text-lg font-medium mb-4">
+                  {formData.tipo_post === 'carousel' ? 'Imagens do Carrossel' : 'Posts'} 
+                  ({formData.quantidade_materiais})
+                </h3>
+                
+                <div className="space-y-6">
+                  {formData.posts.map((post, index) => (
+                    <div key={index} className="border rounded-lg p-4 bg-muted/30">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-md font-medium">
+                          {formData.tipo_post === 'carousel' ? `Imagem ${index + 1}` : `Post ${index + 1}`}
+                        </h4>
+                        {post.arquivo && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeFile(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor={`legenda-${index}`} className="text-sm font-medium mb-1">
+                            {formData.tipo_post === 'carousel' ? 'Descrição da Imagem' : 'Legenda'} *
+                          </Label>
+                          <Textarea
+                            id={`legenda-${index}`}
+                            value={post.legenda}
+                            onChange={(e) => handlePostChange(index, 'legenda', e.target.value)}
+                            placeholder={formData.tipo_post === 'carousel' 
+                              ? 'Descreva esta imagem...' 
+                              : 'Digite a legenda do post...'}
+                            rows={3}
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor={`hashtags-${index}`} className="text-sm font-medium mb-1">Hashtags</Label>
+                          <Input
+                            id={`hashtags-${index}`}
+                            value={post.hashtags}
+                            onChange={(e) => handlePostChange(index, 'hashtags', e.target.value)}
+                            placeholder="#hashtag1 #hashtag2"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Upload de arquivo */}
+                      <div className="mt-4">
+                        <Label className="text-sm font-medium mb-2 block">Arquivo</Label>
+                        {post.arquivo ? (
+                          <div className="border rounded-lg p-4 bg-background">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-12 h-12 bg-primary/10 rounded-md flex items-center justify-center">
+                                {getFileType(post.arquivo) === 'image' ? (
+                                  <img 
+                                    src={URL.createObjectURL(post.arquivo)} 
+                                    alt="Preview"
+                                    className="w-full h-full object-cover rounded"
+                                  />
+                                ) : getFileType(post.arquivo) === 'video' ? (
+                                  <Play className="h-6 w-6 text-primary" />
+                                ) : (
+                                  <span className="text-primary font-medium text-xs">DOC</span>
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-medium">{post.arquivo.name}</p>
+                                <p className="text-xs text-muted-foreground">{formatFileSize(post.arquivo.size)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="border-2 border-dashed border-muted rounded-lg p-6 text-center">
+                            <CloudUpload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                            <p className="text-sm text-muted-foreground mb-2">Arraste um arquivo ou clique para selecionar</p>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => document.getElementById(`file-upload-${index}`)?.click()}
+                            >
+                              <Upload className="h-4 w-4 mr-1" />
+                              Selecionar Arquivo
+                            </Button>
+                            <input
+                              type="file"
+                              id={`file-upload-${index}`}
+                              accept="image/*,video/*"
+                              onChange={(e) => handleFileSelect(index, e)}
+                              className="hidden"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              {/* Link de aprovação */}
+              {approvalLink && (
+                <div className="mt-8 p-4 bg-success/10 border border-success/20 rounded-lg">
+                  <h3 className="text-lg font-medium text-success mb-2">Pauta criada com sucesso!</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Link de aprovação gerado. Compartilhe com o cliente para aprovação:
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      value={approvalLink}
+                      readOnly
+                      className="flex-1 bg-background"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(approvalLink)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openLink(approvalLink)}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              {!approvalLink && (
+                <div className="mt-8 flex justify-end space-x-3">
+                  <Button type="button" variant="outline" disabled={uploading}>
+                    Salvar como Rascunho
+                  </Button>
+                  <Button type="button" variant="outline" disabled={uploading}>
+                    Visualizar
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={uploading}
+                    className="flex items-center"
+                  >
+                    {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Criar e Compartilhar com Cliente
+                    <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                  </Button>
+                </div>
+              )}
+
+              {approvalLink && (
+                <div className="mt-8 flex justify-end">
+                  <Button 
+                    type="button" 
+                    onClick={() => navigate("/")}
+                  >
+                    Voltar ao Dashboard
+                  </Button>
+                </div>
+              )}
             </form>
           </div>
         </div>
