@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import previewPlaceholder from "@/assets/preview-placeholder.jpg";
+import { ComentariosPontuais } from "@/components/ComentariosPontuais";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, Tag, Check, Edit, X, MessageCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, User, Tag, Check, Edit, X, MessageCircle, ArrowLeft, Share, Download, Activity } from "lucide-react";
 import { toast } from "sonner";
 
 interface Arte {

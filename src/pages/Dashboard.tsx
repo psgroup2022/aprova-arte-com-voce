@@ -4,6 +4,7 @@ import { PautaCard } from "@/components/PautaCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Search, Filter, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -17,7 +18,9 @@ const mockPautas = [
     status: "pendente" as const,
     totalArtes: 3,
     cliente: "Loja XYZ",
-    criadoEm: "2024-07-02"
+    criadoEm: "2024-07-02",
+    compartilhadoEm: "2024-07-02",
+    designer: "João Silva"
   },
   {
     id: "2", 
@@ -27,7 +30,9 @@ const mockPautas = [
     status: "aprovada" as const,
     totalArtes: 5,
     cliente: "Fashion Store",
-    criadoEm: "2024-07-01"
+    criadoEm: "2024-07-01",
+    compartilhadoEm: "2024-07-01",
+    designer: "Maria Santos"
   },
   {
     id: "3",
@@ -37,9 +42,31 @@ const mockPautas = [
     status: "aprovada-com-alteracoes" as const,
     totalArtes: 4,
     cliente: "Tech Corp",
-    criadoEm: "2024-07-02"
+    criadoEm: "2024-07-02",
+    compartilhadoEm: "2024-07-02",
+    designer: "Pedro Costa"
+  },
+  {
+    id: "4",
+    titulo: "Anúncio Promoção Weekend - Style Co",
+    dataPublicacao: "2024-07-08",
+    tipoPost: "stories",
+    status: "reprovada" as const,
+    totalArtes: 1,
+    cliente: "Style Co",
+    criadoEm: "2024-07-01",
+    compartilhadoEm: "2024-07-01",
+    designer: "Ana Lima"
   }
 ];
+
+const metricas = {
+  total: 24,
+  aguardando: 8,
+  aprovadas: 12,
+  precisaRevisao: 4,
+  rejeitadas: 0
+};
 
 const statusFilters = [
   { key: "todos", label: "Todos", count: 8 },
@@ -73,6 +100,49 @@ export const Dashboard = () => {
               Criar Nova Pauta
             </Button>
           </Link>
+        </div>
+
+        {/* Métricas */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Card className="bg-gradient-card border-border">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-primary">{metricas.total}</div>
+              <div className="text-sm text-muted-foreground">Total Pautas</div>
+              <div className="text-xs text-muted-foreground mt-1">+3 desde a semana passada</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-card border-warning">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-warning">{metricas.aguardando}</div>
+              <div className="text-sm text-muted-foreground">Aguardando</div>
+              <div className="text-xs text-muted-foreground mt-1">2 vencem hoje</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-card border-success">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-success">{metricas.aprovadas}</div>
+              <div className="text-sm text-muted-foreground">Aprovadas</div>
+              <div className="text-xs text-muted-foreground mt-1">+5 esta semana</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-card border-warning">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-warning">{metricas.precisaRevisao}</div>
+              <div className="text-sm text-muted-foreground">Precisam Revisão</div>
+              <div className="text-xs text-muted-foreground mt-1">-2 desde ontem</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-card border-destructive">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-destructive">{metricas.rejeitadas}</div>
+              <div className="text-sm text-muted-foreground">Rejeitadas</div>
+              <div className="text-xs text-muted-foreground mt-1">Nenhuma rejeição</div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Filters and Search */}

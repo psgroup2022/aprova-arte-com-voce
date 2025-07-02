@@ -14,6 +14,8 @@ interface Pauta {
   totalArtes: number;
   cliente: string;
   criadoEm: string;
+  compartilhadoEm?: string;
+  designer?: string;
 }
 
 interface PautaCardProps {
@@ -65,26 +67,48 @@ export const PautaCard = ({ pauta }: PautaCardProps) => {
       
       <CardContent className="pt-0">
         <div className="space-y-3">
+          {/* Miniaturas das artes */}
+          <div className="flex items-center gap-2 mb-3">
+            {[...Array(Math.min(pauta.totalArtes, 4))].map((_, index) => (
+              <div key={index} className="w-12 h-12 bg-primary/10 rounded-md flex items-center justify-center">
+                <Image className="w-6 h-6 text-primary/50" />
+              </div>
+            ))}
+            {pauta.totalArtes > 4 && (
+              <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center text-xs text-muted-foreground">
+                +{pauta.totalArtes - 4}
+              </div>
+            )}
+          </div>
+
+          <div className="text-sm text-muted-foreground mb-2">
+            {pauta.tipoPost.charAt(0).toUpperCase() + pauta.tipoPost.slice(1)} • Criada em {new Date(pauta.criadoEm).toLocaleDateString('pt-BR')}
+          </div>
+
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Cliente:</span>
             <span className="font-medium">{pauta.cliente}</span>
           </div>
           
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Tipo:</span>
-            <span className="font-medium capitalize">{pauta.tipoPost}</span>
-          </div>
-          
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Image className="w-4 h-4" />
-            {pauta.totalArtes} {pauta.totalArtes === 1 ? 'arte' : 'artes'}
-          </div>
+          {pauta.designer && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Designer:</span>
+              <span className="font-medium">{pauta.designer}</span>
+            </div>
+          )}
+
+          {pauta.compartilhadoEm && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Compartilhada:</span>
+              <span className="font-medium">{new Date(pauta.compartilhadoEm).toLocaleDateString('pt-BR')}</span>
+            </div>
+          )}
           
           <div className="flex gap-2 pt-2">
             <Link to={`/pauta/${pauta.id}`} className="flex-1">
               <Button variant="outline" size="sm" className="w-full">
                 <Eye className="w-4 h-4 mr-2" />
-                Visualizar
+                Abrir Revisão
               </Button>
             </Link>
             
@@ -95,7 +119,7 @@ export const PautaCard = ({ pauta }: PautaCardProps) => {
                 navigator.clipboard.writeText(`${window.location.origin}/pauta/${pauta.id}`);
               }}
             >
-              Copiar Link
+              Compartilhar
             </Button>
           </div>
         </div>
