@@ -5,38 +5,36 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { usePauta } from "@/hooks/usePautas";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { 
   X, Mail, Send, Expand, Download, Play, 
   VolumeX, Check, Edit3, Hash, AtSign, 
   Image as ImageIcon, HelpCircle, Video, Type,
-  Loader2
+  Loader2, Plus, MessageCircle
 } from "lucide-react";
 
-interface Comment {
+interface ComentarioPontual {
   id: string;
-  pinNumber?: number;
-  assetType: 'image' | 'video' | 'caption';
-  assetIndex?: number;
-  title: string;
-  content: string;
-  timestamp: string;
-  replies: Reply[];
-}
-
-interface Reply {
-  id: string;
-  author: string;
-  avatar: string;
-  content: string;
-  timestamp: string;
+  pauta_id: string;
+  arquivo_id?: string;
+  x_coordenada?: number;
+  y_coordenada?: number;
+  comentario: string;
+  resolvido: boolean;
+  criado_por?: string;
+  created_at: string;
 }
 
 export const VisualizarPautaV2 = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
   const [selectedApproval, setSelectedApproval] = useState<string>("");
+  const [showAddComment, setShowAddComment] = useState(false);
+  const [pendingPin, setPendingPin] = useState<{x: number, y: number, arquivoId: string} | null>(null);
 
   // Buscar dados reais da pauta
   const { data: pauta, isLoading: pautaLoading } = usePauta(id!);
@@ -58,7 +56,103 @@ export const VisualizarPautaV2 = () => {
     enabled: !!id,
   });
 
-  if (pautaLoading || arquivosLoading) {
+  // Buscar comentários da pauta
+  const { data: comentarios = [], isLoading: comentariosLoading } = useQuery({
+    queryKey: ['comentarios', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from('comentarios_pontuais')
+        .select('*')
+        .eq('pauta_id', id)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  const addComentarioMutation = useMutation({
+    mutationFn: async (comentario: any) => {
+      const { data, error } = await supabase
+        .from('comentarios_pontuais')
+        .insert(comentario)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comentarios', id] });
+      toast({ title: "Comentário adicionado com sucesso!" });
+      setNewComment("");
+      setPendingPin(null);
+      setShowAddComment(false);
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Erro ao adicionar comentário", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const updatePautaMutation = useMutation({
+    mutationFn: async ({ status, comentario }: { status: string, comentario?: string }) => {
+      const updateData: any = { status };
+      
+      if (status === 'aprovada') {
+        updateData.aprovado_por = 'cliente'; // Em um sistema real, seria o ID do usuário
+        updateData.data_aprovacao = new Date().toISOString();
+      }
+
+      const { data, error } = await supabase
+        .from('pautas')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Adicionar comentário de aprovação se houver
+      if (comentario) {
+        await supabase
+          .from('comentarios_pontuais')
+          .insert({
+            pauta_id: id!,
+            comentario,
+            criado_por: 'cliente'
+          });
+      }
+      
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['pauta', id] });
+      queryClient.invalidateQueries({ queryKey: ['comentarios', id] });
+      
+      const statusText = data.status === 'aprovada' ? 'aprovada' : 
+                        data.status === 'rejeitada' ? 'rejeitada' : 'aprovada com alterações';
+      
+      toast({ 
+        title: `Pauta ${statusText} com sucesso!`,
+        description: "O responsável foi notificado sobre sua decisão."
+      });
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Erro ao atualizar pauta", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    }
+  });
+
+  if (pautaLoading || arquivosLoading || comentariosLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -82,27 +176,6 @@ export const VisualizarPautaV2 = () => {
     );
   }
 
-  const [comments] = useState<Comment[]>([
-    {
-      id: "1",
-      pinNumber: 1,
-      assetType: "image",
-      assetIndex: 0,
-      title: "Imagem 1 - Seção superior",
-      content: "Podemos tornar o logo mais proeminente nesta seção? Está se perdendo no fundo.",
-      timestamp: "2 horas atrás",
-      replies: [
-        {
-          id: "1-1",
-          author: "João Silva",
-          avatar: "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg",
-          content: "Vou ajustar o tamanho do logo e adicionar uma sombra sutil para destacá-lo mais.",
-          timestamp: "1 hora atrás"
-        }
-      ]
-    }
-  ]);
-
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Sem prazo definido";
     return new Date(dateString).toLocaleDateString('pt-BR', {
@@ -114,24 +187,62 @@ export const VisualizarPautaV2 = () => {
 
   const handleApprovalClick = (type: string) => {
     setSelectedApproval(type);
+    
+    let status = '';
+    let comentario = '';
+    
+    switch(type) {
+      case 'approved':
+        status = 'aprovada';
+        break;
+      case 'approved-changes':
+        status = 'aguardando_aprovacao'; // Continua aguardando até as alterações serem feitas
+        comentario = 'Aprovado com alterações solicitadas nos comentários.';
+        break;
+      case 'rejected':
+        status = 'rejeitada';
+        comentario = 'Rejeitado. Por favor, verificar os comentários para mais detalhes.';
+        break;
+    }
+    
+    updatePautaMutation.mutate({ status, comentario });
   };
 
   const handleAddComment = () => {
     if (!newComment.trim()) return;
-    // Aqui seria a lógica para adicionar o comentário
-    setNewComment("");
+    
+    const comentario: any = {
+      pauta_id: id!,
+      comentario: newComment,
+      criado_por: 'cliente'
+    };
+
+    if (pendingPin) {
+      comentario.arquivo_id = pendingPin.arquivoId;
+      comentario.x_coordenada = Math.round(pendingPin.x);
+      comentario.y_coordenada = Math.round(pendingPin.y);
+    }
+
+    addComentarioMutation.mutate(comentario);
   };
 
-  const handleImageClick = (e: React.MouseEvent<HTMLImageElement>, assetIndex: number) => {
+  const handleImageClick = (e: React.MouseEvent<HTMLImageElement>, arquivoId: string) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
     
-    const xPercent = (x / rect.width) * 100;
-    const yPercent = (y / rect.height) * 100;
+    setPendingPin({ x, y, arquivoId });
+    setShowAddComment(true);
+  };
+
+  const addLegendaComment = () => {
+    if (!newComment.trim()) return;
     
-    // Aqui seria a lógica para adicionar um novo pin de comentário
-    console.log(`Pin adicionado na posição: ${xPercent}%, ${yPercent}% na imagem ${assetIndex + 1}`);
+    addComentarioMutation.mutate({
+      pauta_id: id!,
+      comentario: `[LEGENDA] ${newComment}`,
+      criado_por: 'cliente'
+    });
   };
 
   return (
@@ -207,22 +318,24 @@ export const VisualizarPautaV2 = () => {
                           className="w-full h-auto cursor-pointer" 
                           src={arquivo.url} 
                           alt={arquivo.nome_arquivo}
-                          onClick={(e) => handleImageClick(e, index)}
+                          onClick={(e) => handleImageClick(e, arquivo.id)}
                         />
                         
                         {/* Comment Pins */}
-                        {comments
-                          .filter(comment => comment.assetType === 'image' && comment.assetIndex === index && comment.pinNumber)
-                          .map((comment) => (
+                        {comentarios
+                          .filter(c => c.arquivo_id === arquivo.id && c.x_coordenada && c.y_coordenada)
+                          .map((comentario, pinIndex) => (
                             <div 
-                              key={comment.id}
-                              className="absolute h-6 w-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold -ml-3 -mt-3"
+                              key={comentario.id}
+                              className="absolute h-6 w-6 bg-blue-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:bg-blue-600"
                               style={{
-                                top: comment.pinNumber === 1 ? '30%' : '45%',
-                                left: comment.pinNumber === 1 ? '25%' : '70%'
+                                left: `${comentario.x_coordenada}%`,
+                                top: `${comentario.y_coordenada}%`,
+                                transform: 'translate(-50%, -50%)'
                               }}
+                              title={comentario.comentario}
                             >
-                              {comment.pinNumber}
+                              {pinIndex + 1}
                             </div>
                           ))
                         }
@@ -246,10 +359,31 @@ export const VisualizarPautaV2 = () => {
             {/* Description/Caption Preview */}
             {pauta.descricao && (
               <div className="mb-12 bg-white rounded-lg shadow-sm p-5 border border-gray-200">
-                <h3 className="text-sm font-medium text-slate-700 mb-3">Descrição</h3>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-sm font-medium text-slate-700">Descrição</h3>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowAddComment(true)}
+                    className="flex items-center"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-1" />
+                    Comentar legenda
+                  </Button>
+                </div>
                 <div className="bg-gray-50 p-4 rounded-md">
                   <p className="text-gray-700 whitespace-pre-wrap">{pauta.descricao}</p>
                 </div>
+                
+                {/* Comentários da legenda */}
+                {comentarios.filter(c => c.comentario.startsWith('[LEGENDA]')).map((comentario) => (
+                  <div key={comentario.id} className="mt-3 p-3 bg-blue-50 rounded-md border-l-4 border-blue-500">
+                    <p className="text-sm text-gray-700">{comentario.comentario.replace('[LEGENDA] ', '')}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(comentario.created_at).toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -296,92 +430,100 @@ export const VisualizarPautaV2 = () => {
             <div className="p-5">
               <h3 className="text-base font-medium text-slate-700 mb-4">Comentários</h3>
               
-              {comments.map((comment) => (
-                <div key={comment.id} className="mb-6 bg-white rounded-lg shadow-sm p-4">
-                  <div className="flex items-start mb-3">
-                    <div className={`flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold mr-2 ${
-                      comment.pinNumber ? 'bg-blue-500' : 'bg-slate-500'
-                    }`}>
-                      {comment.pinNumber || (
-                        comment.assetType === 'video' ? <Video className="w-3 h-3" /> :
-                        comment.assetType === 'caption' ? <Type className="w-3 h-3" /> : 
-                        comment.pinNumber
-                      )}
+              {/* Comentários pontuais */}
+              {comentarios.filter(c => c.arquivo_id && c.x_coordenada && c.y_coordenada).map((comentario, index) => (
+                <div key={comentario.id} className="mb-4 bg-white rounded-lg shadow-sm p-4">
+                  <div className="flex items-start mb-2">
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold mr-2">
+                      {index + 1}
                     </div>
                     <div className="flex-grow">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-medium text-slate-800">{comment.title}</h4>
-                        <span className="text-xs text-gray-500">{comment.timestamp}</span>
-                      </div>
-                      <p className="text-sm text-gray-700 mt-1">{comment.content}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Replies */}
-                  <div className="pl-8">
-                    {comment.replies.map((reply) => (
-                      <div key={reply.id} className="flex items-start mb-2 pb-2 border-b border-gray-100">
-                        <img src={reply.avatar} alt={reply.author} className="w-7 h-7 rounded-full mr-2" />
-                        <div className="flex-grow">
-                          <div className="flex justify-between">
-                            <h5 className="text-sm font-medium">{reply.author}</h5>
-                            <span className="text-xs text-gray-500">{reply.timestamp}</span>
-                          </div>
-                          <p className="text-sm text-gray-700">{reply.content}</p>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {/* Reply Input */}
-                    <div className="flex mt-2">
-                      <img 
-                        src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg" 
-                        alt="Cliente" 
-                        className="w-7 h-7 rounded-full mr-2" 
-                      />
-                      <div className="flex-grow">
-                        <Input 
-                          type="text" 
-                          placeholder="Responder este comentário..." 
-                          className="w-full text-sm"
-                        />
-                      </div>
+                      <h4 className="font-medium text-slate-800">Comentário na imagem</h4>
+                      <p className="text-sm text-gray-700 mt-1">{comentario.comentario}</p>
+                      <span className="text-xs text-gray-500">
+                        {new Date(comentario.created_at).toLocaleString('pt-BR')}
+                      </span>
                     </div>
                   </div>
                 </div>
               ))}
-              
-              {/* Add New Comment */}
-              <div>
-                <h4 className="text-sm font-medium text-slate-700 mb-2">Adicionar novo comentário</h4>
-                <div className="bg-white rounded-lg shadow-sm p-3">
-                  <Textarea 
-                    placeholder="Digite seu comentário aqui..." 
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm min-h-[100px] mb-3"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                  />
-                  <div className="flex justify-between items-center">
-                    <div className="flex space-x-2">
-                      <button className="text-gray-500 hover:text-gray-700">
-                        <ImageIcon className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-500 hover:text-gray-700">
-                        <AtSign className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-500 hover:text-gray-700">
-                        <Hash className="w-4 h-4" />
-                      </button>
+
+              {/* Comentários gerais */}
+              {comentarios.filter(c => !c.arquivo_id && !c.comentario.startsWith('[LEGENDA]')).map((comentario) => (
+                <div key={comentario.id} className="mb-4 bg-white rounded-lg shadow-sm p-4">
+                  <div className="flex items-start mb-2">
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-500 text-white text-xs font-bold mr-2">
+                      <MessageCircle className="w-3 h-3" />
                     </div>
-                    <Button 
-                      onClick={handleAddComment}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm"
-                    >
-                      Postar Comentário
-                    </Button>
+                    <div className="flex-grow">
+                      <h4 className="font-medium text-slate-800">Comentário geral</h4>
+                      <p className="text-sm text-gray-700 mt-1">{comentario.comentario}</p>
+                      <span className="text-xs text-gray-500">
+                        {new Date(comentario.created_at).toLocaleString('pt-BR')}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
+
+              {/* Add New Comment */}
+              {showAddComment && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">
+                    {pendingPin ? 'Adicionar comentário na imagem' : 'Adicionar novo comentário'}
+                  </h4>
+                  <div className="bg-white rounded-lg shadow-sm p-3">
+                    <Textarea 
+                      placeholder="Digite seu comentário aqui..." 
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm min-h-[100px] mb-3"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                    />
+                    <div className="flex justify-between items-center">
+                      <div className="flex space-x-2">
+                        <button className="text-gray-500 hover:text-gray-700">
+                          <ImageIcon className="w-4 h-4" />
+                        </button>
+                        <button className="text-gray-500 hover:text-gray-700">
+                          <AtSign className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setShowAddComment(false);
+                            setPendingPin(null);
+                            setNewComment("");
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                        <Button 
+                          onClick={handleAddComment}
+                          size="sm"
+                          disabled={addComentarioMutation.isPending}
+                        >
+                          {addComentarioMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Postar Comentário
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!showAddComment && (
+                <Button
+                  onClick={() => setShowAddComment(true)}
+                  className="w-full"
+                  variant="outline"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar comentário geral
+                </Button>
+              )}
             </div>
           </div>
         </div>
