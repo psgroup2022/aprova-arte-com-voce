@@ -126,7 +126,7 @@ export const VisualizarPautaV2 = () => {
             pauta_id: id!,
             arquivo_id: 'geral',
             comentario,
-            criado_por: 'cliente',
+            criado_por: null,
             x_coordenada: 0,
             y_coordenada: 0
           });
@@ -223,7 +223,7 @@ export const VisualizarPautaV2 = () => {
     const comentario: any = {
       pauta_id: id!,
       comentario: newComment,
-      criado_por: 'cliente'
+      criado_por: null
     };
 
     if (pendingPin) {
@@ -264,7 +264,7 @@ export const VisualizarPautaV2 = () => {
       pauta_id: id!,
       arquivo_id: 'legenda',
       comentario: `[LEGENDA] ${newComment}`,
-      criado_por: 'cliente',
+      criado_por: null,
       x_coordenada: 0,
       y_coordenada: 0
     });
