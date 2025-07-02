@@ -21,7 +21,7 @@ export const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-background flex">
       <AppSidebar />
-      <div className="flex-1 ml-16">
+      <div className="flex-1 ml-64">
         {children}
       </div>
     </div>
