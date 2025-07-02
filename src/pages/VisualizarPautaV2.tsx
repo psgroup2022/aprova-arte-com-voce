@@ -212,7 +212,13 @@ export const VisualizarPautaV2 = () => {
   };
 
   const handleAddComment = () => {
-    if (!newComment.trim()) return;
+    if (!newComment.trim()) {
+      console.log('Comentário vazio, não enviando');
+      return;
+    }
+    
+    console.log('Enviando comentário:', newComment);
+    console.log('PendingPin:', pendingPin);
     
     const comentario: any = {
       pauta_id: id!,
@@ -224,23 +230,31 @@ export const VisualizarPautaV2 = () => {
       comentario.arquivo_id = pendingPin.arquivoId;
       comentario.x_coordenada = Math.round(pendingPin.x);
       comentario.y_coordenada = Math.round(pendingPin.y);
+      console.log('Comentário pontual:', comentario);
     } else {
       // Para comentários gerais, usar valores padrão
       comentario.arquivo_id = 'geral';
       comentario.x_coordenada = 0;
       comentario.y_coordenada = 0;
+      console.log('Comentário geral:', comentario);
     }
 
     addComentarioMutation.mutate(comentario);
   };
 
   const handleImageClick = (e: React.MouseEvent<HTMLImageElement>, arquivoId: string) => {
+    e.preventDefault();
+    console.log('Clique na imagem detectado:', arquivoId);
+    
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     
+    console.log('Posição calculada:', { x, y });
+    
     setPendingPin({ x, y, arquivoId });
     setShowAddComment(true);
+    console.log('Estado atualizado - showAddComment:', true);
   };
 
   const addLegendaComment = () => {
@@ -330,9 +344,24 @@ export const VisualizarPautaV2 = () => {
                           src={arquivo.url} 
                           alt={arquivo.nome_arquivo}
                           onClick={(e) => handleImageClick(e, arquivo.id)}
+                          style={{ userSelect: 'none' }}
                         />
                         
-                        {/* Comment Pins */}
+                        {/* Pin temporário enquanto aguarda comentário */}
+                        {pendingPin && pendingPin.arquivoId === arquivo.id && (
+                          <div 
+                            className="absolute h-6 w-6 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold animate-pulse cursor-pointer"
+                            style={{
+                              left: `${pendingPin.x}%`,
+                              top: `${pendingPin.y}%`,
+                              transform: 'translate(-50%, -50%)'
+                            }}
+                          >
+                            ?
+                          </div>
+                        )}
+                        
+                        {/* Comment Pins existentes */}
                         {comentarios
                           .filter(c => c.arquivo_id === arquivo.id && c.x_coordenada && c.y_coordenada)
                           .map((comentario, pinIndex) => (
@@ -479,23 +508,30 @@ export const VisualizarPautaV2 = () => {
 
               {/* Add New Comment */}
               {showAddComment && (
-                <div className="mb-4">
+                <div className="mb-4 bg-white rounded-lg shadow-sm p-4 border-2 border-blue-200">
                   <h4 className="text-sm font-medium text-slate-700 mb-2">
-                    {pendingPin ? 'Adicionar comentário na imagem' : 'Adicionar novo comentário'}
+                    {pendingPin ? (
+                      <span className="text-blue-600">
+                        ✓ Adicionar comentário na imagem (posição marcada)
+                      </span>
+                    ) : (
+                      'Adicionar novo comentário geral'
+                    )}
                   </h4>
-                  <div className="bg-white rounded-lg shadow-sm p-3">
+                  <div className="bg-gray-50 rounded-lg p-3">
                     <Textarea 
                       placeholder="Digite seu comentário aqui..." 
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm min-h-[100px] mb-3"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm min-h-[100px] mb-3 bg-white"
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
+                      autoFocus
                     />
                     <div className="flex justify-between items-center">
                       <div className="flex space-x-2">
-                        <button className="text-gray-500 hover:text-gray-700">
+                        <button className="text-gray-500 hover:text-gray-700 p-1 rounded">
                           <ImageIcon className="w-4 h-4" />
                         </button>
-                        <button className="text-gray-500 hover:text-gray-700">
+                        <button className="text-gray-500 hover:text-gray-700 p-1 rounded">
                           <AtSign className="w-4 h-4" />
                         </button>
                       </div>
@@ -504,6 +540,7 @@ export const VisualizarPautaV2 = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => {
+                            console.log('Cancelando comentário');
                             setShowAddComment(false);
                             setPendingPin(null);
                             setNewComment("");
@@ -514,7 +551,8 @@ export const VisualizarPautaV2 = () => {
                         <Button 
                           onClick={handleAddComment}
                           size="sm"
-                          disabled={addComentarioMutation.isPending}
+                          disabled={addComentarioMutation.isPending || !newComment.trim()}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
                         >
                           {addComentarioMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                           Postar Comentário
