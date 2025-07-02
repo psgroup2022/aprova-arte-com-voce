@@ -7,6 +7,11 @@ import { Dashboard } from "./pages/Dashboard";
 import { CriarPauta } from "./pages/CriarPauta";
 import { VisualizarPautaV2 as VisualizarPauta } from "./pages/VisualizarPautaV2";
 import { Auth } from "./pages/Auth";
+import { Agenda } from "./pages/Agenda";
+import { Mensagens } from "./pages/Mensagens";
+import { Relatorios } from "./pages/Relatorios";
+import { Equipe } from "./pages/Equipe";
+import { Configuracoes } from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,6 +26,11 @@ const App = () => (
           <Route path="/" element={<Dashboard />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/criar-pauta" element={<CriarPauta />} />
+          <Route path="/agenda" element={<Agenda />} />
+          <Route path="/mensagens" element={<Mensagens />} />
+          <Route path="/relatorios" element={<Relatorios />} />
+          <Route path="/equipe" element={<Equipe />} />
+          <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/pauta/:id" element={<VisualizarPauta />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

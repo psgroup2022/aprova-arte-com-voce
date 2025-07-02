@@ -18,6 +18,7 @@ type PostType = "feed" | "story" | "reel" | "carousel" | "facebook" | "twitter";
 interface FormData {
   titulo: string;
   tipo_post: PostType | "";
+  quantidade_materiais: number;
   data_prazo: string;
   responsavel: string;
   tags: string[];
@@ -36,6 +37,7 @@ export const CriarPauta = () => {
   const [formData, setFormData] = useState<FormData>({
     titulo: "",
     tipo_post: "",
+    quantidade_materiais: 1,
     data_prazo: "",
     responsavel: "",
     tags: [],
@@ -52,7 +54,7 @@ export const CriarPauta = () => {
   const [notifyTeam, setNotifyTeam] = useState(false);
   const [requireApproval, setRequireApproval] = useState(true);
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  const handleInputChange = (field: keyof FormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -96,7 +98,7 @@ export const CriarPauta = () => {
     setArquivos(prev => prev.filter((_, i) => i !== index));
   };
 
-  const uploadFile = async (file: File, pautaId: string) => {
+  const uploadFile = async (file: File, pautaId: string, ordem: number = 0) => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${pautaId}/${Date.now()}.${fileExt}`;
     
@@ -125,11 +127,27 @@ export const CriarPauta = () => {
         tipo,
         url: publicUrl,
         tamanho: file.size,
-        ordem: 0,
+        ordem,
       });
 
     if (dbError) {
       throw dbError;
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Link copiado!",
+        description: "O link de aprovação foi copiado para a área de transferência.",
+      });
+    } catch (err) {
+      toast({
+        title: "Erro ao copiar",
+        description: "Não foi possível copiar o link. Copie manualmente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -157,40 +175,58 @@ export const CriarPauta = () => {
     try {
       setUploading(true);
       
-      // Criar pauta
-      const pautaData = {
-        titulo: formData.titulo,
-        descricao: formData.legenda,
-        cliente: formData.cliente,
-        data_prazo: formData.data_prazo || undefined,
-        observacoes: formData.observacoes || undefined,
-      };
-      
-      const novaPauta = await new Promise<any>((resolve, reject) => {
-        createPauta(pautaData, {
-          onSuccess: resolve,
-          onError: reject,
-        });
-      });
+      // Criar pauta diretamente com supabase para evitar duplicação
+      const { data: novaPauta, error: pautaError } = await supabase
+        .from('pautas')
+        .insert({
+          titulo: formData.titulo,
+          descricao: formData.legenda,
+          cliente: formData.cliente,
+          data_prazo: formData.data_prazo || null,
+          observacoes: formData.observacoes || null,
+          criado_por: user.id,
+          status: 'aguardando_aprovacao'
+        })
+        .select()
+        .single();
+
+      if (pautaError) {
+        throw pautaError;
+      }
 
       // Upload dos arquivos se houver
       if (arquivos.length > 0) {
         await Promise.all(
-          arquivos.map(arquivo => uploadFile(arquivo, novaPauta.id))
+          arquivos.map((arquivo, index) => uploadFile(arquivo, novaPauta.id, index))
         );
       }
 
+      // Gerar link de aprovação
+      const approvalLink = `${window.location.origin}/pauta/${novaPauta.id}`;
+      
       toast({
-        title: "Sucesso",
-        description: "Pauta criada com sucesso!",
+        title: "Pauta criada com sucesso!",
+        description: "Link de aprovação gerado. Clique para copiar.",
+        action: (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => copyToClipboard(approvalLink)}
+          >
+            Copiar Link
+          </Button>
+        ),
       });
+      
+      // Opcional: Abrir link em nova aba para demonstrar
+      console.log("Link de aprovação:", approvalLink);
       
       navigate("/");
     } catch (error) {
-      console.error(error);
+      console.error("Erro detalhado:", error);
       toast({
         title: "Erro",
-        description: "Erro ao criar pauta. Tente novamente.",
+        description: `Erro ao criar pauta: ${error?.message || "Tente novamente."}`,
         variant: "destructive",
       });
     } finally {
@@ -272,6 +308,33 @@ export const CriarPauta = () => {
                         <SelectItem value="twitter">Twitter Post</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="quantidade_materiais" className="text-sm font-medium mb-1">Quantidade de Materiais *</Label>
+                    <Select 
+                      value={formData.quantidade_materiais.toString()} 
+                      onValueChange={(value) => handleInputChange("quantidade_materiais", parseInt(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a quantidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                          <SelectItem key={num} value={num.toString()}>
+                            {num} {num === 1 ? 'material' : 'materiais'}
+                            {formData.tipo_post === 'carousel' && num > 1 ? ' (imagens no carrossel)' : 
+                             formData.tipo_post !== 'carousel' && num > 1 ? ' posts' : ' post'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formData.tipo_post === 'carousel' 
+                        ? 'Para carrossel: cada material é uma imagem do carrossel'
+                        : 'Cada material é um post separado'
+                      }
+                    </p>
                   </div>
 
                   <div>
