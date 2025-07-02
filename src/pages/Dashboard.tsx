@@ -3,12 +3,13 @@ import {
   Grid3X3, Folder, CalendarDays, MessageSquare, BarChart3, Users, Settings,
   Filter, ChevronDown, Bell, HelpCircle, Search, List, Grid, Plus, X,
   Clock, Check, Edit3, Share2, MoreVertical, Eye, ExternalLink, 
-  MessageCircle, Download, Play, Upload
+  MessageCircle, Download, Play, Upload, Mail, FileText, ArrowUpRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 
 const mockPautas = [
   {
@@ -77,6 +78,7 @@ const mockPautas = [
 
 export const Dashboard = () => {
   const [showModal, setShowModal] = useState(false);
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
 
   const getStatusBg = (status: string) => {
     switch (status) {
@@ -149,7 +151,7 @@ export const Dashboard = () => {
         {/* Header */}
         <div className="bg-white p-4 flex justify-between items-center shadow-sm sticky top-0 z-20">
           <h1 className="text-xl font-semibold text-slate-800">
-            🇧🇷 Painel de Revisão Criativa
+            Painel de Revisão Criativa
           </h1>
           <div className="flex items-center space-x-3">
             <Button variant="outline" size="sm" className="flex items-center space-x-1">
@@ -170,153 +172,220 @@ export const Dashboard = () => {
           </div>
         </div>
 
-        {/* Filters Section */}
-        <div className="px-6 py-3 flex flex-wrap justify-between bg-gray-50 border-b border-gray-200">
-          <div className="w-64">
-            <div className="flex justify-between items-center mb-1">
-              <h3 className="text-sm font-medium text-slate-700">Status</h3>
-              <ChevronDown className="w-3 h-3 text-gray-500" />
-            </div>
-            <p className="text-xs text-gray-500">Todos os status</p>
+        {/* Centro de Notificações */}
+        <div className="px-6 py-4 bg-white border-b border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-800">Atividades Recentes</h2>
+            <button className="text-blue-600 text-sm font-medium hover:text-blue-700">Marcar todas como lidas</button>
           </div>
-          <div className="w-64">
-            <div className="flex justify-between items-center mb-1">
-              <h3 className="text-sm font-medium text-slate-700">Tipo de Post</h3>
-              <ChevronDown className="w-3 h-3 text-gray-500" />
+          <div className="space-y-3">
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 flex">
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                <Eye className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-slate-800 text-sm font-medium">Cliente visualizou "Promoção Coleção de Verão"</p>
+                <div className="flex items-center mt-1">
+                  <p className="text-xs text-gray-500">10 minutos atrás</p>
+                  <span className="mx-1 text-gray-400">•</span>
+                  <button className="text-xs text-blue-600 hover:text-blue-700">Visualizar</button>
+                </div>
+              </div>
+              <button className="text-gray-400 hover:text-gray-600 self-start">
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <p className="text-xs text-gray-500">Todos os tipos</p>
-          </div>
-          <div className="w-64">
-            <div className="flex justify-between items-center mb-1">
-              <h3 className="text-sm font-medium text-slate-700">Período</h3>
-              <ChevronDown className="w-3 h-3 text-gray-500" />
+            
+            <div className="bg-red-50 p-3 rounded-lg border border-red-100 flex">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                <Edit3 className="w-5 h-5 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-slate-800 text-sm font-medium">Cliente solicitou alterações em "Anúncio Promoção de Final de Semana"</p>
+                <div className="flex items-center mt-1">
+                  <p className="text-xs text-gray-500">5 horas atrás</p>
+                  <span className="mx-1 text-gray-400">•</span>
+                  <button className="text-xs text-blue-600 hover:text-blue-700">Visualizar</button>
+                </div>
+              </div>
+              <button className="text-gray-400 hover:text-gray-600 self-start">
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <p className="text-xs text-gray-500">Últimos 30 dias</p>
-          </div>
-          <div className="w-64">
-            <div className="flex justify-between items-center mb-1">
-              <h3 className="text-sm font-medium text-slate-700">Atribuído a</h3>
-              <ChevronDown className="w-3 h-3 text-gray-500" />
+            
+            <div className="bg-green-50 p-3 rounded-lg border border-green-100 flex">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                <Check className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-slate-800 text-sm font-medium">Cliente aprovou "Lançamento de Produto - Novos Tênis"</p>
+                <div className="flex items-center mt-1">
+                  <p className="text-xs text-gray-500">1 dia atrás</p>
+                  <span className="mx-1 text-gray-400">•</span>
+                  <button className="text-xs text-blue-600 hover:text-blue-700">Visualizar</button>
+                </div>
+              </div>
+              <button className="text-gray-400 hover:text-gray-600 self-start">
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <p className="text-xs text-gray-500">Todos os membros</p>
-          </div>
-          <div className="flex items-center">
-            <button className="text-blue-600 hover:text-blue-700 hover:underline text-sm font-medium">
-              Limpar Tudo
-            </button>
           </div>
         </div>
 
-        {/* Sort Bar */}
-        <div className="px-6 py-3 flex justify-between items-center bg-white border-b border-gray-200">
-          <div className="flex items-center">
-            <span className="text-sm text-slate-600 mr-2">Ordenar por</span>
-            <select className="appearance-none bg-white border border-gray-300 rounded-md px-4 py-1.5 pr-8 text-sm text-slate-700">
-              <option>Data de Vencimento (Mais Próxima)</option>
-              <option>Última Modificação</option>
-              <option>Data de Criação</option>
-              <option>Alfabética</option>
-            </select>
+        {/* Filtros e Busca */}
+        <div className="px-6 py-4 flex justify-between items-center">
+          <div className="flex space-x-2">
+            <div className="relative">
+              <select className="appearance-none bg-white border border-gray-300 rounded-md pl-9 pr-8 py-2 text-sm w-40">
+                <option>Todos os Status</option>
+                <option>Aguardando Revisão</option>
+                <option>Aprovado</option>
+                <option>Precisa Revisão</option>
+                <option>Rejeitado</option>
+              </select>
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                <Filter className="w-4 h-4 text-gray-400" />
+              </div>
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <ChevronDown className="w-3 h-3 text-gray-500" />
+              </div>
+            </div>
+            
+            <div className="relative">
+              <select className="appearance-none bg-white border border-gray-300 rounded-md pl-9 pr-8 py-2 text-sm w-40">
+                <option>Todos os Tipos</option>
+                <option>Feed Instagram</option>
+                <option>Stories Instagram</option>
+                <option>Reels Instagram</option>
+                <option>Carrossel Instagram</option>
+              </select>
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                <Grid3X3 className="w-4 h-4 text-gray-400" />
+              </div>
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <ChevronDown className="w-3 h-3 text-gray-500" />
+              </div>
+            </div>
+            
+            <div className="relative">
+              <select className="appearance-none bg-white border border-gray-300 rounded-md pl-9 pr-8 py-2 text-sm w-44">
+                <option>Ordenar: Data de Vencimento</option>
+                <option>Ordenar: Última Modificação</option>
+                <option>Ordenar: Data de Criação</option>
+                <option>Ordenar: Alfabética</option>
+              </select>
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                <List className="w-4 h-4 text-gray-400" />
+              </div>
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <ChevronDown className="w-3 h-3 text-gray-500" />
+              </div>
+            </div>
           </div>
-          <div className="flex items-center space-x-4">
+          
+          <div className="flex items-center space-x-3">
             <div className="relative">
               <Input type="text" placeholder="Buscar pautas..." className="pl-9 w-64" />
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             </div>
-            <button className="text-blue-600 hover:text-blue-700">
-              <List className="w-5 h-5" />
-            </button>
-            <button className="text-gray-400">
-              <Grid className="w-5 h-5" />
-            </button>
+            <Link to="/criar-pauta">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md flex items-center space-x-2">
+                <Plus className="w-4 h-4" />
+                <span>Nova Pauta</span>
+              </Button>
+            </Link>
           </div>
         </div>
 
-        {/* New Pauta Button */}
+        {/* Visão Geral do Status */}
         <div className="px-6 py-4">
-          <Button onClick={() => setShowModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md flex items-center space-x-2">
-            <Plus className="w-4 h-4" />
-            <span>Criar Nova Pauta</span>
-          </Button>
-        </div>
-
-        {/* Dashboard Stats */}
-        <div className="px-6 py-2 grid grid-cols-4 gap-4 mb-6">
-          <Card className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-slate-600 font-medium">Total de Pautas</h3>
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Grid3X3 className="w-4 h-4 text-blue-600" />
-                </div>
-              </div>
-              <p className="text-2xl font-semibold text-slate-800">24</p>
-              <p className="text-xs text-gray-500 mt-1">+3 desde a semana passada</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4">Visão Geral do Status</h2>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="text-slate-600 font-medium">Aguardando Revisão</h3>
                 <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
                   <Clock className="w-4 h-4 text-yellow-600" />
                 </div>
               </div>
               <p className="text-2xl font-semibold text-slate-800">8</p>
-              <p className="text-xs text-gray-500 mt-1">2 vencem hoje</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-gray-500">2 vencem hoje</p>
+                <button className="text-xs text-blue-600 hover:text-blue-700">Ver todas</button>
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="text-slate-600 font-medium">Aprovadas</h3>
                 <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                   <Check className="w-4 h-4 text-green-600" />
                 </div>
               </div>
               <p className="text-2xl font-semibold text-slate-800">12</p>
-              <p className="text-xs text-gray-500 mt-1">+5 esta semana</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-gray-500">+5 esta semana</p>
+                <button className="text-xs text-blue-600 hover:text-blue-700">Ver todas</button>
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="text-slate-600 font-medium">Precisam Revisão</h3>
                 <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
                   <Edit3 className="w-4 h-4 text-red-600" />
                 </div>
               </div>
               <p className="text-2xl font-semibold text-slate-800">4</p>
-              <p className="text-xs text-gray-500 mt-1">-2 desde a semana passada</p>
-            </CardContent>
-          </Card>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-gray-500">-2 desde a semana passada</p>
+                <button className="text-xs text-blue-600 hover:text-blue-700">Ver todas</button>
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-slate-600 font-medium">Rejeitadas</h3>
+                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <X className="w-4 h-4 text-gray-600" />
+                </div>
+              </div>
+              <p className="text-2xl font-semibold text-slate-800">0</p>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-gray-500">Nenhuma rejeição</p>
+                <button className="text-xs text-blue-600 hover:text-blue-700">Ver todas</button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Pautas List */}
+        {/* Lista de Pautas */}
         <div className="px-6 pb-8">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">Todas as Pautas</h2>
           
-          {mockPautas.map((pauta) => (
-            <div key={pauta.id} className="border border-gray-300 rounded-lg bg-white overflow-hidden mb-4 hover:shadow-md transition-shadow">
-              <div className={`${getStatusBg(pauta.status)} p-4 border-b border-gray-200`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className={`w-10 h-10 ${pauta.status === 'awaiting' ? 'bg-yellow-100' : pauta.status === 'approved' ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center mr-3`}>
-                      {getStatusIcon(pauta.status)}
+          {/* Pauta Card 1 - Aguardando */}
+          <div className="border border-gray-300 rounded-lg bg-white overflow-hidden mb-4 hover:shadow-md transition-shadow">
+            <div className="bg-yellow-50 p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                    <Clock className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-slate-800">Promoção Coleção de Verão</h3>
+                    <div className="flex items-center text-xs text-gray-600 mt-1">
+                      <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs">Aguardando Revisão</span>
+                      <span className="mx-2">•</span>
+                      <span className="text-gray-500">Feed Instagram</span>
+                      <span className="mx-2">•</span>
+                      <span className="text-gray-500">Vence 15 Jul, 2023</span>
                     </div>
-                    <div>
-                      <h3 className="font-medium text-slate-800">{pauta.titulo}</h3>
-                      <div className="flex items-center text-xs text-gray-600 mt-1">
-                        {getStatusBadge(pauta.status, pauta.statusLabel)}
-                        <span className="mx-2">•</span>
-                        <span className="text-gray-500">{pauta.tipo}</span>
-                        <span className="mx-2">•</span>
-                        <span className="text-gray-500">Vence {pauta.dataVencimento}</span>
-                      </div>
-                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center text-xs text-gray-500">
+                    <Eye className="w-4 h-4 text-gray-400 mr-1" />
+                    <span>Cliente visualizou há 10 min</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <button className="text-slate-600 hover:text-slate-800">
@@ -328,75 +397,229 @@ export const Dashboard = () => {
                   </div>
                 </div>
               </div>
-              
-              <div className="p-4">
-                <div className="flex space-x-4 mb-4 overflow-x-auto pb-2">
-                  {Array.from({ length: pauta.artes }).map((_, index) => (
-                    <div key={index} className="flex-shrink-0 w-32 h-32 bg-gray-100 rounded-md relative group">
-                      {pauta.temVideo && index === pauta.artes - 1 && (
-                        <div className="absolute inset-0 flex items-center justify-center text-slate-400">
-                          <Play className="w-8 h-8" />
-                        </div>
-                      )}
-                      {pauta.comentarios && index === 0 && (
-                        <div className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-bl-md">
-                          {pauta.comentarios} comentários
-                        </div>
-                      )}
-                      <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/default-placeholder.png" alt="Asset preview" className="w-full h-full object-cover rounded-md" />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center transition-all rounded-md">
-                        <button className="opacity-0 group-hover:opacity-100 bg-white rounded-full p-2 shadow-md">
-                          <Eye className="w-4 h-4 text-slate-700" />
-                        </button>
+            </div>
+            <div className="p-4">
+              <div className="flex space-x-4 mb-4 overflow-x-auto pb-2">
+                {[1, 2, 3].map((index) => (
+                  <div key={index} className="flex-shrink-0 w-32 h-32 bg-gray-100 rounded-md relative group">
+                    {index === 3 && (
+                      <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+                        <Play className="w-8 h-8" />
                       </div>
+                    )}
+                    <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/default-placeholder.png" alt="Asset preview" className="w-full h-full object-cover rounded-md" />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center transition-all rounded-md">
+                      <button className="opacity-0 group-hover:opacity-100 bg-white rounded-full p-2 shadow-md">
+                        <Eye className="w-4 h-4 text-slate-700" />
+                      </button>
                     </div>
-                  ))}
-                </div>
-                
-                <p className="text-gray-700 text-sm mb-4 line-clamp-2">
-                  {pauta.legenda}
-                </p>
-                
-                <div className="flex items-center justify-between">
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-gray-700 text-sm mb-4 line-clamp-2">
+                    Coleção de verão com novos modelos de beachwear e acessórios. Legenda: "Se prepare para o verão com nossa nova coleção! #VibesVerao #NovaColecao"
+                  </p>
                   <div className="flex items-center space-x-2">
                     <div className="flex -space-x-2">
-                      {pauta.teamMembers.map((member, index) => (
-                        <img key={index} src={member} alt="Team member" className="w-7 h-7 rounded-full border-2 border-white" />
-                      ))}
+                      <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg" alt="Team member" className="w-7 h-7 rounded-full border-2 border-white" />
+                      <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg" alt="Team member" className="w-7 h-7 rounded-full border-2 border-white" />
                     </div>
-                    <span className="text-xs text-gray-500">
-                      {pauta.aprovado ? `Aprovada pelo cliente ${pauta.compartilhado}` : `Compartilhada com cliente ${pauta.compartilhado}`}
-                    </span>
+                    <span className="text-xs text-gray-500">Compartilhada com cliente há 2 dias</span>
                   </div>
-                  <div className="flex items-center space-x-3 text-gray-500">
-                    {pauta.comentarios && (
-                      <button className="text-red-500 flex items-center">
-                        <MessageCircle className="w-4 h-4" />
-                        <span className="text-xs ml-1">{pauta.comentarios}</span>
-                      </button>
-                    )}
-                    {!pauta.comentarios && (
-                      <button className="hover:text-slate-700">
-                        <MessageCircle className="w-4 h-4" />
-                      </button>
-                    )}
-                    <button className="hover:text-slate-700">
-                      <Eye className="w-4 h-4" />
+                </div>
+                <div className="flex flex-col space-y-2">
+                  <Link to="/pauta/1">
+                    <Button variant="outline" size="sm" className="flex items-center space-x-1 text-sm">
+                      <ArrowUpRight className="w-4 h-4" />
+                      <span>Abrir Revisão</span>
+                    </Button>
+                  </Link>
+                  <Button variant="outline" size="sm" className="flex items-center space-x-1 text-sm">
+                    <Mail className="w-4 h-4" />
+                    <span>Enviar Lembrete</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pauta Card 2 - Aprovada */}
+          <div className="border border-gray-300 rounded-lg bg-white overflow-hidden mb-4 hover:shadow-md transition-shadow">
+            <div className="bg-green-50 p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                    <Check className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-slate-800">Lançamento de Produto - Novos Tênis</h3>
+                    <div className="flex items-center text-xs text-gray-600 mt-1">
+                      <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs">Aprovada</span>
+                      <span className="mx-2">•</span>
+                      <span className="text-gray-500">Carrossel Instagram</span>
+                      <span className="mx-2">•</span>
+                      <span className="text-gray-500">Vence 10 Jul, 2023</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center text-xs text-gray-500">
+                    <Check className="w-4 h-4 text-green-500 mr-1" />
+                    <span>Aprovada há 1 dia</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button className="text-slate-600 hover:text-slate-800">
+                      <Share2 className="w-4 h-4" />
                     </button>
-                    {pauta.aprovado ? (
-                      <button className="hover:text-slate-700">
-                        <Download className="w-4 h-4" />
-                      </button>
-                    ) : (
-                      <button className="hover:text-slate-700">
-                        <ExternalLink className="w-4 h-4" />
-                      </button>
-                    )}
+                    <button className="text-slate-600 hover:text-slate-800">
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
-          ))}
+            <div className="p-4">
+              <div className="flex space-x-4 mb-4 overflow-x-auto pb-2">
+                {[1, 2, 3, 4].map((index) => (
+                  <div key={index} className="flex-shrink-0 w-32 h-32 bg-gray-100 rounded-md relative group">
+                    <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/default-placeholder.png" alt="Asset preview" className="w-full h-full object-cover rounded-md" />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center transition-all rounded-md">
+                      <button className="opacity-0 group-hover:opacity-100 bg-white rounded-full p-2 shadow-md">
+                        <Eye className="w-4 h-4 text-slate-700" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-gray-700 text-sm mb-4 line-clamp-2">
+                    Apresentando nossa nova linha de tênis com tecnologia avançada de conforto. Legenda: "Entre no futuro com nossos tênis mais confortáveis! Disponível agora! #NovoLancamento #TecnologiaConforto"
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex -space-x-2">
+                      <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg" alt="Team member" className="w-7 h-7 rounded-full border-2 border-white" />
+                    </div>
+                    <span className="text-xs text-gray-500">Aprovada pelo cliente há 1 dia</span>
+                  </div>
+                </div>
+                <div className="flex flex-col space-y-2">
+                  <Button variant="outline" size="sm" className="flex items-center space-x-1 text-sm">
+                    <Download className="w-4 h-4" />
+                    <span>Baixar Assets</span>
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex items-center space-x-1 text-sm">
+                    <FileText className="w-4 h-4" />
+                    <span>Exportar PDF</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pauta Card 3 - Revisão */}
+          <div className="border border-gray-300 rounded-lg bg-white overflow-hidden mb-4 hover:shadow-md transition-shadow">
+            <div className="bg-red-50 p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                    <Edit3 className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-slate-800">Anúncio Promoção de Final de Semana</h3>
+                    <div className="flex items-center text-xs text-gray-600 mt-1">
+                      <span className="bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs">Precisa Revisão</span>
+                      <span className="mx-2">•</span>
+                      <span className="text-gray-500">Stories Instagram</span>
+                      <span className="mx-2">•</span>
+                      <span className="text-gray-500">Vence 8 Jul, 2023</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center text-xs text-gray-500">
+                    <Edit3 className="w-4 h-4 text-red-500 mr-1" />
+                    <span>Feedback recebido há 5 horas</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button className="text-slate-600 hover:text-slate-800">
+                      <Share2 className="w-4 h-4" />
+                    </button>
+                    <button className="text-slate-600 hover:text-slate-800">
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="p-4">
+              <div className="flex space-x-4 mb-4 overflow-x-auto pb-2">
+                <div className="flex-shrink-0 w-32 h-32 bg-gray-100 rounded-md relative group">
+                  <div className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-bl-md">
+                    2 comentários
+                  </div>
+                  <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/default-placeholder.png" alt="Asset preview" className="w-full h-full object-cover rounded-md" />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 flex items-center justify-center transition-all rounded-md">
+                    <button className="opacity-0 group-hover:opacity-100 bg-white rounded-full p-2 shadow-md">
+                      <Eye className="w-4 h-4 text-slate-700" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 p-3 rounded-lg mb-4 border border-gray-200">
+                <div className="flex items-start space-x-2 mb-2">
+                  <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-4.jpg" alt="Client" className="w-7 h-7 rounded-full border-2 border-white mt-0.5" />
+                  <div>
+                    <div className="flex items-center">
+                      <p className="text-sm font-medium text-slate-800">Cliente</p>
+                      <span className="mx-2 text-xs text-gray-400">•</span>
+                      <p className="text-xs text-gray-500">5 horas atrás</p>
+                    </div>
+                    <p className="text-sm text-gray-700 mt-1">Por favor, altere o desconto de 40% para 50% e torne o texto mais proeminente. Além disso, podemos usar uma cor de fundo mais vibrante?</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-4.jpg" alt="Client" className="w-7 h-7 rounded-full border-2 border-white mt-0.5" />
+                  <div>
+                    <div className="flex items-center">
+                      <p className="text-sm font-medium text-slate-800">Cliente</p>
+                      <span className="mx-2 text-xs text-gray-400">•</span>
+                      <p className="text-xs text-gray-500">5 horas atrás</p>
+                    </div>
+                    <p className="text-sm text-gray-700 mt-1">Podemos adicionar "Oferta por Tempo Limitado" no topo?</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-gray-700 text-sm mb-4 line-clamp-2">
+                    Anúncio de promoção relâmpago de final de semana com 40% de desconto em todos os acessórios. Legenda: "PROMOÇÃO RELÂMPAGO de final de semana! 40% OFF em todos os acessórios. Compre agora antes que acabe! #PromocaoRelampago #OfertasFimDeSemana"
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex -space-x-2">
+                      <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-4.jpg" alt="Team member" className="w-7 h-7 rounded-full border-2 border-white" />
+                    </div>
+                    <span className="text-xs text-gray-500">Cliente solicitou alterações há 5 horas</span>
+                  </div>
+                </div>
+                <div className="flex flex-col space-y-2">
+                  <Button 
+                    onClick={() => setShowRevisionModal(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded flex items-center space-x-1 text-sm"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Enviar Revisão</span>
+                  </Button>
+                  <Button variant="outline" size="sm" className="flex items-center space-x-1 text-sm">
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Adicionar Nota Interna</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -475,7 +698,102 @@ export const Dashboard = () => {
             </div>
           </div>
         </div>
-      )}
+        )}
+
+        {/* Modal de Upload de Revisão */}
+        {showRevisionModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg w-full max-w-2xl">
+              <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="text-lg font-medium text-slate-800">Enviar Revisão</h2>
+                <button onClick={() => setShowRevisionModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6">
+                <div className="mb-6">
+                  <h3 className="text-md font-medium text-slate-700 mb-2">Anúncio Promoção de Final de Semana</h3>
+                  <div className="flex items-center text-xs text-gray-600">
+                    <span className="bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs">Precisa Revisão</span>
+                    <span className="mx-2">•</span>
+                    <span className="text-gray-500">Stories Instagram</span>
+                    <span className="mx-2">•</span>
+                    <span className="text-gray-500">Vence 8 Jul, 2023</span>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium text-slate-700 mb-3">Feedback do Cliente</h3>
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <div className="flex items-start space-x-2 mb-2">
+                      <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-4.jpg" alt="Client" className="w-7 h-7 rounded-full border-2 border-white mt-0.5" />
+                      <div>
+                        <div className="flex items-center">
+                          <p className="text-sm font-medium text-slate-800">Cliente</p>
+                          <span className="mx-2 text-xs text-gray-400">•</span>
+                          <p className="text-xs text-gray-500">5 horas atrás</p>
+                        </div>
+                        <p className="text-sm text-gray-700 mt-1">Por favor, altere o desconto de 40% para 50% e torne o texto mais proeminente. Além disso, podemos usar uma cor de fundo mais vibrante?</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-4.jpg" alt="Client" className="w-7 h-7 rounded-full border-2 border-white mt-0.5" />
+                      <div>
+                        <div className="flex items-center">
+                          <p className="text-sm font-medium text-slate-800">Cliente</p>
+                          <span className="mx-2 text-xs text-gray-400">•</span>
+                          <p className="text-xs text-gray-500">5 horas atrás</p>
+                        </div>
+                        <p className="text-sm text-gray-700 mt-1">Podemos adicionar "Oferta por Tempo Limitado" no topo?</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium text-slate-700 mb-3">Enviar Nova Versão</h3>
+                  <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
+                    <div className="space-y-2">
+                      <Upload className="w-8 h-8 text-gray-400 mx-auto" />
+                      <p className="text-sm text-gray-500">Arraste e solte arquivos aqui, ou clique para navegar</p>
+                      <p className="text-xs text-gray-400">Suporta JPG, PNG, GIF, MP4 (máx 100MB)</p>
+                    </div>
+                    <Button variant="outline" className="mt-4">
+                      Selecionar Arquivos
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium text-slate-700 mb-2">Atualizar Legenda (Opcional)</h3>
+                  <textarea 
+                    rows={3} 
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" 
+                    placeholder="Atualize a legenda se necessário..."
+                    defaultValue="PROMOÇÃO RELÂMPAGO de final de semana! 40% OFF em todos os acessórios. Compre agora antes que acabe! #PromocaoRelampago #OfertasFimDeSemana"
+                  />
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-slate-700 mb-2">Notas Internas (Não visível para o cliente)</h3>
+                  <textarea 
+                    rows={2} 
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" 
+                    placeholder="Adicione notas para sua equipe..."
+                  />
+                </div>
+              </div>
+              <div className="p-4 flex justify-end space-x-2 border-t border-gray-200">
+                <Button variant="outline" onClick={() => setShowRevisionModal(false)}>
+                  Cancelar
+                </Button>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  Enviar Revisão
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 };
