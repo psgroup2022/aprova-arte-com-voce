@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Dashboard } from "./pages/Dashboard";
 import { CriarPauta } from "./pages/CriarPauta";
-import { VisualizarPauta } from "./pages/VisualizarPautaV2";
+import { VisualizarPautaV2 as VisualizarPauta } from "./pages/VisualizarPautaV2";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
