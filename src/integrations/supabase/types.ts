@@ -9,7 +9,193 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      comentarios_pontuais: {
+        Row: {
+          arquivo_id: string
+          comentario: string
+          created_at: string
+          criado_por: string | null
+          data_resposta: string | null
+          id: string
+          pauta_id: string
+          resolvido: boolean
+          respondido_por: string | null
+          resposta: string | null
+          updated_at: string
+          x_coordenada: number
+          y_coordenada: number
+        }
+        Insert: {
+          arquivo_id: string
+          comentario: string
+          created_at?: string
+          criado_por?: string | null
+          data_resposta?: string | null
+          id?: string
+          pauta_id: string
+          resolvido?: boolean
+          respondido_por?: string | null
+          resposta?: string | null
+          updated_at?: string
+          x_coordenada: number
+          y_coordenada: number
+        }
+        Update: {
+          arquivo_id?: string
+          comentario?: string
+          created_at?: string
+          criado_por?: string | null
+          data_resposta?: string | null
+          id?: string
+          pauta_id?: string
+          resolvido?: boolean
+          respondido_por?: string | null
+          resposta?: string | null
+          updated_at?: string
+          x_coordenada?: number
+          y_coordenada?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comentarios_pontuais_arquivo_id_fkey"
+            columns: ["arquivo_id"]
+            isOneToOne: false
+            referencedRelation: "pauta_arquivos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comentarios_pontuais_pauta_id_fkey"
+            columns: ["pauta_id"]
+            isOneToOne: false
+            referencedRelation: "pautas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historico_aprovacoes: {
+        Row: {
+          comentario: string | null
+          created_at: string
+          id: string
+          pauta_id: string
+          status_anterior: Database["public"]["Enums"]["pauta_status"] | null
+          status_novo: Database["public"]["Enums"]["pauta_status"]
+          usuario_id: string | null
+        }
+        Insert: {
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          pauta_id: string
+          status_anterior?: Database["public"]["Enums"]["pauta_status"] | null
+          status_novo: Database["public"]["Enums"]["pauta_status"]
+          usuario_id?: string | null
+        }
+        Update: {
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          pauta_id?: string
+          status_anterior?: Database["public"]["Enums"]["pauta_status"] | null
+          status_novo?: Database["public"]["Enums"]["pauta_status"]
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_aprovacoes_pauta_id_fkey"
+            columns: ["pauta_id"]
+            isOneToOne: false
+            referencedRelation: "pautas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pauta_arquivos: {
+        Row: {
+          created_at: string
+          id: string
+          nome_arquivo: string
+          ordem: number | null
+          pauta_id: string
+          tamanho: number | null
+          tipo: Database["public"]["Enums"]["arquivo_tipo"]
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome_arquivo: string
+          ordem?: number | null
+          pauta_id: string
+          tamanho?: number | null
+          tipo: Database["public"]["Enums"]["arquivo_tipo"]
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome_arquivo?: string
+          ordem?: number | null
+          pauta_id?: string
+          tamanho?: number | null
+          tipo?: Database["public"]["Enums"]["arquivo_tipo"]
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pauta_arquivos_pauta_id_fkey"
+            columns: ["pauta_id"]
+            isOneToOne: false
+            referencedRelation: "pautas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pautas: {
+        Row: {
+          aprovado_por: string | null
+          cliente: string
+          created_at: string
+          criado_por: string | null
+          data_aprovacao: string | null
+          data_prazo: string | null
+          descricao: string | null
+          id: string
+          observacoes: string | null
+          status: Database["public"]["Enums"]["pauta_status"]
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          aprovado_por?: string | null
+          cliente: string
+          created_at?: string
+          criado_por?: string | null
+          data_aprovacao?: string | null
+          data_prazo?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["pauta_status"]
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          aprovado_por?: string | null
+          cliente?: string
+          created_at?: string
+          criado_por?: string | null
+          data_aprovacao?: string | null
+          data_prazo?: string | null
+          descricao?: string | null
+          id?: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["pauta_status"]
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +204,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      arquivo_tipo: "imagem" | "video" | "documento"
+      pauta_status:
+        | "rascunho"
+        | "aguardando_aprovacao"
+        | "aprovada"
+        | "rejeitada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +324,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      arquivo_tipo: ["imagem", "video", "documento"],
+      pauta_status: [
+        "rascunho",
+        "aguardando_aprovacao",
+        "aprovada",
+        "rejeitada",
+      ],
+    },
   },
 } as const
