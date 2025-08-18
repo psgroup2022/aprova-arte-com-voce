@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Cliente, CreateClienteData, UpdateClienteData } from "@/types/database";
-import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Cliente, CreateClienteData, UpdateClienteData } from '@/types/database';
+import { useToast } from '@/hooks/use-toast';
 
 export const useClientes = () => {
   const { toast } = useToast();
@@ -22,9 +22,15 @@ export const useClientes = () => {
   };
 
   const createCliente = async (clienteData: CreateClienteData): Promise<Cliente> => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Usuário não autenticado');
+    }
     const { data, error } = await supabase
       .from('clientes')
-      .insert(clienteData)
+      .insert({ ...clienteData, criado_por: user.id })
       .select()
       .single();
 
@@ -35,7 +41,10 @@ export const useClientes = () => {
     return data;
   };
 
-  const updateCliente = async ({ id, ...updateData }: UpdateClienteData & { id: string }): Promise<Cliente> => {
+  const updateCliente = async ({
+    id,
+    ...updateData
+  }: UpdateClienteData & { id: string }): Promise<Cliente> => {
     const { data, error } = await supabase
       .from('clientes')
       .update(updateData)
@@ -51,10 +60,7 @@ export const useClientes = () => {
   };
 
   const deleteCliente = async (id: string): Promise<void> => {
-    const { error } = await supabase
-      .from('clientes')
-      .update({ ativo: false })
-      .eq('id', id);
+    const { error } = await supabase.from('clientes').update({ ativo: false }).eq('id', id);
 
     if (error) {
       throw new Error(error.message);
@@ -65,7 +71,7 @@ export const useClientes = () => {
     data: clientes = [],
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery({
     queryKey: ['clientes'],
     queryFn: fetchClientes,
@@ -76,15 +82,15 @@ export const useClientes = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientes'] });
       toast({
-        title: "Sucesso",
-        description: "Cliente criado com sucesso!",
+        title: 'Sucesso',
+        description: 'Cliente criado com sucesso!',
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Erro",
+        title: 'Erro',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     },
   });
@@ -94,15 +100,15 @@ export const useClientes = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientes'] });
       toast({
-        title: "Sucesso",
-        description: "Cliente atualizado com sucesso!",
+        title: 'Sucesso',
+        description: 'Cliente atualizado com sucesso!',
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Erro",
+        title: 'Erro',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     },
   });
@@ -112,15 +118,15 @@ export const useClientes = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientes'] });
       toast({
-        title: "Sucesso",
-        description: "Cliente excluído com sucesso!",
+        title: 'Sucesso',
+        description: 'Cliente excluído com sucesso!',
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Erro",
+        title: 'Erro',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     },
   });

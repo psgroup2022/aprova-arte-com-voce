@@ -1,21 +1,21 @@
-import React from "react";
-import { useParams } from "react-router-dom";
-import { HelpCircle } from "lucide-react";
-import { usePautaData } from "@/hooks/usePautaData";
-import { useComentarios } from "@/hooks/useComentarios";
-import { useAprovacao } from "@/hooks/useAprovacao";
-import { PautaHeader } from "@/components/pauta/PautaHeader";
-import { ArquivosPreview } from "@/components/pauta/ArquivosPreview";
-import { ApprovalActions } from "@/components/pauta/ApprovalActions";
-import { CommentsSection } from "@/components/pauta/CommentsSection";
-import { LoadingState } from "@/components/pauta/LoadingState";
-import { NotFoundState } from "@/components/pauta/NotFoundState";
+import React from 'react';
+import { useParams } from 'react-router-dom';
+import { HelpCircle } from 'lucide-react';
+import { usePautaData } from '@/hooks/usePautaData';
+import { useComentarios } from '@/hooks/useComentarios';
+import { useAprovacao } from '@/hooks/useAprovacao';
+import { PautaHeader } from '@/components/pauta/PautaHeader';
+import { ArquivosPreview } from '@/components/pauta/ArquivosPreview';
+import { ApprovalActions } from '@/components/pauta/ApprovalActions';
+import { CommentsSection } from '@/components/pauta/CommentsSection';
+import { LoadingState } from '@/components/pauta/LoadingState';
+import { NotFoundState } from '@/components/pauta/NotFoundState';
 
 export const VisualizarPauta = () => {
   const { id } = useParams();
-  
-  const { pauta, arquivos, comentarios, isLoading } = usePautaData(id!);
-  
+
+  const { pauta, arquivos, comentarios, isLoading, error } = usePautaData(id!);
+
   const {
     newComment,
     setNewComment,
@@ -31,7 +31,7 @@ export const VisualizarPauta = () => {
     handleSaveEdit,
     handleDeleteComment,
     cancelComment,
-    cancelEdit
+    cancelEdit,
   } = useComentarios(id!);
 
   const { selectedApproval, handleApprovalClick } = useAprovacao(id!);
@@ -40,16 +40,27 @@ export const VisualizarPauta = () => {
     return <LoadingState />;
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Erro ao carregar a pauta</h2>
+          <p className="text-muted-foreground">Tente novamente mais tarde.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!pauta) {
     return <NotFoundState />;
   }
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      <PautaHeader 
+      <PautaHeader
         titulo={pauta.titulo}
         cliente={pauta.cliente}
-        dataPrazo={pauta.data_prazo}
+        dataPrazo={pauta.data_prazo ?? undefined}
       />
 
       {/* Main Content Area */}
@@ -59,17 +70,17 @@ export const VisualizarPauta = () => {
           comentarios={comentarios}
           pendingPin={pendingPin}
           onImageClick={handleImageClick}
-          descricao={pauta.descricao}
+          descricao={pauta.descricao ?? undefined}
           onShowAddComment={() => setShowAddComment(true)}
         />
-        
+
         {/* Feedback Section */}
         <div className="w-full md:w-2/5 border-l border-gray-200 flex flex-col">
           <ApprovalActions
             selectedApproval={selectedApproval}
             onApprovalClick={handleApprovalClick}
           />
-          
+
           <CommentsSection
             comentarios={comentarios}
             showAddComment={showAddComment}
@@ -89,7 +100,7 @@ export const VisualizarPauta = () => {
           />
         </div>
       </div>
-      
+
       {/* Help Button */}
       <button className="fixed bottom-6 right-6 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border border-gray-200 hover:bg-gray-50">
         <HelpCircle className="w-5 h-5 text-slate-600" />

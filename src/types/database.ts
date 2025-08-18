@@ -4,11 +4,12 @@ export type ArquivoTipo = 'imagem' | 'video' | 'documento';
 export interface Cliente {
   id: string;
   nome: string;
-  email?: string;
-  telefone?: string;
-  empresa?: string;
-  observacoes?: string;
+  email?: string | null;
+  telefone?: string | null;
+  empresa?: string | null;
+  observacoes?: string | null;
   ativo: boolean;
+  criado_por?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -16,14 +17,14 @@ export interface Cliente {
 export interface Pauta {
   id: string;
   titulo: string;
-  descricao?: string;
+  descricao?: string | null;
   cliente: string;
-  data_prazo?: string;
+  data_prazo?: string | null;
   status: PautaStatus;
-  observacoes?: string;
-  criado_por?: string;
-  aprovado_por?: string;
-  data_aprovacao?: string;
+  observacoes?: string | null;
+  criado_por?: string | null;
+  aprovado_por?: string | null;
+  data_aprovacao?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -47,10 +48,10 @@ export interface ComentarioPontual {
   y_coordenada: number;
   comentario: string;
   resolvido: boolean;
-  criado_por?: string;
-  respondido_por?: string;
-  resposta?: string;
-  data_resposta?: string;
+  criado_por?: string | null;
+  respondido_por?: string | null;
+  resposta?: string | null;
+  data_resposta?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -90,6 +91,7 @@ export interface CreateClienteData {
   telefone?: string;
   empresa?: string;
   observacoes?: string;
+  criado_por?: string;
 }
 
 export interface UpdateClienteData {

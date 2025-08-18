@@ -2,16 +2,32 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://uaqxgzoprrxdswnomccc.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhcXhnem9wcnJ4ZHN3bm9tY2NjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NjMwOTYsImV4cCI6MjA2NzAzOTA5Nn0.urdxdkDwAXFWZ8goggi9UyUpFGF7geT7QPVKgWTps-Y";
-
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const IS_TEST = Boolean(
+  (import.meta as any)?.env?.MODE === 'test' || (import.meta as any)?.env?.VITEST,
+);
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  if (!IS_TEST) {
+    // Fail fast in dev/prod if env vars are missing
+    throw new Error(
+      'Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY environment variables.\nConfigure them in a .env file (see .env.example).',
+    );
   }
-});
+}
+
+export const supabase = createClient<Database>(
+  SUPABASE_URL || 'http://localhost',
+  SUPABASE_ANON_KEY || 'test-anon-key',
+  {
+    auth: {
+      storage: localStorage,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  },
+);
