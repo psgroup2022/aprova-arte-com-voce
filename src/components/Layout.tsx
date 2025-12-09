@@ -12,17 +12,19 @@ export const Layout = ({ children }: LayoutProps) => {
 
   if (isClientView) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
         {children}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 flex">
       <AppSidebar />
-      <div className="flex-1 ml-64">
-        {children}
+      <div className="flex-1 ml-72">
+        <main className="p-8">
+          {children}
+        </main>
       </div>
     </div>
   );

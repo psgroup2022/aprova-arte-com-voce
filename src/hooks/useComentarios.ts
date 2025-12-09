@@ -4,6 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { PendingPin } from '@/types/comentario';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
+import { logger } from '@/utils/logger';
+import { handleMutationError } from '@/lib/errorHandler';
+import { createComentarioSchema, updateComentarioSchema } from '@/lib/validation/schemas';
+import { sanitizeText } from '@/utils/sanitize';
 
 export const useComentarios = (pautaId: string) => {
   const { toast } = useToast();
@@ -61,11 +65,7 @@ export const useComentarios = (pautaId: string) => {
       if (context?.previous) {
         queryClient.setQueryData<ComentarioRow[]>(['comentarios', pautaId], context.previous);
       }
-      toast({
-        title: 'Erro ao adicionar comentário',
-        description: (error).message,
-        variant: 'destructive',
-      });
+      handleMutationError(error, toast, { operation: 'addComentario', pautaId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comentarios', pautaId] });
@@ -78,20 +78,27 @@ export const useComentarios = (pautaId: string) => {
 
   const handleAddComment = async () => {
     if (!newComment.trim()) {
-      console.log('Comentário vazio, não enviando');
+      logger.debug('Comentário vazio, não enviando');
+      toast({
+        title: 'Erro',
+        description: 'Comentário não pode ser vazio',
+        variant: 'destructive',
+      });
       return;
     }
 
-    console.log('Enviando comentário:', newComment);
-    console.log('PendingPin:', pendingPin);
+    logger.debug('Enviando comentário', { newComment, pendingPin });
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const comentario: ComentarioInsert = {
+    // Sanitizar input antes de validar
+    const sanitizedComment = sanitizeText(newComment);
+
+    const comentarioData: ComentarioInsert = {
       pauta_id: pautaId,
-      comentario: newComment,
+      comentario: sanitizedComment,
       criado_por: user?.id ?? (null as string | null),
       // serão preenchidos abaixo
       arquivo_id: '' as string,
@@ -100,36 +107,46 @@ export const useComentarios = (pautaId: string) => {
     };
 
     if (pendingPin) {
-      comentario.arquivo_id = pendingPin.arquivoId;
+      comentarioData.arquivo_id = pendingPin.arquivoId;
       // Arredonda para inteiro (0-100) para compatibilidade com colunas inteiras
-      comentario.x_coordenada = Math.round(pendingPin.x);
-      comentario.y_coordenada = Math.round(pendingPin.y);
-      console.log('Comentário pontual:', comentario);
+      comentarioData.x_coordenada = Math.round(pendingPin.x);
+      comentarioData.y_coordenada = Math.round(pendingPin.y);
+      logger.debug('Comentário pontual', comentarioData);
     } else {
       // Para comentários gerais, usar valores padrão
-      comentario.arquivo_id = 'geral';
-      comentario.x_coordenada = 0;
-      comentario.y_coordenada = 0;
-      console.log('Comentário geral:', comentario);
+      comentarioData.arquivo_id = 'geral';
+      comentarioData.x_coordenada = 0;
+      comentarioData.y_coordenada = 0;
+      logger.debug('Comentário geral', comentarioData);
     }
 
-    addComentarioMutation.mutate(comentario);
+    // Validar com Zod antes de enviar
+    try {
+      const validatedData = createComentarioSchema.parse(comentarioData);
+      addComentarioMutation.mutate(validatedData);
+    } catch (error) {
+      logger.error('Erro de validação no comentário', error as Error);
+      toast({
+        title: 'Erro de validação',
+        description: 'Verifique os dados do comentário e tente novamente',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleImageClick = (e: React.MouseEvent<HTMLImageElement>, arquivoId: string) => {
     e.preventDefault();
-    console.log('Clique na imagem detectado:', arquivoId);
+    logger.debug('Clique na imagem detectado', { arquivoId });
 
     const rect = e.currentTarget.getBoundingClientRect();
     // Calcula porcentagens e arredonda para inteiros
     const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
     const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
 
-    console.log('Posição calculada:', { x, y });
+    logger.debug('Posição calculada', { x, y, arquivoId });
 
     setPendingPin({ x, y, arquivoId });
     setShowAddComment(true);
-    console.log('Estado atualizado - showAddComment:', true);
   };
 
   const editComentarioMutation = useMutation<
@@ -161,11 +178,7 @@ export const useComentarios = (pautaId: string) => {
       if (context?.previous) {
         queryClient.setQueryData<ComentarioRow[]>(['comentarios', pautaId], context.previous);
       }
-      toast({
-        title: 'Erro ao atualizar comentário',
-        description: (error).message,
-        variant: 'destructive',
-      });
+      handleMutationError(error, toast, { operation: 'editComentario', pautaId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comentarios', pautaId] });
@@ -197,11 +210,7 @@ export const useComentarios = (pautaId: string) => {
       if (context?.previous) {
         queryClient.setQueryData<ComentarioRow[]>(['comentarios', pautaId], context.previous);
       }
-      toast({
-        title: 'Erro ao excluir comentário',
-        description: (error).message,
-        variant: 'destructive',
-      });
+      handleMutationError(error, toast, { operation: 'deleteComentario', pautaId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comentarios', pautaId] });
@@ -214,12 +223,35 @@ export const useComentarios = (pautaId: string) => {
   };
 
   const handleSaveEdit = () => {
-    if (!editingComment || !editingComment.text.trim()) return;
+    if (!editingComment || !editingComment.text.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'Comentário não pode ser vazio',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    editComentarioMutation.mutate({
-      id: editingComment.id,
-      comentario: editingComment.text,
-    });
+    // Sanitizar e validar
+    const sanitizedText = sanitizeText(editingComment.text);
+
+    try {
+      const validatedData = updateComentarioSchema.parse({
+        comentario: sanitizedText,
+      });
+
+      editComentarioMutation.mutate({
+        id: editingComment.id,
+        comentario: validatedData.comentario,
+      });
+    } catch (error) {
+      logger.error('Erro de validação ao editar comentário', error as Error);
+      toast({
+        title: 'Erro de validação',
+        description: 'Comentário inválido',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleDeleteComment = (id: string) => {
@@ -227,7 +259,7 @@ export const useComentarios = (pautaId: string) => {
   };
 
   const cancelComment = () => {
-    console.log('Cancelando comentário');
+    logger.debug('Cancelando comentário');
     setShowAddComment(false);
     setPendingPin(null);
     setNewComment('');
