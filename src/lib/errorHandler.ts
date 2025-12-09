@@ -52,7 +52,7 @@ export interface AppError {
   message: string;
   userMessage: string;
   originalError?: Error;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   timestamp: Date;
   shouldNotify: boolean;
 }
@@ -64,7 +64,7 @@ export interface AppError {
 /**
  * Detecta categoria do erro baseado em sua estrutura
  */
-export const detectErrorCategory = (error: any): ErrorCategory => {
+export const detectErrorCategory = (error: unknown): ErrorCategory => {
   // Erros de validação (Zod)
   if (error instanceof ZodError) {
     return ErrorCategory.VALIDATION;
@@ -106,18 +106,21 @@ export const detectErrorCategory = (error: any): ErrorCategory => {
     return ErrorCategory.NETWORK;
   }
 
+  // Cast para objeto com propriedades opcionais
+  const errorObj = error as { name?: string; message?: string; status?: number } | null;
+
   // Erros de timeout
-  if (error?.name === 'AbortError' || error?.message?.includes('timeout')) {
+  if (errorObj?.name === 'AbortError' || errorObj?.message?.includes('timeout')) {
     return ErrorCategory.NETWORK;
   }
 
   // Rate limiting
-  if (error?.status === 429 || error?.message?.includes('rate limit')) {
+  if (errorObj?.status === 429 || errorObj?.message?.includes('rate limit')) {
     return ErrorCategory.RATE_LIMIT;
   }
 
   // File upload errors
-  if (error?.message?.includes('file') || error?.message?.includes('upload')) {
+  if (errorObj?.message?.includes('file') || errorObj?.message?.includes('upload')) {
     return ErrorCategory.FILE_UPLOAD;
   }
 
@@ -151,7 +154,7 @@ export const detectErrorSeverity = (category: ErrorCategory): ErrorSeverity => {
 /**
  * Extrai mensagem amigável para o usuário
  */
-export const getUserMessage = (error: any, category: ErrorCategory): string => {
+export const getUserMessage = (error: unknown, category: ErrorCategory): string => {
   switch (category) {
     case ErrorCategory.VALIDATION:
       if (error instanceof ZodError) {
@@ -210,15 +213,17 @@ export const getUserMessage = (error: any, category: ErrorCategory): string => {
  *   toast({ title: appError.userMessage, variant: 'destructive' });
  * }
  */
-export const handleError = (error: any, context?: Record<string, any>): AppError => {
+export const handleError = (error: unknown, context?: Record<string, unknown>): AppError => {
   const category = detectErrorCategory(error);
   const severity = detectErrorSeverity(category);
   const userMessage = getUserMessage(error, category);
 
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
   const appError: AppError = {
     category,
     severity,
-    message: error?.message || String(error),
+    message: errorMessage,
     userMessage,
     originalError: error instanceof Error ? error : undefined,
     context,
@@ -229,7 +234,7 @@ export const handleError = (error: any, context?: Record<string, any>): AppError
   // Log local
   logger.error(
     `[${category.toUpperCase()}] ${appError.message}`,
-    error,
+    error instanceof Error ? error : undefined,
     {
       ...context,
       category,
@@ -260,9 +265,9 @@ export const handleError = (error: any, context?: Record<string, any>): AppError
  * });
  */
 export const handleMutationError = (
-  error: any,
+  error: unknown,
   toast: (options: { title: string; description?: string; variant?: 'destructive' }) => void,
-  context?: Record<string, any>,
+  context?: Record<string, unknown>,
 ): AppError => {
   const appError = handleError(error, context);
 
@@ -279,8 +284,8 @@ export const handleMutationError = (
  * Handler específico para queries do React Query
  */
 export const handleQueryError = (
-  error: any,
-  context?: Record<string, any>,
+  error: unknown,
+  context?: Record<string, unknown>,
 ): AppError => {
   return handleError(error, {
     ...context,
@@ -294,7 +299,7 @@ export const handleQueryError = (
  */
 export const handleAsyncError = async <T>(
   fn: () => Promise<T>,
-  context?: Record<string, any>,
+  context?: Record<string, unknown>,
 ): Promise<{ data?: T; error?: AppError }> => {
   try {
     const data = await fn();
@@ -312,9 +317,9 @@ export const handleAsyncError = async <T>(
 /**
  * Verifica se é erro do Postgrest/Supabase
  */
-export const isPostgrestError = (error: any): error is PostgrestError => {
+export const isPostgrestError = (error: unknown): error is PostgrestError => {
   return (
-    error &&
+    error !== null &&
     typeof error === 'object' &&
     ('code' in error || 'details' in error || 'hint' in error)
   );
@@ -323,32 +328,34 @@ export const isPostgrestError = (error: any): error is PostgrestError => {
 /**
  * Verifica se é erro de autenticação
  */
-export const isAuthError = (error: any): boolean => {
+export const isAuthError = (error: unknown): boolean => {
   return detectErrorCategory(error) === ErrorCategory.AUTHENTICATION;
 };
 
 /**
  * Verifica se é erro de validação
  */
-export const isValidationError = (error: any): boolean => {
+export const isValidationError = (error: unknown): boolean => {
   return detectErrorCategory(error) === ErrorCategory.VALIDATION;
 };
 
 /**
  * Verifica se é erro de rede
  */
-export const isNetworkError = (error: any): boolean => {
+export const isNetworkError = (error: unknown): boolean => {
   return detectErrorCategory(error) === ErrorCategory.NETWORK;
 };
 
 /**
  * Extrai informações detalhadas do erro para debugging
  */
-export const getErrorDetails = (error: any): Record<string, any> => {
-  const details: Record<string, any> = {
-    message: error?.message || String(error),
-    name: error?.name,
-    stack: error?.stack,
+export const getErrorDetails = (error: unknown): Record<string, unknown> => {
+  const errorObj = error as { message?: string; name?: string; stack?: string } | null;
+  
+  const details: Record<string, unknown> = {
+    message: errorObj?.message || String(error),
+    name: errorObj?.name,
+    stack: errorObj?.stack,
   };
 
   // Adicionar campos específicos do Postgrest
@@ -373,7 +380,7 @@ export const getErrorDetails = (error: any): Record<string, any> => {
 /**
  * Verifica se erro é recuperável (vale a pena retry)
  */
-export const isRetryableError = (error: any): boolean => {
+export const isRetryableError = (error: unknown): boolean => {
   const category = detectErrorCategory(error);
 
   return (
