@@ -23,6 +23,9 @@ const Equipe = lazy(() => import('./pages/Equipe').then((m) => ({ default: m.Equ
 const Configuracoes = lazy(() =>
   import('./pages/Configuracoes').then((m) => ({ default: m.Configuracoes })),
 );
+const Integracoes = lazy(() =>
+  import('./pages/Integracoes').then((m) => ({ default: m.Integracoes })),
+);
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -90,6 +93,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Configuracoes />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/integracoes"
+                element={
+                  <ProtectedRoute>
+                    <Integracoes />
                   </ProtectedRoute>
                 }
               />

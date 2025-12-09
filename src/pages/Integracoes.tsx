@@ -1,0 +1,474 @@
+import React, { useState } from 'react';
+import { Layout } from '@/components/Layout';
+import { useMirapautaIntegration } from '@/hooks/useMirapauta';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  RefreshCw,
+  Download,
+  AlertCircle,
+  Users,
+  FileText,
+  Building2,
+  Link2,
+  Link2Off,
+  Loader2,
+  ArrowRight,
+  Calendar,
+  Clock,
+} from 'lucide-react';
+import type { MirapautaPautaWithCliente } from '@/integrations/mirapauta';
+
+export const Integracoes = () => {
+  const { isConfigured, clientes, pautas, profiles, importClientes, importPautas } =
+    useMirapautaIntegration();
+
+  const [selectedClientes, setSelectedClientes] = useState<Set<string>>(new Set());
+  const [selectedPautas, setSelectedPautas] = useState<Set<string>>(new Set());
+
+  // Toggle seleção de cliente
+  const toggleCliente = (id: string) => {
+    const newSelected = new Set(selectedClientes);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedClientes(newSelected);
+  };
+
+  // Toggle seleção de pauta
+  const togglePauta = (id: string) => {
+    const newSelected = new Set(selectedPautas);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedPautas(newSelected);
+  };
+
+  // Selecionar todos clientes
+  const selectAllClientes = () => {
+    if (clientes.data) {
+      setSelectedClientes(new Set(clientes.data.map((c) => c.id)));
+    }
+  };
+
+  // Selecionar todas pautas
+  const selectAllPautas = () => {
+    if (pautas.data) {
+      setSelectedPautas(new Set(pautas.data.map((p) => p.id)));
+    }
+  };
+
+  // Importar clientes selecionados
+  const handleImportClientes = () => {
+    if (clientes.data) {
+      const clientesToImport = clientes.data.filter((c) => selectedClientes.has(c.id));
+      importClientes.mutate(clientesToImport);
+      setSelectedClientes(new Set());
+    }
+  };
+
+  // Importar pautas selecionadas
+  const handleImportPautas = () => {
+    if (pautas.data) {
+      const pautasToImport = pautas.data.filter((p) => selectedPautas.has(p.id));
+      importPautas.mutate(pautasToImport);
+      setSelectedPautas(new Set());
+    }
+  };
+
+  // Mapear status do MiraPauta para exibição
+  const getStatusDisplay = (pauta: MirapautaPautaWithCliente) => {
+    if (pauta.pauta_aprovada_status === 'concluido') {
+      return { label: 'Aprovada', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+    }
+    if (pauta.revisao_cliente_status === 'rejeitado') {
+      return { label: 'Rejeitada', className: 'bg-rose-50 text-rose-700 border-rose-200' };
+    }
+    if (
+      pauta.revisao_cliente_status === 'em_andamento' ||
+      pauta.enviado_cliente_status === 'concluido'
+    ) {
+      return { label: 'Com Cliente', className: 'bg-amber-50 text-amber-700 border-amber-200' };
+    }
+    if (pauta.layout_status === 'em_andamento' || pauta.revisao_interna_status === 'em_andamento') {
+      return { label: 'Em Produção', className: 'bg-blue-50 text-blue-700 border-blue-200' };
+    }
+    return { label: 'Briefing', className: 'bg-slate-100 text-slate-600 border-slate-200' };
+  };
+
+  if (!isConfigured) {
+    return (
+      <Layout>
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Integrações</h1>
+            <p className="text-slate-500 mt-1">Conecte com outros sistemas</p>
+          </div>
+
+          <Card className="p-8">
+            <div className="flex flex-col items-center justify-center text-center space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
+                <Link2Off className="w-8 h-8 text-slate-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">MiraPauta não configurado</h2>
+                <p className="text-slate-500 mt-2 max-w-md">
+                  Para integrar com o MiraPauta, adicione as variáveis de ambiente:
+                </p>
+              </div>
+              <div className="bg-slate-900 rounded-xl p-4 text-left w-full max-w-lg">
+                <code className="text-sm text-emerald-400">
+                  VITE_MIRAPAUTA_SUPABASE_URL=https://xxx.supabase.co
+                  <br />
+                  VITE_MIRAPAUTA_SUPABASE_ANON_KEY=eyJhbG...
+                </code>
+              </div>
+              <p className="text-sm text-slate-400">
+                Reinicie o servidor de desenvolvimento após adicionar as variáveis.
+              </p>
+            </div>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Integrações</h1>
+            <p className="text-slate-500 mt-1">Importe dados do MiraPauta</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Badge
+              variant="outline"
+              className="bg-emerald-50 text-emerald-700 border-emerald-200 px-3 py-1"
+            >
+              <Link2 className="w-3.5 h-3.5 mr-1.5" />
+              MiraPauta Conectado
+            </Badge>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="p-5 bg-white border-slate-200/60">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">
+                  {clientes.isLoading ? '-' : clientes.data?.length || 0}
+                </p>
+                <p className="text-sm text-slate-500">Clientes no MiraPauta</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-5 bg-white border-slate-200/60">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <FileText className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">
+                  {pautas.isLoading ? '-' : pautas.data?.length || 0}
+                </p>
+                <p className="text-sm text-slate-500">Pautas no MiraPauta</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-5 bg-white border-slate-200/60">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">
+                  {profiles.isLoading ? '-' : profiles.data?.length || 0}
+                </p>
+                <p className="text-sm text-slate-500">Usuários no MiraPauta</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue="pautas" className="space-y-6">
+          <TabsList className="bg-slate-100 p-1">
+            <TabsTrigger value="pautas" className="data-[state=active]:bg-white">
+              <FileText className="w-4 h-4 mr-2" />
+              Pautas
+            </TabsTrigger>
+            <TabsTrigger value="clientes" className="data-[state=active]:bg-white">
+              <Building2 className="w-4 h-4 mr-2" />
+              Clientes
+            </TabsTrigger>
+            <TabsTrigger value="usuarios" className="data-[state=active]:bg-white">
+              <Users className="w-4 h-4 mr-2" />
+              Usuários
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Pautas Tab */}
+          <TabsContent value="pautas" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => pautas.refetch()}
+                  disabled={pautas.isFetching}
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 mr-2 ${pautas.isFetching ? 'animate-spin' : ''}`}
+                  />
+                  Atualizar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAllPautas}
+                  disabled={!pautas.data?.length}
+                >
+                  Selecionar Todas
+                </Button>
+              </div>
+              <Button
+                onClick={handleImportPautas}
+                disabled={selectedPautas.size === 0 || importPautas.isPending}
+                className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
+              >
+                {importPautas.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
+                Importar {selectedPautas.size > 0 && `(${selectedPautas.size})`}
+              </Button>
+            </div>
+
+            {pautas.isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+              </div>
+            ) : pautas.error ? (
+              <Card className="p-8 text-center">
+                <AlertCircle className="w-12 h-12 mx-auto text-rose-500 mb-4" />
+                <p className="text-slate-600">Erro ao carregar pautas do MiraPauta</p>
+                <p className="text-sm text-slate-400 mt-1">{String(pautas.error)}</p>
+              </Card>
+            ) : pautas.data?.length === 0 ? (
+              <Card className="p-8 text-center">
+                <FileText className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+                <p className="text-slate-600">Nenhuma pauta encontrada no MiraPauta</p>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {pautas.data?.map((pauta) => {
+                  const status = getStatusDisplay(pauta);
+                  return (
+                    <Card
+                      key={pauta.id}
+                      className={`p-4 cursor-pointer transition-all hover:shadow-md ${
+                        selectedPautas.has(pauta.id)
+                          ? 'border-violet-300 bg-violet-50/50 ring-2 ring-violet-200'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                      onClick={() => togglePauta(pauta.id)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <Checkbox
+                          checked={selectedPautas.has(pauta.id)}
+                          onCheckedChange={() => togglePauta(pauta.id)}
+                          className="data-[state=checked]:bg-violet-600"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3">
+                            <h3 className="font-medium text-slate-900 truncate">
+                              {pauta.clientes?.nome || 'Cliente não definido'}
+                            </h3>
+                            <Badge variant="outline" className={status.className}>
+                              {status.label}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5" />
+                              {new Date(pauta.created_at).toLocaleDateString('pt-BR')}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5" />
+                              {new Date(pauta.updated_at).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-slate-400" />
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Clientes Tab */}
+          <TabsContent value="clientes" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => clientes.refetch()}
+                  disabled={clientes.isFetching}
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 mr-2 ${clientes.isFetching ? 'animate-spin' : ''}`}
+                  />
+                  Atualizar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAllClientes}
+                  disabled={!clientes.data?.length}
+                >
+                  Selecionar Todos
+                </Button>
+              </div>
+              <Button
+                onClick={handleImportClientes}
+                disabled={selectedClientes.size === 0 || importClientes.isPending}
+                className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
+              >
+                {importClientes.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
+                Importar {selectedClientes.size > 0 && `(${selectedClientes.size})`}
+              </Button>
+            </div>
+
+            {clientes.isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+              </div>
+            ) : clientes.error ? (
+              <Card className="p-8 text-center">
+                <AlertCircle className="w-12 h-12 mx-auto text-rose-500 mb-4" />
+                <p className="text-slate-600">Erro ao carregar clientes do MiraPauta</p>
+              </Card>
+            ) : clientes.data?.length === 0 ? (
+              <Card className="p-8 text-center">
+                <Building2 className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+                <p className="text-slate-600">Nenhum cliente encontrado no MiraPauta</p>
+              </Card>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {clientes.data?.map((cliente) => (
+                  <Card
+                    key={cliente.id}
+                    className={`p-4 cursor-pointer transition-all hover:shadow-md ${
+                      selectedClientes.has(cliente.id)
+                        ? 'border-violet-300 bg-violet-50/50 ring-2 ring-violet-200'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                    onClick={() => toggleCliente(cliente.id)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={selectedClientes.has(cliente.id)}
+                        onCheckedChange={() => toggleCliente(cliente.id)}
+                        className="data-[state=checked]:bg-violet-600"
+                      />
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-slate-900 truncate">{cliente.nome}</h3>
+                        <p className="text-xs text-slate-500">
+                          Desde {new Date(cliente.created_at).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Usuários Tab */}
+          <TabsContent value="usuarios" className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => profiles.refetch()}
+                disabled={profiles.isFetching}
+              >
+                <RefreshCw
+                  className={`w-4 h-4 mr-2 ${profiles.isFetching ? 'animate-spin' : ''}`}
+                />
+                Atualizar
+              </Button>
+            </div>
+
+            {profiles.isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+              </div>
+            ) : profiles.error ? (
+              <Card className="p-8 text-center">
+                <AlertCircle className="w-12 h-12 mx-auto text-rose-500 mb-4" />
+                <p className="text-slate-600">Erro ao carregar usuários do MiraPauta</p>
+              </Card>
+            ) : profiles.data?.length === 0 ? (
+              <Card className="p-8 text-center">
+                <Users className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+                <p className="text-slate-600">Nenhum usuário encontrado no MiraPauta</p>
+              </Card>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {profiles.data?.map((profile) => (
+                  <Card key={profile.id} className="p-4 border-slate-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center">
+                        <span className="text-white font-medium text-sm">
+                          {profile.nome?.charAt(0) || profile.email?.charAt(0) || '?'}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-slate-900 truncate">
+                          {profile.nome || 'Sem nome'}
+                        </h3>
+                        <p className="text-xs text-slate-500 truncate">{profile.email}</p>
+                      </div>
+                      <Badge variant="outline" className="bg-slate-50">
+                        Visualizar
+                      </Badge>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Layout>
+  );
+};
+
+export default Integracoes;
