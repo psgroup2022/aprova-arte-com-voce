@@ -16,10 +16,18 @@ import { toast } from '@/hooks/use-toast';
  * Buscar clientes do MiraPauta
  */
 export const useMirapautaClientes = () => {
+  const isConfigured = isMirapautaConfigured();
+  console.log('[MiraPauta] useMirapautaClientes - isConfigured:', isConfigured);
+  console.log(
+    '[MiraPauta] useMirapautaClientes - mirapautaClient:',
+    mirapautaClient ? 'exists' : 'null',
+  );
+
   return useQuery({
     queryKey: ['mirapauta', 'clientes'],
     queryFn: async () => {
       if (!mirapautaClient) {
+        console.error('[MiraPauta] Cliente não está configurado!');
         throw new Error('MiraPauta não está configurado');
       }
 
@@ -33,7 +41,7 @@ export const useMirapautaClientes = () => {
       console.log('[MiraPauta] Clientes encontrados:', data?.length);
       return data as MirapautaCliente[];
     },
-    enabled: isMirapautaConfigured(),
+    enabled: isConfigured,
   });
 };
 

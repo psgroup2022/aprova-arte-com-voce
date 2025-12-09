@@ -8,6 +8,16 @@ import type { MirapautaDatabase } from './types';
 const MIRAPAUTA_URL = import.meta.env.VITE_MIRAPAUTA_SUPABASE_URL as string | undefined;
 const MIRAPAUTA_ANON_KEY = import.meta.env.VITE_MIRAPAUTA_SUPABASE_ANON_KEY as string | undefined;
 
+console.log('[MiraPauta Client] Initializing...');
+console.log(
+  '[MiraPauta Client] VITE_MIRAPAUTA_SUPABASE_URL:',
+  MIRAPAUTA_URL ? `${MIRAPAUTA_URL.substring(0, 30)}...` : 'undefined',
+);
+console.log(
+  '[MiraPauta Client] VITE_MIRAPAUTA_SUPABASE_ANON_KEY:',
+  MIRAPAUTA_ANON_KEY ? `${MIRAPAUTA_ANON_KEY.substring(0, 20)}...` : 'undefined',
+);
+
 // Cliente pode ser null se as credenciais não estiverem configuradas
 export const mirapautaClient =
   MIRAPAUTA_URL && MIRAPAUTA_ANON_KEY
@@ -19,6 +29,8 @@ export const mirapautaClient =
         },
       })
     : null;
+
+console.log('[MiraPauta Client] Client created:', mirapautaClient ? 'SUCCESS' : 'NULL');
 
 /**
  * Verifica se a integração com MiraPauta está configurada
