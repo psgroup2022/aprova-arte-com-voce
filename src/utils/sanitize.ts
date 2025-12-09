@@ -37,7 +37,8 @@ const DEFAULT_CONFIG: SanitizeConfig = {
 const RICH_TEXT_CONFIG: SanitizeConfig = {
   ALLOWED_TAGS: ['b', 'i', 'u', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li'],
   ALLOWED_ATTR: ['href', 'target', 'rel'],
-  ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+  ALLOWED_URI_REGEXP:
+    /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
   KEEP_CONTENT: true,
   RETURN_DOM: false,
   RETURN_DOM_FRAGMENT: false,
@@ -67,7 +68,9 @@ export const sanitizeObject = <T extends Record<string, unknown>>(obj: T): T => 
       sanitized[key] = sanitizeText(value);
     } else if (Array.isArray(value)) {
       sanitized[key] = value.map((item) =>
-        typeof item === 'string' ? sanitizeText(item) : sanitizeObject(item as Record<string, unknown>),
+        typeof item === 'string'
+          ? sanitizeText(item)
+          : sanitizeObject(item as Record<string, unknown>),
       );
     } else if (typeof value === 'object' && value !== null) {
       sanitized[key] = sanitizeObject(value as Record<string, unknown>);

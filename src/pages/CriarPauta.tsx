@@ -193,7 +193,7 @@ export const CriarPauta = () => {
       console.error('Erro detalhado:', error);
       toast({
         title: 'Erro',
-        description: `Erro ao criar pauta: ${(error as any)?.message || 'Tente novamente.'}`,
+        description: `Erro ao criar pauta: ${error instanceof Error ? error.message : 'Tente novamente.'}`,
         variant: 'destructive',
       });
     } finally {

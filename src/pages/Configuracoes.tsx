@@ -1,12 +1,12 @@
-import React from "react";
-import { Layout } from "@/components/Layout";
-import { Settings, User, Bell, Shield, Palette, Globe } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+import React from 'react';
+import { Layout } from '@/components/Layout';
+import { User, Bell, Shield, Palette, Globe } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 
 export const Configuracoes = () => {
   return (
@@ -15,7 +15,9 @@ export const Configuracoes = () => {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold">Configurações</h1>
-            <p className="text-muted-foreground">Gerencie suas preferências e configurações do sistema</p>
+            <p className="text-muted-foreground">
+              Gerencie suas preferências e configurações do sistema
+            </p>
           </div>
         </div>
 

@@ -9,9 +9,15 @@
 
 import * as Sentry from '@sentry/react';
 
-const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
-const ENVIRONMENT = import.meta.env.MODE;
-const APP_VERSION = import.meta.env.VITE_APP_VERSION || 'unknown';
+interface ImportMetaEnv {
+  readonly VITE_SENTRY_DSN?: string;
+  readonly MODE: string;
+  readonly VITE_APP_VERSION?: string;
+}
+
+const SENTRY_DSN = (import.meta.env as ImportMetaEnv).VITE_SENTRY_DSN;
+const ENVIRONMENT = (import.meta.env as ImportMetaEnv).MODE;
+const APP_VERSION = (import.meta.env as ImportMetaEnv).VITE_APP_VERSION || 'unknown';
 
 /**
  * Inicializa o Sentry
@@ -89,11 +95,12 @@ export const initSentry = () => {
       'The operation was aborted',
     ],
 
-    initialScope: {
-      tags: {
+    initialScope: (scope) => {
+      scope.setTags({
         version: APP_VERSION,
         environment: ENVIRONMENT,
-      },
+      });
+      return scope;
     },
 
     maxBreadcrumbs: 50,

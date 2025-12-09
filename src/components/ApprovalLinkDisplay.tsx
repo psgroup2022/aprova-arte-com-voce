@@ -1,8 +1,8 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Copy, ExternalLink } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Copy, ExternalLink } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ApprovalLinkDisplayProps {
   approvalLink: string;
@@ -16,14 +16,14 @@ export const ApprovalLinkDisplay = ({ approvalLink, onNavigateHome }: ApprovalLi
     try {
       await navigator.clipboard.writeText(text);
       toast({
-        title: "Link copiado!",
-        description: "O link de aprovação foi copiado para a área de transferência.",
+        title: 'Link copiado!',
+        description: 'O link de aprovação foi copiado para a área de transferência.',
       });
-    } catch (err) {
+    } catch {
       toast({
-        title: "Erro ao copiar",
-        description: "Não foi possível copiar o link. Copie manualmente.",
-        variant: "destructive",
+        title: 'Erro ao copiar',
+        description: 'Não foi possível copiar o link. Copie manualmente.',
+        variant: 'destructive',
       });
     }
   };
@@ -39,11 +39,7 @@ export const ApprovalLinkDisplay = ({ approvalLink, onNavigateHome }: ApprovalLi
         Link de aprovação gerado. Compartilhe com o cliente para aprovação:
       </p>
       <div className="flex items-center space-x-2">
-        <Input
-          value={approvalLink}
-          readOnly
-          className="flex-1 bg-background"
-        />
+        <Input value={approvalLink} readOnly className="flex-1 bg-background" />
         <Button
           type="button"
           variant="outline"
@@ -52,20 +48,12 @@ export const ApprovalLinkDisplay = ({ approvalLink, onNavigateHome }: ApprovalLi
         >
           <Copy className="h-4 w-4" />
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => openLink(approvalLink)}
-        >
+        <Button type="button" variant="outline" size="sm" onClick={() => openLink(approvalLink)}>
           <ExternalLink className="h-4 w-4" />
         </Button>
       </div>
       <div className="mt-4 flex justify-end">
-        <Button 
-          type="button" 
-          onClick={onNavigateHome}
-        >
+        <Button type="button" onClick={onNavigateHome}>
           Voltar ao Dashboard
         </Button>
       </div>

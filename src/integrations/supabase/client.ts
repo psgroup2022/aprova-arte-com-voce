@@ -8,7 +8,8 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const IS_TEST = Boolean(
-  (import.meta as any)?.env?.MODE === 'test' || (import.meta as any)?.env?.VITEST,
+  (import.meta.env as { MODE?: string; VITEST?: boolean })?.MODE === 'test' ||
+    (import.meta.env as { MODE?: string; VITEST?: boolean })?.VITEST,
 );
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {

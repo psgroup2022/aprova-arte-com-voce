@@ -19,11 +19,11 @@ import * as Sentry from '@sentry/react';
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 interface LogContext {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const isDevelopment = import.meta.env.DEV;
-const isTest = import.meta.env.MODE === 'test' || (import.meta as any)?.env?.VITEST;
+const isTest = import.meta.env.MODE === 'test' || (import.meta.env as { VITEST?: boolean })?.VITEST;
 
 /**
  * Classe Logger - Centraliza todo logging da aplicação
@@ -37,12 +37,6 @@ class Logger {
     if (isTest) return;
 
     const timestamp = new Date().toISOString();
-    const logData = {
-      timestamp,
-      level,
-      message,
-      ...context,
-    };
 
     // Desenvolvimento: console colorido
     if (isDevelopment) {

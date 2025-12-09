@@ -1,9 +1,9 @@
-import React from "react";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { FileUpload } from "./FileUpload";
-import { PostData } from "@/types/pauta-form";
+import React from 'react';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { FileUpload } from './FileUpload';
+import { PostData } from '@/types/pauta-form';
 
 interface PostManagerProps {
   posts: PostData[];
@@ -15,10 +15,9 @@ export const PostManager = ({ posts, tipoPost, onPostChange }: PostManagerProps)
   return (
     <div className="mt-8">
       <h3 className="text-lg font-medium mb-4">
-        {tipoPost === 'carousel' ? 'Imagens do Carrossel' : 'Posts'} 
-        ({posts.length})
+        {tipoPost === 'carousel' ? 'Imagens do Carrossel' : 'Posts'}({posts.length})
       </h3>
-      
+
       <div className="space-y-6">
         {posts.map((post, index) => (
           <div key={index} className="border rounded-lg p-4 bg-muted/30">
@@ -37,16 +36,20 @@ export const PostManager = ({ posts, tipoPost, onPostChange }: PostManagerProps)
                   id={`legenda-${index}`}
                   value={post.legenda}
                   onChange={(e) => onPostChange(index, 'legenda', e.target.value)}
-                  placeholder={tipoPost === 'carousel' 
-                    ? 'Descreva esta imagem...' 
-                    : 'Digite a legenda do post...'}
+                  placeholder={
+                    tipoPost === 'carousel'
+                      ? 'Descreva esta imagem...'
+                      : 'Digite a legenda do post...'
+                  }
                   rows={3}
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor={`hashtags-${index}`} className="text-sm font-medium mb-1">Hashtags</Label>
+                <Label htmlFor={`hashtags-${index}`} className="text-sm font-medium mb-1">
+                  Hashtags
+                </Label>
                 <Input
                   id={`hashtags-${index}`}
                   value={post.hashtags}
@@ -61,7 +64,7 @@ export const PostManager = ({ posts, tipoPost, onPostChange }: PostManagerProps)
               <FileUpload
                 file={post.arquivo}
                 onFileSelect={(file) => onPostChange(index, 'arquivo', file)}
-                onFileRemove={() => onPostChange(index, 'arquivo', undefined as any)}
+                onFileRemove={() => onPostChange(index, 'arquivo', '' as unknown as File)}
                 index={index}
               />
             </div>

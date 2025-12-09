@@ -4,24 +4,23 @@ import { PautaCard } from '@/components/PautaCard';
 import { usePautas } from '@/hooks/usePautas';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { 
-  Loader2, 
-  Plus, 
-  FileCheck2, 
-  Clock, 
-  CheckCircle2, 
+import {
+  Loader2,
+  Plus,
+  FileCheck2,
+  Clock,
+  CheckCircle2,
   XCircle,
   Search,
   Filter,
   LayoutGrid,
-  List
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 
 export const Dashboard = () => {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { pautas, isLoading, error, deletePauta, isDeleting } = usePautas();
 
   // Calculate stats
@@ -29,9 +28,9 @@ export const Dashboard = () => {
     if (!pautas) return { total: 0, aguardando: 0, aprovadas: 0, rejeitadas: 0 };
     return {
       total: pautas.length,
-      aguardando: pautas.filter(p => p.status === 'aguardando_aprovacao').length,
-      aprovadas: pautas.filter(p => p.status === 'aprovada').length,
-      rejeitadas: pautas.filter(p => p.status === 'rejeitada').length,
+      aguardando: pautas.filter((p) => p.status === 'aguardando_aprovacao').length,
+      aprovadas: pautas.filter((p) => p.status === 'aprovada').length,
+      rejeitadas: pautas.filter((p) => p.status === 'rejeitada').length,
     };
   }, [pautas]);
 
@@ -77,7 +76,7 @@ export const Dashboard = () => {
             <XCircle className="w-8 h-8 text-rose-500" />
           </div>
           <p className="text-slate-600 font-medium">Erro ao carregar pautas</p>
-          <Button 
+          <Button
             onClick={() => window.location.reload()}
             className="bg-slate-900 hover:bg-slate-800"
           >
@@ -120,7 +119,7 @@ export const Dashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-2xl border border-slate-200/60 p-5 hover:shadow-lg hover:shadow-slate-200/50 transition-all">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
@@ -132,7 +131,7 @@ export const Dashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-2xl border border-slate-200/60 p-5 hover:shadow-lg hover:shadow-slate-200/50 transition-all">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -144,7 +143,7 @@ export const Dashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-2xl border border-slate-200/60 p-5 hover:shadow-lg hover:shadow-slate-200/50 transition-all">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center shadow-lg shadow-rose-500/20">
@@ -162,16 +161,24 @@ export const Dashboard = () => {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input 
-              placeholder="Buscar pautas..." 
+            <Input
+              placeholder="Buscar pautas..."
               className="pl-10 bg-white border-slate-200 focus:border-violet-300 focus:ring-violet-200"
             />
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" className="bg-white border-slate-200 hover:bg-slate-50">
+            <Button
+              variant="outline"
+              size="icon"
+              className="bg-white border-slate-200 hover:bg-slate-50"
+            >
               <Filter className="w-4 h-4 text-slate-500" />
             </Button>
-            <Button variant="outline" size="icon" className="bg-white border-slate-200 hover:bg-slate-50">
+            <Button
+              variant="outline"
+              size="icon"
+              className="bg-white border-slate-200 hover:bg-slate-50"
+            >
               <LayoutGrid className="w-4 h-4 text-slate-500" />
             </Button>
           </div>
@@ -181,7 +188,10 @@ export const Dashboard = () => {
         {isLoading ? (
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-slate-200/60 p-5 space-y-4">
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-slate-200/60 p-5 space-y-4"
+              >
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
                     <Skeleton className="h-5 w-40" />
