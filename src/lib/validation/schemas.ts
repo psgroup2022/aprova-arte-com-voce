@@ -231,7 +231,7 @@ export const fileSchema = z
     `Arquivo muito grande (máximo: ${FILE_LIMITS.MAX_SIZE_LABEL})`,
   )
   .refine((file) => {
-    const allAllowedTypes = [
+    const allAllowedTypes: string[] = [
       ...ALLOWED_MIME_TYPES.IMAGES,
       ...ALLOWED_MIME_TYPES.VIDEOS,
       ...ALLOWED_MIME_TYPES.DOCUMENTS,
