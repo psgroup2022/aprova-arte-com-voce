@@ -21,10 +21,12 @@ export const useAprovacao = (pautaId: string) => {
         .from('pautas')
         .update(updateData)
         .eq('id', pautaId)
-        .select()
-        .single();
+        .select();
       
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error('Pauta não encontrada');
+      
+      const pautaData = data[0];
       
       // Adicionar comentário de aprovação se houver
       if (comentario) {
@@ -40,14 +42,14 @@ export const useAprovacao = (pautaId: string) => {
           });
       }
       
-      return data;
+      return pautaData;
     },
-    onSuccess: (data) => {
+    onSuccess: (pautaData) => {
       queryClient.invalidateQueries({ queryKey: ['pauta', pautaId] });
       queryClient.invalidateQueries({ queryKey: ['comentarios', pautaId] });
       
-      const statusText = data.status === 'aprovada' ? 'aprovada' : 
-                        data.status === 'rejeitada' ? 'rejeitada' : 'aprovada com alterações';
+      const statusText = pautaData.status === 'aprovada' ? 'aprovada' : 
+                        pautaData.status === 'rejeitada' ? 'rejeitada' : 'aprovada com alterações';
       
       toast({ 
         title: `Pauta ${statusText} com sucesso!`,
