@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type {
   MirapautaCliente,
   MirapautaProfile,
+  MirapautaPauta,
   MirapautaPautaWithCliente,
 } from '@/integrations/mirapauta';
 import { toast } from '@/hooks/use-toast';
@@ -57,25 +58,44 @@ export const useMirapautaPautas = () => {
       }
 
       console.log('[MiraPauta] Buscando pautas...');
-      const { data, error } = await mirapautaClient
+      
+      // Buscar pautas
+      const { data: pautas, error: pautasError } = await mirapautaClient
         .from('pautas')
-        .select(
-          `
-          *,
-          clientes (
-            id,
-            nome
-          )
-        `,
-        )
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('[MiraPauta] Erro ao buscar pautas:', error);
-        throw error;
+      if (pautasError) {
+        console.error('[MiraPauta] Erro ao buscar pautas:', pautasError);
+        throw pautasError;
       }
-      console.log('[MiraPauta] Pautas encontradas:', data?.length);
-      return data as MirapautaPautaWithCliente[];
+
+      // Buscar clientes para enriquecer os dados
+      const { data: clientes, error: clientesError } = await mirapautaClient
+        .from('clientes')
+        .select('*');
+
+      if (clientesError) {
+        console.error('[MiraPauta] Erro ao buscar clientes:', clientesError);
+        // Continua mesmo sem clientes
+      }
+
+      // Mapear clientes por ID
+      const clientesMap = new Map<string, MirapautaCliente>();
+      if (clientes) {
+        clientes.forEach((cliente) => {
+          clientesMap.set(cliente.id, cliente as MirapautaCliente);
+        });
+      }
+
+      // Combinar pautas com clientes
+      const pautasWithClientes: MirapautaPautaWithCliente[] = (pautas || []).map((pauta) => ({
+        ...(pauta as MirapautaPauta),
+        clientes: pauta.cliente_id ? clientesMap.get(pauta.cliente_id) || null : null,
+      }));
+
+      console.log('[MiraPauta] Pautas encontradas:', pautasWithClientes.length);
+      return pautasWithClientes;
     },
     enabled: isMirapautaConfigured(),
   });
