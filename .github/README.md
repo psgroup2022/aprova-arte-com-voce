@@ -19,10 +19,21 @@ Pipeline principal que executa em todos os PRs e pushs para `main`:
 
 ### Secrets Obrigatórios
 
-| Secret                   | Descrição                 | Onde Obter                                                                        |
-| ------------------------ | ------------------------- | --------------------------------------------------------------------------------- |
-| `VITE_SUPABASE_URL`      | URL do projeto Supabase   | [Supabase Dashboard](https://app.supabase.com) → Settings → API → Project URL     |
-| `VITE_SUPABASE_ANON_KEY` | Chave pública do Supabase | [Supabase Dashboard](https://app.supabase.com) → Settings → API → anon/public key |
+**AprovaArte (Sistema Principal):**
+
+| Secret                   | Descrição                   | Projeto         |
+| ------------------------ | --------------------------- | --------------- |
+| `VITE_SUPABASE_URL`      | URL do projeto AprovaArte   | `uaqxgzoprrxd…` |
+| `VITE_SUPABASE_ANON_KEY` | Chave pública do AprovaArte | `uaqxgzoprrxd…` |
+
+**MiraPauta (Integração):**
+
+| Secret                             | Descrição                  | Projeto         |
+| ---------------------------------- | -------------------------- | --------------- |
+| `VITE_MIRAPAUTA_SUPABASE_URL`      | URL do projeto MiraPauta   | `vjxkbddfavho…` |
+| `VITE_MIRAPAUTA_SUPABASE_ANON_KEY` | Chave pública do MiraPauta | `vjxkbddfavho…` |
+
+> 📖 Onde obter: [Supabase Dashboard](https://app.supabase.com) → Selecione o projeto → Settings → API
 
 ### Secrets Opcionais
 
@@ -60,8 +71,15 @@ Para instruções completas, consulte: [SECRETS_SETUP.md](./SECRETS_SETUP.md)
 
 Se os secrets **não estiverem configurados**, o workflow usará valores fallback:
 
+**AprovaArte:**
+
 - `VITE_SUPABASE_URL`: `http://localhost:54321`
 - `VITE_SUPABASE_ANON_KEY`: `dummy-key-for-ci`
+
+**MiraPauta:**
+
+- `VITE_MIRAPAUTA_SUPABASE_URL`: `http://localhost:54322`
+- `VITE_MIRAPAUTA_SUPABASE_ANON_KEY`: `dummy-mirapauta-key-for-ci`
 
 Isso permite que lint e typecheck rodem, mas **não é adequado para produção**.
 

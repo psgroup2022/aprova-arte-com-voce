@@ -15,25 +15,51 @@ Para configurar os secrets, siga estes passos:
 
 ### 2. Adicione os Seguintes Secrets
 
-#### **VITE_SUPABASE_URL** (Obrigatório)
+#### **Secrets do AprovaArte (Obrigatórios)**
+
+##### **VITE_SUPABASE_URL**
 
 - **Nome do Secret:** `VITE_SUPABASE_URL`
-- **Valor:** URL do seu projeto Supabase
-- **Exemplo:** `https://xxxxxxxxxxxxx.supabase.co`
+- **Valor:** URL do projeto AprovaArte Supabase
+- **Exemplo:** `https://uaqxgzoprrxdswnomccc.supabase.co`
 - **Como obter:**
   1. Acesse [app.supabase.com](https://app.supabase.com)
-  2. Selecione seu projeto
+  2. Selecione o projeto **AprovaArte** (`uaqxgzoprrxdswnomccc`)
   3. Vá em **Settings** → **API**
   4. Copie a **Project URL**
 
-#### **VITE_SUPABASE_ANON_KEY** (Obrigatório)
+##### **VITE_SUPABASE_ANON_KEY**
 
 - **Nome do Secret:** `VITE_SUPABASE_ANON_KEY`
-- **Valor:** Chave anônima do Supabase
+- **Valor:** Chave anônima do AprovaArte
 - **Exemplo:** `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
 - **Como obter:**
   1. Acesse [app.supabase.com](https://app.supabase.com)
-  2. Selecione seu projeto
+  2. Selecione o projeto **AprovaArte**
+  3. Vá em **Settings** → **API**
+  4. Copie a **anon** / **public** key
+
+#### **Secrets do MiraPauta (Obrigatórios)**
+
+##### **VITE_MIRAPAUTA_SUPABASE_URL**
+
+- **Nome do Secret:** `VITE_MIRAPAUTA_SUPABASE_URL`
+- **Valor:** URL do projeto MiraPauta Supabase
+- **Exemplo:** `https://vjxkbddfavhoqnuabmrt.supabase.co`
+- **Como obter:**
+  1. Acesse [app.supabase.com](https://app.supabase.com)
+  2. Selecione o projeto **MiraPauta** (`vjxkbddfavhoqnuabmrt`)
+  3. Vá em **Settings** → **API**
+  4. Copie a **Project URL**
+
+##### **VITE_MIRAPAUTA_SUPABASE_ANON_KEY**
+
+- **Nome do Secret:** `VITE_MIRAPAUTA_SUPABASE_ANON_KEY`
+- **Valor:** Chave anônima do MiraPauta
+- **Exemplo:** `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+- **Como obter:**
+  1. Acesse [app.supabase.com](https://app.supabase.com)
+  2. Selecione o projeto **MiraPauta**
   3. Vá em **Settings** → **API**
   4. Copie a **anon** / **public** key
 
@@ -66,8 +92,15 @@ Depois de adicionar os secrets:
 
 Se os secrets não estiverem configurados, o CI usará valores fallback temporários:
 
+**AprovaArte:**
+
 - `VITE_SUPABASE_URL`: `http://localhost:54321`
 - `VITE_SUPABASE_ANON_KEY`: `dummy-key-for-ci`
+
+**MiraPauta:**
+
+- `VITE_MIRAPAUTA_SUPABASE_URL`: `http://localhost:54322`
+- `VITE_MIRAPAUTA_SUPABASE_ANON_KEY`: `dummy-mirapauta-key-for-ci`
 
 ⚠️ **Importante:** Esses valores fallback permitem que o lint e typecheck rodem, mas não são adequados para produção ou testes de integração completos.
 
