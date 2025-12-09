@@ -152,6 +152,7 @@ export const sanitizeURL = (url: string): string => {
 export const removeControlCharacters = (text: string): string => {
   if (!text || typeof text !== 'string') return '';
 
+  // eslint-disable-next-line no-control-regex
   return text.replace(/[\x00-\x1F\x7F]/g, '');
 };
 

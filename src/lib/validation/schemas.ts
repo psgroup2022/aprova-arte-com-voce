@@ -192,7 +192,7 @@ export const createClienteSchema = z.object({
 
   telefone: z
     .string()
-    .regex(/^[\d\s\-\(\)\+]+$/, 'Telefone inválido')
+    .regex(/^[\d\s()+-]+$/, 'Telefone inválido')
     .optional()
     .nullable()
     .or(z.literal('')),
