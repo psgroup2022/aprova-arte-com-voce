@@ -1,123 +1,47 @@
 import React, { useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowRight, Save, Eye, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useClientes } from '@/hooks/useClientes';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { PautaFormHeader } from '@/components/PautaFormHeader';
-import { PautaBasicInfoForm } from '@/components/PautaBasicInfoForm';
-import { TagManager } from '@/components/TagManager';
-import { PautaFormOptions } from '@/components/PautaFormOptions';
-import { PostManager } from '@/components/PostManager';
+import { usePautaFormV2 } from '@/hooks/usePautaFormV2';
+import { usePautaSubmit } from '@/hooks/usePautaSubmit';
+import { VersaoSelector } from '@/components/criar-pauta/VersaoSelector';
+import { PautaInfoBasicaV2 } from '@/components/criar-pauta/PautaInfoBasicaV2';
+import { BlocosContainer } from '@/components/criar-pauta/BlocosContainer';
+import { LegendaFinalSection } from '@/components/criar-pauta/LegendaFinalSection';
 import { ApprovalLinkDisplay } from '@/components/ApprovalLinkDisplay';
-import { FormData, PostData } from '@/types/pauta-form';
+import { NovoClienteDialog } from '@/components/NovoClienteDialog';
 
 export const CriarPauta = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { clientes } = useClientes();
+  const [showNovoClienteDialog, setShowNovoClienteDialog] = useState(false);
 
-  const [formData, setFormData] = useState<FormData>({
-    titulo: '',
-    tipo_post: '',
-    quantidade_materiais: 1,
-    data_prazo: '',
-    responsavel: '',
-    tags: [],
-    cliente_id: '',
-    observacoes: '',
-    posts: [{ legenda: '', hashtags: '', arquivo: undefined }],
-  });
+  const {
+    formData,
+    getVersaoAtiva,
+    updateField,
+    addBloco,
+    removeBloco,
+    updateBloco,
+    addItemToBloco,
+    removeItemFromBloco,
+    updateBlocoItem,
+    createNewVersion,
+    setVersaoAtiva,
+    updateTags,
+    updateHashtagsPrincipais,
+  } = usePautaFormV2();
 
-  const [uploading, setUploading] = useState(false);
-  const [autoSchedule, setAutoSchedule] = useState(false);
-  const [notifyTeam, setNotifyTeam] = useState(false);
-  const [requireApproval, setRequireApproval] = useState(true);
-  const [approvalLink, setApprovalLink] = useState('');
+  const { submitPauta, isSubmitting, approvalLink, setApprovalLink } = usePautaSubmit();
 
-  const handleInputChange = (field: keyof FormData, value: string | number) => {
-    setFormData((prev) => {
-      const updated = { ...prev, [field]: value };
+  const versaoAtiva = getVersaoAtiva();
+  const isVersaoReadOnly = !versaoAtiva?.ativa;
 
-      // Quando a quantidade muda, ajusta os posts
-      if (field === 'quantidade_materiais') {
-        const quantidade = value as number;
-        const currentPosts = updated.posts;
-
-        if (quantidade > currentPosts.length) {
-          // Adiciona novos posts
-          const novoPosts = Array(quantidade - currentPosts.length)
-            .fill(null)
-            .map(() => ({
-              legenda: '',
-              hashtags: '',
-              arquivo: undefined,
-            }));
-          updated.posts = [...currentPosts, ...novoPosts];
-        } else if (quantidade < currentPosts.length) {
-          // Remove posts extras
-          updated.posts = currentPosts.slice(0, quantidade);
-        }
-      }
-
-      return updated;
-    });
-  };
-
-  const handlePostChange = (index: number, field: keyof PostData, value: string | File) => {
-    setFormData((prev) => ({
-      ...prev,
-      posts: prev.posts.map((post, i) => (i === index ? { ...post, [field]: value } : post)),
-    }));
-  };
-
-  const handleTagsChange = (tags: string[]) => {
-    setFormData((prev) => ({ ...prev, tags }));
-  };
-
-  const uploadFile = async (file: File, pautaId: string, ordem: number = 0) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${pautaId}/${Date.now()}_${ordem}.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('pauta-arquivos')
-      .upload(fileName, file);
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('pauta-arquivos').getPublicUrl(fileName);
-
-    const tipo = file.type.startsWith('image/')
-      ? 'imagem'
-      : file.type.startsWith('video/')
-        ? 'video'
-        : 'documento';
-
-    const { error: dbError } = await supabase.from('pauta_arquivos').insert({
-      pauta_id: pautaId,
-      nome_arquivo: file.name,
-      tipo,
-      url: publicUrl,
-      tamanho: file.size,
-      ordem,
-    });
-
-    if (dbError) {
-      throw dbError;
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async (status: 'rascunho' | 'aguardando_aprovacao') => {
     if (!user) {
       toast({
         title: 'Erro',
@@ -129,87 +53,40 @@ export const CriarPauta = () => {
 
     if (!formData.titulo || !formData.cliente_id) {
       toast({
-        title: 'Erro',
+        title: 'Campos obrigatórios',
         description: 'Título e cliente são obrigatórios',
         variant: 'destructive',
       });
       return;
     }
 
-    // Validar se todos os posts têm legenda
-    const postsValidos = formData.posts.every((post) => post.legenda.trim());
-    if (!postsValidos) {
-      toast({
-        title: 'Erro',
-        description: 'Todos os posts devem ter legenda',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     try {
-      setUploading(true);
-
-      // Buscar nome do cliente
-      const clienteSelecionado = clientes.find((c) => c.id === formData.cliente_id);
-      const nomeCliente = clienteSelecionado?.nome || formData.cliente_id;
-
-      // Criar pauta
-      const { data: novaPauta, error: pautaError } = await supabase
-        .from('pautas')
-        .insert({
-          titulo: formData.titulo,
-          descricao: `${formData.posts.length} ${formData.tipo_post === 'carousel' ? 'imagens no carrossel' : 'posts'}\n\n${formData.posts.map((p, i) => `Post ${i + 1}: ${p.legenda}`).join('\n\n')}`,
-          cliente: nomeCliente,
-          data_prazo: formData.data_prazo || null,
-          observacoes: formData.observacoes || null,
-          criado_por: user.id,
-          status: 'aguardando_aprovacao',
-        })
-        .select()
-        .single();
-
-      if (pautaError) {
-        throw pautaError;
-      }
-
-      // Upload dos arquivos
-      const uploadPromises = formData.posts
-        .filter((post) => post.arquivo)
-        .map((post, index) => uploadFile(post.arquivo!, novaPauta.id, index));
-
-      if (uploadPromises.length > 0) {
-        await Promise.all(uploadPromises);
-      }
-
-      const linkAprovacao = `${window.location.origin}/pauta/${novaPauta.id}`;
-      setApprovalLink(linkAprovacao);
-
-      toast({
-        title: 'Pauta criada com sucesso!',
-        description: 'Link de aprovação gerado.',
-      });
+      await submitPauta(formData, user.id, status);
     } catch (error) {
-      console.error('Erro detalhado:', error);
-      toast({
-        title: 'Erro',
-        description: `Erro ao criar pauta: ${error instanceof Error ? error.message : 'Tente novamente.'}`,
-        variant: 'destructive',
-      });
-    } finally {
-      setUploading(false);
+      // Erro já tratado no hook
     }
   };
 
   const handleClienteCreated = (clienteId: string) => {
-    setFormData((prev) => ({ ...prev, cliente_id: clienteId }));
+    updateField('cliente_id', clienteId);
+    setShowNovoClienteDialog(false);
   };
 
   if (!user) {
     return (
       <Layout>
-        <div className="text-center">
-          <p>Você precisa estar logado para criar uma pauta.</p>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <p className="text-muted-foreground">
+              Você precisa estar logado para criar uma pauta.
+            </p>
+            <Button 
+              className="mt-4" 
+              onClick={() => navigate('/login')}
+            >
+              Fazer Login
+            </Button>
+          </div>
         </div>
       </Layout>
     );
@@ -217,72 +94,130 @@ export const CriarPauta = () => {
 
   return (
     <Layout>
-      <PautaFormHeader />
+      {/* Header */}
+      <div className="border-b bg-card">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-foreground">
+            Criar Pauta
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Crie pautas com múltiplos formatos de conteúdo para aprovação
+          </p>
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="p-6">
-        <div className="bg-card rounded-lg shadow-sm border">
-          <div className="p-6">
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left Column */}
-                <div className="space-y-5">
-                  <PautaBasicInfoForm
-                    formData={formData}
-                    onInputChange={handleInputChange}
-                    onClienteCreated={handleClienteCreated}
-                  />
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Versão Selector */}
+          <VersaoSelector
+            versoes={formData.versoes}
+            versaoAtiva={formData.versao_ativa}
+            onVersaoChange={setVersaoAtiva}
+            onCreateNewVersion={createNewVersion}
+            disabled={isSubmitting}
+          />
 
-                  <TagManager tags={formData.tags} onTagsChange={handleTagsChange} />
-                </div>
-
-                {/* Right Column */}
-                <PautaFormOptions
-                  observacoes={formData.observacoes}
-                  onObservacoesChange={(value) => handleInputChange('observacoes', value)}
-                  autoSchedule={autoSchedule}
-                  onAutoScheduleChange={setAutoSchedule}
-                  notifyTeam={notifyTeam}
-                  onNotifyTeamChange={setNotifyTeam}
-                  requireApproval={requireApproval}
-                  onRequireApprovalChange={setRequireApproval}
-                />
-              </div>
-
-              <PostManager
-                posts={formData.posts}
-                tipoPost={formData.tipo_post}
-                onPostChange={handlePostChange}
-              />
-
-              {/* Link de aprovação */}
-              {approvalLink && (
-                <ApprovalLinkDisplay
-                  approvalLink={approvalLink}
-                  onNavigateHome={() => navigate('/')}
-                />
-              )}
-
-              {/* Action Buttons */}
-              {!approvalLink && (
-                <div className="mt-8 flex justify-end space-x-3">
-                  <Button type="button" variant="outline" disabled={uploading}>
-                    Salvar como Rascunho
-                  </Button>
-                  <Button type="button" variant="outline" disabled={uploading}>
-                    Visualizar
-                  </Button>
-                  <Button type="submit" disabled={uploading} className="flex items-center">
-                    {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Criar e Compartilhar com Cliente
-                    <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
-                  </Button>
-                </div>
-              )}
-            </form>
+          {/* Informações básicas da pauta */}
+          <div className="bg-card rounded-xl border-2 p-6">
+            <PautaInfoBasicaV2
+              titulo={formData.titulo}
+              clienteId={formData.cliente_id}
+              dataPrevista={formData.data_prevista}
+              tags={formData.tags}
+              observacoesInternas={formData.observacoes_internas}
+              onTituloChange={(value) => updateField('titulo', value)}
+              onClienteChange={(value) => updateField('cliente_id', value)}
+              onDataPrevistaChange={(value) => updateField('data_prevista', value)}
+              onTagsChange={updateTags}
+              onObservacoesChange={(value) => updateField('observacoes_internas', value)}
+              onNovoCliente={() => setShowNovoClienteDialog(true)}
+              disabled={isSubmitting || isVersaoReadOnly}
+            />
           </div>
+
+          {/* Blocos de Material */}
+          <BlocosContainer
+            blocos={versaoAtiva?.blocos || []}
+            onAddBloco={addBloco}
+            onRemoveBloco={removeBloco}
+            onUpdateBloco={updateBloco}
+            onAddItem={addItemToBloco}
+            onRemoveItem={removeItemFromBloco}
+            onUpdateItem={updateBlocoItem}
+            disabled={isSubmitting || isVersaoReadOnly}
+          />
+
+          {/* Legenda Final e Hashtags */}
+          <LegendaFinalSection
+            legenda={formData.legenda_final}
+            hashtags={formData.hashtags_principais}
+            onLegendaChange={(value) => updateField('legenda_final', value)}
+            onHashtagsChange={updateHashtagsPrincipais}
+            disabled={isSubmitting || isVersaoReadOnly}
+          />
+
+          {/* Link de aprovação (após criar) */}
+          {approvalLink && (
+            <ApprovalLinkDisplay
+              approvalLink={approvalLink}
+              onNavigateHome={() => navigate('/')}
+            />
+          )}
+
+          {/* Botões de ação */}
+          {!approvalLink && (
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleSubmit('rascunho')}
+                disabled={isSubmitting || isVersaoReadOnly}
+                className="gap-2"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Salvar Rascunho
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isSubmitting || isVersaoReadOnly}
+                className="gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                Visualizar
+              </Button>
+              
+              <Button
+                type="button"
+                onClick={() => handleSubmit('aguardando_aprovacao')}
+                disabled={isSubmitting || isVersaoReadOnly}
+                className="gap-2"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                Enviar para Aprovação
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Dialog novo cliente */}
+      <NovoClienteDialog
+        open={showNovoClienteDialog}
+        onOpenChange={setShowNovoClienteDialog}
+        onClienteCreated={handleClienteCreated}
+      />
     </Layout>
   );
 };
