@@ -10,6 +10,7 @@ import type {
   MirapautaProfile,
   MirapautaPauta,
   MirapautaPautaWithCliente,
+  MirapautaTask,
 } from '@/integrations/mirapauta';
 import { toast } from '@/hooks/use-toast';
 
@@ -58,7 +59,7 @@ export const useMirapautaPautas = () => {
       }
 
       console.log('[MiraPauta] Buscando pautas...');
-      
+
       // Buscar pautas
       const { data: pautas, error: pautasError } = await mirapautaClient
         .from('pautas')
@@ -209,11 +210,56 @@ export const useImportPautas = () => {
 
   return useMutation({
     mutationFn: async (pautas: MirapautaPautaWithCliente[]) => {
+      if (!mirapautaClient) {
+        throw new Error('MiraPauta não está configurado');
+      }
+
       const results = {
         imported: 0,
         skipped: 0,
         errors: [] as string[],
       };
+
+      // Buscar todas as tasks do MiraPauta de uma vez
+      const { data: allTasks, error: tasksError } = await mirapautaClient
+        .from('tasks')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (tasksError) {
+        console.error('[MiraPauta] Erro ao buscar tasks:', tasksError);
+        results.errors.push(`Erro ao buscar tasks: ${tasksError.message}`);
+      }
+
+      // Buscar todos os profiles para mapear assignees
+      const { data: allProfiles, error: profilesError } = await mirapautaClient
+        .from('profiles')
+        .select('*');
+
+      if (profilesError) {
+        console.error('[MiraPauta] Erro ao buscar profiles:', profilesError);
+      }
+
+      // Criar mapa de profiles por ID
+      const profilesMap = new Map<string, MirapautaProfile>();
+      if (allProfiles) {
+        allProfiles.forEach((profile) => {
+          profilesMap.set(profile.id, profile as MirapautaProfile);
+        });
+      }
+
+      // Criar mapa de tasks por cliente_id
+      const tasksByCliente = new Map<string, MirapautaTask[]>();
+      if (allTasks) {
+        (allTasks as MirapautaTask[]).forEach((task) => {
+          if (task.cliente_id) {
+            if (!tasksByCliente.has(task.cliente_id)) {
+              tasksByCliente.set(task.cliente_id, []);
+            }
+            tasksByCliente.get(task.cliente_id)?.push(task);
+          }
+        });
+      }
 
       for (const pauta of pautas) {
         // Primeiro, garantir que o cliente existe no AprovaArte
@@ -260,28 +306,86 @@ export const useImportPautas = () => {
           status = 'rascunho';
         }
 
-        // Criar título baseado no cliente e data
-        const titulo = pauta.clientes
-          ? `Pauta ${pauta.clientes.nome} - ${new Date(pauta.created_at).toLocaleDateString('pt-BR')}`
-          : `Pauta Importada - ${new Date(pauta.created_at).toLocaleDateString('pt-BR')}`;
+        // Buscar tasks relacionadas a esta pauta (pelo cliente_id)
+        const tasks = pauta.cliente_id ? tasksByCliente.get(pauta.cliente_id) || [] : [];
 
-        // Inserir pauta no AprovaArte
-        const { error } = await supabase.from('pautas').insert({
-          titulo,
-          cliente: pauta.clientes?.nome || 'Cliente não definido',
-          status,
-          mirapauta_id: pauta.id, // Referência ao ID original
-        });
+        // Se houver tasks, importar cada uma como uma pauta separada
+        // Caso contrário, importar apenas a pauta básica
+        if (tasks.length > 0) {
+          for (const task of tasks) {
+            // Buscar nome do assignee
+            const assigneeName = task.assignee ? profilesMap.get(task.assignee)?.nome : null;
 
-        if (error) {
-          if (error.code === '23505') {
-            // Unique violation - já existe
-            results.skipped++;
-          } else {
-            results.errors.push(`Erro ao importar pauta: ${error.message}`);
+            // Criar título combinando cliente, task title e data
+            const titulo =
+              task.title ||
+              (pauta.clientes
+                ? `Pauta ${pauta.clientes.nome} - ${new Date(pauta.created_at).toLocaleDateString('pt-BR')}`
+                : `Pauta Importada - ${new Date(pauta.created_at).toLocaleDateString('pt-BR')}`);
+
+            // Preparar dados para inserção
+            const insertData = {
+              titulo,
+              cliente: pauta.clientes?.nome || 'Cliente não definido',
+              status,
+              mirapauta_id: pauta.id,
+              origem: 'mirapauta' as const,
+              // Dados da task
+              mirapauta_task_title: task.title,
+              mirapauta_descricao: task.description,
+              mirapauta_ticket: task.ticket_number,
+              mirapauta_assignee_id: task.assignee,
+              mirapauta_assignee_nome: assigneeName,
+              mirapauta_prazo_entrega: task.prazo_entrega,
+              mirapauta_data_inicio: task.data_inicio,
+              mirapauta_task_status: task.status,
+              mirapauta_peso: task.peso,
+              mirapauta_tempo_gasto: task.tempo_gasto,
+              // Usar prazo da task como data_prazo se disponível
+              data_prazo: task.prazo_entrega,
+              // Usar descrição da task como descricao se disponível
+              descricao: task.description,
+            };
+
+            // Inserir pauta no AprovaArte
+            const { error } = await supabase.from('pautas').insert(insertData);
+
+            if (error) {
+              if (error.code === '23505') {
+                // Unique violation - já existe
+                results.skipped++;
+              } else {
+                results.errors.push(
+                  `Erro ao importar task ${task.ticket_number || task.title}: ${error.message}`,
+                );
+              }
+            } else {
+              results.imported++;
+            }
           }
         } else {
-          results.imported++;
+          // Importar pauta sem task associada
+          const titulo = pauta.clientes
+            ? `Pauta ${pauta.clientes.nome} - ${new Date(pauta.created_at).toLocaleDateString('pt-BR')}`
+            : `Pauta Importada - ${new Date(pauta.created_at).toLocaleDateString('pt-BR')}`;
+
+          const { error } = await supabase.from('pautas').insert({
+            titulo,
+            cliente: pauta.clientes?.nome || 'Cliente não definido',
+            status,
+            mirapauta_id: pauta.id,
+            origem: 'mirapauta' as const,
+          });
+
+          if (error) {
+            if (error.code === '23505') {
+              results.skipped++;
+            } else {
+              results.errors.push(`Erro ao importar pauta: ${error.message}`);
+            }
+          } else {
+            results.imported++;
+          }
         }
       }
 
