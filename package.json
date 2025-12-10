@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "format": "prettier --write .",
     "typecheck": "tsc -p tsconfig.app.json --noEmit",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "test": "vitest run --reporter=default",
     "test:coverage": "vitest run --coverage --reporter=default",
     "test:watch": "vitest"
