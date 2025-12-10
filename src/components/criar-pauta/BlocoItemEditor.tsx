@@ -15,6 +15,7 @@ interface BlocoItemEditorProps {
   onRemove: () => void;
   canRemove: boolean;
   disabled?: boolean;
+  hideUpload?: boolean; // Nova prop para esconder upload individual
 }
 
 export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
@@ -24,7 +25,8 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
   onUpdate,
   onRemove,
   canRemove,
-  disabled = false
+  disabled = false,
+  hideUpload = false
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const config = MATERIAL_CONFIG[tipoMaterial];
@@ -48,15 +50,30 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
     return FileText;
   };
 
+  // Para Carrossel: mostra preview da imagem associada (read-only)
+  const showCarrosselPreview = tipoMaterial === 'carrossel' && hideUpload && item.arquivos.length > 0;
+
   return (
     <div className={cn(
       "p-4 rounded-lg border bg-card space-y-4",
       disabled && "opacity-60"
     )}>
       <div className="flex items-center justify-between">
-        <h4 className="font-medium text-sm text-foreground">
-          {config.itemLabel} {itemIndex + 1}
-        </h4>
+        <div className="flex items-center gap-3">
+          {/* Preview da imagem do slide (Carrossel) */}
+          {showCarrosselPreview && (
+            <div className="w-12 h-12 rounded-md overflow-hidden bg-muted border flex-shrink-0">
+              <img 
+                src={URL.createObjectURL(item.arquivos[0])} 
+                alt={`Slide ${itemIndex + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          <h4 className="font-medium text-sm text-foreground">
+            {config.itemLabel} {itemIndex + 1}
+          </h4>
+        </div>
         {canRemove && (
           <Button
             type="button"
@@ -104,7 +121,7 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
         {(config.fields.texto || config.fields.corpo) && (
           <div className="space-y-2">
             <Label htmlFor={`texto-${itemIndex}`}>
-              {config.fields.corpo ? 'Corpo' : 'Texto'}
+              {config.fields.corpo ? 'Corpo' : tipoMaterial === 'reels' ? 'Chamada' : 'Texto'}
             </Label>
             <Textarea
               id={`texto-${itemIndex}`}
@@ -112,7 +129,9 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
               onChange={(e) => onUpdate({ texto_conteudo: e.target.value })}
               placeholder={config.fields.corpo 
                 ? "Digite o conteúdo completo..." 
-                : "Digite o texto da peça..."}
+                : tipoMaterial === 'reels' 
+                  ? "Digite a chamada desta cena..."
+                  : "Digite o texto da peça..."}
               rows={config.fields.corpo ? 6 : 3}
               disabled={disabled}
             />
@@ -133,8 +152,8 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
           </div>
         )}
 
-        {/* Upload de mídia */}
-        {config.fields.midia && (
+        {/* Upload de mídia - apenas se não estiver oculto */}
+        {config.fields.midia && !hideUpload && (
           <div className="space-y-2">
             <Label>Mídia</Label>
             

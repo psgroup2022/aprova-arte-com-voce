@@ -31,6 +31,7 @@ export const MATERIAL_CONFIG: Record<TipoMaterial, {
     hashtags?: boolean;
     midia?: boolean;
   };
+  singleUploadAtBlock?: boolean; // Upload único no nível do bloco (Reels = 1 vídeo, Carrossel = múltiplas imagens)
 }> = {
   carrossel: {
     label: 'Carrossel',
@@ -38,7 +39,8 @@ export const MATERIAL_CONFIG: Record<TipoMaterial, {
     itemLabel: 'Slide',
     hasMultipleItems: true,
     defaultItemCount: 3,
-    fields: { texto: true, hashtags: true, midia: true }
+    fields: { texto: true, hashtags: true, midia: true },
+    singleUploadAtBlock: true
   },
   story: {
     label: 'Story',
@@ -51,10 +53,11 @@ export const MATERIAL_CONFIG: Record<TipoMaterial, {
   reels: {
     label: 'Reels',
     icon: 'Film',
-    itemLabel: 'Tela',
+    itemLabel: 'Cena',
     hasMultipleItems: true,
     defaultItemCount: 1,
-    fields: { texto: true, hashtags: true, midia: true }
+    fields: { texto: true, hashtags: true, midia: true },
+    singleUploadAtBlock: true
   },
   estatico: {
     label: 'Estático',
