@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { useMirapautaIntegration } from '@/hooks/useMirapauta';
+import { useMirapautaIntegration, useMirapautaTasks } from '@/hooks/useMirapauta';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,15 +19,25 @@ import {
   ArrowRight,
   Calendar,
   Clock,
+  ListTodo,
+  User,
+  Hash,
+  Weight,
 } from 'lucide-react';
-import type { MirapautaPautaWithCliente } from '@/integrations/mirapauta';
+import type { MirapautaPautaWithCliente, MirapautaTask, MirapautaCliente, MirapautaProfile } from '@/integrations/mirapauta';
+
+type TaskWithData = MirapautaTask & {
+  cliente: MirapautaCliente | null;
+  responsavel: MirapautaProfile | null;
+};
 
 export const Integracoes = () => {
   const { isConfigured, clientes, pautas, profiles, importClientes, importPautas } =
     useMirapautaIntegration();
+  const tasks = useMirapautaTasks();
 
   const [selectedClientes, setSelectedClientes] = useState<Set<string>>(new Set());
-  const [selectedPautas, setSelectedPautas] = useState<Set<string>>(new Set());
+  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
 
   // Toggle seleção de cliente
   const toggleCliente = (id: string) => {
@@ -40,15 +50,15 @@ export const Integracoes = () => {
     setSelectedClientes(newSelected);
   };
 
-  // Toggle seleção de pauta
-  const togglePauta = (id: string) => {
-    const newSelected = new Set(selectedPautas);
+  // Toggle seleção de task
+  const toggleTask = (id: string) => {
+    const newSelected = new Set(selectedTasks);
     if (newSelected.has(id)) {
       newSelected.delete(id);
     } else {
       newSelected.add(id);
     }
-    setSelectedPautas(newSelected);
+    setSelectedTasks(newSelected);
   };
 
   // Selecionar todos clientes
@@ -58,10 +68,10 @@ export const Integracoes = () => {
     }
   };
 
-  // Selecionar todas pautas
-  const selectAllPautas = () => {
-    if (pautas.data) {
-      setSelectedPautas(new Set(pautas.data.map((p) => p.id)));
+  // Selecionar todas tasks
+  const selectAllTasks = () => {
+    if (tasks.data) {
+      setSelectedTasks(new Set(tasks.data.map((t) => t.id)));
     }
   };
 
@@ -74,33 +84,42 @@ export const Integracoes = () => {
     }
   };
 
-  // Importar pautas selecionadas
-  const handleImportPautas = () => {
-    if (pautas.data) {
-      const pautasToImport = pautas.data.filter((p) => selectedPautas.has(p.id));
-      importPautas.mutate(pautasToImport);
-      setSelectedPautas(new Set());
+  // Importar tasks selecionadas (usando pautas como base)
+  const handleImportTasks = () => {
+    if (tasks.data && pautas.data) {
+      // Mapear tasks para pautas
+      const pautasToImport = selectedTasks.size > 0 
+        ? pautas.data.filter((p) => {
+            // Encontrar tasks relacionadas ao cliente da pauta
+            const relatedTasks = tasks.data?.filter(t => t.cliente_id === p.cliente_id) || [];
+            return relatedTasks.some(t => selectedTasks.has(t.id));
+          })
+        : [];
+      
+      if (pautasToImport.length > 0) {
+        importPautas.mutate(pautasToImport);
+      }
+      setSelectedTasks(new Set());
     }
   };
 
-  // Mapear status do MiraPauta para exibição
-  const getStatusDisplay = (pauta: MirapautaPautaWithCliente) => {
-    if (pauta.pauta_aprovada_status === 'concluido') {
-      return { label: 'Aprovada', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+  // Mapear status da task para exibição
+  const getTaskStatusDisplay = (status: string | null) => {
+    switch (status) {
+      case 'concluido':
+      case 'done':
+        return { label: 'Concluído', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+      case 'em_andamento':
+      case 'in_progress':
+        return { label: 'Em Andamento', className: 'bg-blue-50 text-blue-700 border-blue-200' };
+      case 'pendente':
+      case 'todo':
+        return { label: 'Pendente', className: 'bg-amber-50 text-amber-700 border-amber-200' };
+      case 'cancelado':
+        return { label: 'Cancelado', className: 'bg-rose-50 text-rose-700 border-rose-200' };
+      default:
+        return { label: status || 'Sem status', className: 'bg-slate-100 text-slate-600 border-slate-200' };
     }
-    if (pauta.revisao_cliente_status === 'rejeitado') {
-      return { label: 'Rejeitada', className: 'bg-rose-50 text-rose-700 border-rose-200' };
-    }
-    if (
-      pauta.revisao_cliente_status === 'em_andamento' ||
-      pauta.enviado_cliente_status === 'concluido'
-    ) {
-      return { label: 'Com Cliente', className: 'bg-amber-50 text-amber-700 border-amber-200' };
-    }
-    if (pauta.layout_status === 'em_andamento' || pauta.revisao_interna_status === 'em_andamento') {
-      return { label: 'Em Produção', className: 'bg-blue-50 text-blue-700 border-blue-200' };
-    }
-    return { label: 'Briefing', className: 'bg-slate-100 text-slate-600 border-slate-200' };
   };
 
   if (!isConfigured) {
@@ -206,11 +225,11 @@ export const Integracoes = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="pautas" className="space-y-6">
+        <Tabs defaultValue="tarefas" className="space-y-6">
           <TabsList className="bg-slate-100 p-1">
-            <TabsTrigger value="pautas" className="data-[state=active]:bg-white">
-              <FileText className="w-4 h-4 mr-2" />
-              Pautas
+            <TabsTrigger value="tarefas" className="data-[state=active]:bg-white">
+              <ListTodo className="w-4 h-4 mr-2" />
+              Tarefas
             </TabsTrigger>
             <TabsTrigger value="clientes" className="data-[state=active]:bg-white">
               <Building2 className="w-4 h-4 mr-2" />
@@ -222,33 +241,33 @@ export const Integracoes = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Pautas Tab */}
-          <TabsContent value="pautas" className="space-y-4">
+          {/* Tarefas Tab */}
+          <TabsContent value="tarefas" className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => pautas.refetch()}
-                  disabled={pautas.isFetching}
+                  onClick={() => tasks.refetch()}
+                  disabled={tasks.isFetching}
                 >
                   <RefreshCw
-                    className={`w-4 h-4 mr-2 ${pautas.isFetching ? 'animate-spin' : ''}`}
+                    className={`w-4 h-4 mr-2 ${tasks.isFetching ? 'animate-spin' : ''}`}
                   />
                   Atualizar
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={selectAllPautas}
-                  disabled={!pautas.data?.length}
+                  onClick={selectAllTasks}
+                  disabled={!tasks.data?.length}
                 >
                   Selecionar Todas
                 </Button>
               </div>
               <Button
-                onClick={handleImportPautas}
-                disabled={selectedPautas.size === 0 || importPautas.isPending}
+                onClick={handleImportTasks}
+                disabled={selectedTasks.size === 0 || importPautas.isPending}
                 className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
               >
                 {importPautas.isPending ? (
@@ -256,66 +275,100 @@ export const Integracoes = () => {
                 ) : (
                   <Download className="w-4 h-4 mr-2" />
                 )}
-                Importar {selectedPautas.size > 0 && `(${selectedPautas.size})`}
+                Importar {selectedTasks.size > 0 && `(${selectedTasks.size})`}
               </Button>
             </div>
 
-            {pautas.isLoading ? (
+            {tasks.isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
               </div>
-            ) : pautas.error ? (
+            ) : tasks.error ? (
               <Card className="p-8 text-center">
                 <AlertCircle className="w-12 h-12 mx-auto text-rose-500 mb-4" />
-                <p className="text-slate-600">Erro ao carregar pautas do MiraPauta</p>
-                <p className="text-sm text-slate-400 mt-1">{String(pautas.error)}</p>
+                <p className="text-slate-600">Erro ao carregar tarefas do MiraPauta</p>
+                <p className="text-sm text-slate-400 mt-1">{String(tasks.error)}</p>
               </Card>
-            ) : pautas.data?.length === 0 ? (
+            ) : tasks.data?.length === 0 ? (
               <Card className="p-8 text-center">
-                <FileText className="w-12 h-12 mx-auto text-slate-300 mb-4" />
-                <p className="text-slate-600">Nenhuma pauta encontrada no MiraPauta</p>
+                <ListTodo className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+                <p className="text-slate-600">Nenhuma tarefa encontrada no MiraPauta</p>
               </Card>
             ) : (
               <div className="space-y-3">
-                {pautas.data?.map((pauta) => {
-                  const status = getStatusDisplay(pauta);
+                {(tasks.data as TaskWithData[])?.map((task) => {
+                  const status = getTaskStatusDisplay(task.status);
                   return (
                     <Card
-                      key={pauta.id}
+                      key={task.id}
                       className={`p-4 cursor-pointer transition-all hover:shadow-md ${
-                        selectedPautas.has(pauta.id)
+                        selectedTasks.has(task.id)
                           ? 'border-violet-300 bg-violet-50/50 ring-2 ring-violet-200'
                           : 'border-slate-200 hover:border-slate-300'
                       }`}
-                      onClick={() => togglePauta(pauta.id)}
+                      onClick={() => toggleTask(task.id)}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-start gap-4">
                         <Checkbox
-                          checked={selectedPautas.has(pauta.id)}
-                          onCheckedChange={() => togglePauta(pauta.id)}
-                          className="data-[state=checked]:bg-violet-600"
+                          checked={selectedTasks.has(task.id)}
+                          onCheckedChange={() => toggleTask(task.id)}
+                          className="data-[state=checked]:bg-violet-600 mt-1"
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3">
-                            <h3 className="font-medium text-slate-900 truncate">
-                              {pauta.clientes?.nome || 'Cliente não definido'}
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <h3 className="font-medium text-slate-900">
+                              {task.title || 'Sem título'}
                             </h3>
+                            {task.ticket_number && (
+                              <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">
+                                <Hash className="w-3 h-3 mr-1" />
+                                {task.ticket_number}
+                              </Badge>
+                            )}
                             <Badge variant="outline" className={status.className}>
                               {status.label}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3.5 h-3.5" />
-                              {new Date(pauta.created_at).toLocaleDateString('pt-BR')}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3.5 h-3.5" />
-                              {new Date(pauta.updated_at).toLocaleDateString('pt-BR')}
-                            </span>
+                          
+                          {task.description && (
+                            <p className="text-sm text-slate-500 mt-1 line-clamp-2">
+                              {task.description}
+                            </p>
+                          )}
+                          
+                          <div className="flex items-center gap-4 mt-2 text-sm text-slate-500 flex-wrap">
+                            {task.cliente && (
+                              <span className="flex items-center gap-1">
+                                <Building2 className="w-3.5 h-3.5" />
+                                {task.cliente.nome}
+                              </span>
+                            )}
+                            {task.responsavel && (
+                              <span className="flex items-center gap-1">
+                                <User className="w-3.5 h-3.5" />
+                                {task.responsavel.nome || task.responsavel.email}
+                              </span>
+                            )}
+                            {task.prazo_entrega && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3.5 h-3.5" />
+                                {new Date(task.prazo_entrega).toLocaleDateString('pt-BR')}
+                              </span>
+                            )}
+                            {task.peso && (
+                              <span className="flex items-center gap-1">
+                                <Weight className="w-3.5 h-3.5" />
+                                Peso: {task.peso}
+                              </span>
+                            )}
+                            {task.material_quantity && (
+                              <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">
+                                {task.material_quantity} material(is)
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <ArrowRight className="w-5 h-5 text-slate-400" />
+                        <ArrowRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
                       </div>
                     </Card>
                   );
