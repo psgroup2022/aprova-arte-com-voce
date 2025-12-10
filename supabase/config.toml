@@ -1,1 +1,4 @@
 project_id = "uaqxgzoprrxdswnomccc"
+
+[functions.sync-mirapauta]
+verify_jwt = false

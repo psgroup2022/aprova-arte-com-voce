@@ -359,6 +359,9 @@ export type Database = {
           hashtags_principais: string[] | null
           id: string
           legenda_final: string | null
+          mirapauta_cliente_id: string | null
+          mirapauta_sincronizado_em: string | null
+          mirapauta_task_id: string | null
           observacoes: string | null
           status: Database["public"]["Enums"]["pauta_status"]
           titulo: string
@@ -375,6 +378,9 @@ export type Database = {
           hashtags_principais?: string[] | null
           id?: string
           legenda_final?: string | null
+          mirapauta_cliente_id?: string | null
+          mirapauta_sincronizado_em?: string | null
+          mirapauta_task_id?: string | null
           observacoes?: string | null
           status?: Database["public"]["Enums"]["pauta_status"]
           titulo: string
@@ -391,6 +397,9 @@ export type Database = {
           hashtags_principais?: string[] | null
           id?: string
           legenda_final?: string | null
+          mirapauta_cliente_id?: string | null
+          mirapauta_sincronizado_em?: string | null
+          mirapauta_task_id?: string | null
           observacoes?: string | null
           status?: Database["public"]["Enums"]["pauta_status"]
           titulo?: string
