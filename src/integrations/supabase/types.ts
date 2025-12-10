@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      bloco_arquivos: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          nome_arquivo: string
+          tamanho: number | null
+          tipo: Database["public"]["Enums"]["arquivo_tipo"]
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          nome_arquivo: string
+          tamanho?: number | null
+          tipo: Database["public"]["Enums"]["arquivo_tipo"]
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          nome_arquivo?: string
+          tamanho?: number | null
+          tipo?: Database["public"]["Enums"]["arquivo_tipo"]
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bloco_arquivos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "bloco_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bloco_itens: {
+        Row: {
+          bloco_id: string
+          created_at: string
+          hashtags: string | null
+          id: string
+          ordem: number
+          texto_conteudo: string | null
+          titulo: string | null
+          updated_at: string
+        }
+        Insert: {
+          bloco_id: string
+          created_at?: string
+          hashtags?: string | null
+          id?: string
+          ordem?: number
+          texto_conteudo?: string | null
+          titulo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bloco_id?: string
+          created_at?: string
+          hashtags?: string | null
+          id?: string
+          ordem?: number
+          texto_conteudo?: string | null
+          titulo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bloco_itens_bloco_id_fkey"
+            columns: ["bloco_id"]
+            isOneToOne: false
+            referencedRelation: "blocos_material"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blocos_material: {
+        Row: {
+          created_at: string
+          id: string
+          ordem: number
+          status: Database["public"]["Enums"]["bloco_status"]
+          tipo_material: Database["public"]["Enums"]["material_tipo"]
+          updated_at: string
+          versao_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ordem?: number
+          status?: Database["public"]["Enums"]["bloco_status"]
+          tipo_material: Database["public"]["Enums"]["material_tipo"]
+          updated_at?: string
+          versao_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ordem?: number
+          status?: Database["public"]["Enums"]["bloco_status"]
+          tipo_material?: Database["public"]["Enums"]["material_tipo"]
+          updated_at?: string
+          versao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocos_material_versao_id_fkey"
+            columns: ["versao_id"]
+            isOneToOne: false
+            referencedRelation: "pauta_versoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           ativo: boolean
@@ -192,6 +309,44 @@ export type Database = {
           },
         ]
       }
+      pauta_versoes: {
+        Row: {
+          ativa: boolean
+          briefing_url: string | null
+          created_at: string
+          id: string
+          numero_versao: number
+          pauta_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativa?: boolean
+          briefing_url?: string | null
+          created_at?: string
+          id?: string
+          numero_versao?: number
+          pauta_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativa?: boolean
+          briefing_url?: string | null
+          created_at?: string
+          id?: string
+          numero_versao?: number
+          pauta_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pauta_versoes_pauta_id_fkey"
+            columns: ["pauta_id"]
+            isOneToOne: false
+            referencedRelation: "pautas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pautas: {
         Row: {
           aprovado_por: string | null
@@ -201,7 +356,9 @@ export type Database = {
           data_aprovacao: string | null
           data_prazo: string | null
           descricao: string | null
+          hashtags_principais: string[] | null
           id: string
+          legenda_final: string | null
           observacoes: string | null
           status: Database["public"]["Enums"]["pauta_status"]
           titulo: string
@@ -215,7 +372,9 @@ export type Database = {
           data_aprovacao?: string | null
           data_prazo?: string | null
           descricao?: string | null
+          hashtags_principais?: string[] | null
           id?: string
+          legenda_final?: string | null
           observacoes?: string | null
           status?: Database["public"]["Enums"]["pauta_status"]
           titulo: string
@@ -229,7 +388,9 @@ export type Database = {
           data_aprovacao?: string | null
           data_prazo?: string | null
           descricao?: string | null
+          hashtags_principais?: string[] | null
           id?: string
+          legenda_final?: string | null
           observacoes?: string | null
           status?: Database["public"]["Enums"]["pauta_status"]
           titulo?: string
@@ -246,6 +407,20 @@ export type Database = {
     }
     Enums: {
       arquivo_tipo: "imagem" | "video" | "documento"
+      bloco_status:
+        | "aguardando_midia"
+        | "pronto"
+        | "enviado_aprovacao"
+        | "em_revisao"
+        | "aprovado"
+      material_tipo:
+        | "carrossel"
+        | "story"
+        | "reels"
+        | "estatico"
+        | "linkedin_artigo"
+        | "email"
+        | "whatsapp"
       pauta_status:
         | "rascunho"
         | "aguardando_aprovacao"
@@ -379,6 +554,22 @@ export const Constants = {
   public: {
     Enums: {
       arquivo_tipo: ["imagem", "video", "documento"],
+      bloco_status: [
+        "aguardando_midia",
+        "pronto",
+        "enviado_aprovacao",
+        "em_revisao",
+        "aprovado",
+      ],
+      material_tipo: [
+        "carrossel",
+        "story",
+        "reels",
+        "estatico",
+        "linkedin_artigo",
+        "email",
+        "whatsapp",
+      ],
       pauta_status: [
         "rascunho",
         "aguardando_aprovacao",
