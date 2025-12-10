@@ -13,6 +13,7 @@ REGRAS CRÍTICAS:
 1. Extraia EXATAMENTE o que está no documento, NÃO invente conteúdo
 2. Para "tipo", use apenas: "estatico", "carrossel", "story", "reels", "linkedin_artigo", "email", "whatsapp"
 3. Se for Post Estático, use "estatico"
+4. Se for Stories (ou Story), use "story"
 
 CARROSSEL:
 - Cada slide deve ser um item separado no array "itens"
@@ -22,6 +23,10 @@ REELS:
 - OBRIGATÓRIO: Agrupe TODAS as chamadas/cenas em UM ÚNICO bloco do tipo "reels"
 - Cada chamada/cena vira um item no array "itens" (cena 1, cena 2, etc.)
 - Reels é UM vídeo com múltiplas cenas/chamadas, não múltiplos blocos
+
+STORIES:
+- "Card" e "Tela" são sinônimos - ambos representam um item do story
+- Cada Card ou Tela vira um item no array "itens" (tela 1, tela 2, etc.)
 
 OUTRAS REGRAS:
 4. Hashtags devem ser extraídas SEM o símbolo #
