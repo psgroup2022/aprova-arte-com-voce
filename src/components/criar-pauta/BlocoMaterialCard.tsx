@@ -17,6 +17,7 @@ import {
   BLOCO_STATUS_LABELS 
 } from '@/types/pauta-form';
 import { BlocoItemEditor } from './BlocoItemEditor';
+import { BlocoUploadHeader } from './BlocoUploadHeader';
 import { 
   Images, 
   Smartphone, 
@@ -72,6 +73,11 @@ export const BlocoMaterialCard: React.FC<BlocoMaterialCardProps> = ({
 }) => {
   const config = MATERIAL_CONFIG[bloco.tipo];
   const Icon = iconMap[config.icon as keyof typeof iconMap];
+  const hasBlockLevelUpload = config.singleUploadAtBlock;
+
+  const handleUpdateItens = (newItens: BlocoItem[]) => {
+    onUpdate({ itens: newItens });
+  };
 
   return (
     <div className={cn(
@@ -131,6 +137,16 @@ export const BlocoMaterialCard: React.FC<BlocoMaterialCardProps> = ({
         </div>
       </div>
 
+      {/* Upload no nível do bloco (Reels e Carrossel) */}
+      {hasBlockLevelUpload && (
+        <BlocoUploadHeader
+          tipoMaterial={bloco.tipo}
+          itens={bloco.itens}
+          onUpdateItens={handleUpdateItens}
+          disabled={disabled}
+        />
+      )}
+
       {/* Itens do bloco */}
       <div className="p-4 space-y-4">
         {bloco.itens.map((item, itemIndex) => (
@@ -143,6 +159,7 @@ export const BlocoMaterialCard: React.FC<BlocoMaterialCardProps> = ({
             onRemove={() => onRemoveItem(itemIndex)}
             canRemove={bloco.itens.length > 1}
             disabled={disabled}
+            hideUpload={hasBlockLevelUpload}
           />
         ))}
 

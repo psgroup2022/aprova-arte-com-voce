@@ -9,15 +9,24 @@ const SYSTEM_PROMPT = `Você é um assistente especializado em analisar document
 
 Analise o conteúdo do documento e extraia as informações no formato JSON estruturado abaixo.
 
-REGRAS:
-1. Extraia EXATAMENTE o que está no documento, sem inventar conteúdo
+REGRAS CRÍTICAS:
+1. Extraia EXATAMENTE o que está no documento, NÃO invente conteúdo
 2. Para "tipo", use apenas: "estatico", "carrossel", "story", "reels", "linkedin_artigo", "email", "whatsapp"
 3. Se for Post Estático, use "estatico"
-4. Se for Carrossel, extraia cada slide como um item separado no array "itens"
-5. IMPORTANTE: Se for REELS, agrupe TODAS as chamadas/textos em UM ÚNICO bloco do tipo "reels", cada chamada como um item separado no array "itens"
-6. Hashtags devem ser extraídas SEM o símbolo #
-7. Se a data estiver vazia ou não especificada, retorne null
-8. NÃO invente informações que não existem no documento
+
+CARROSSEL:
+- Cada slide deve ser um item separado no array "itens"
+- Associe cada chamada/texto ao slide correspondente (chamada 1 = slide 1, chamada 2 = slide 2, etc.)
+
+REELS:
+- OBRIGATÓRIO: Agrupe TODAS as chamadas/cenas em UM ÚNICO bloco do tipo "reels"
+- Cada chamada/cena vira um item no array "itens" (cena 1, cena 2, etc.)
+- Reels é UM vídeo com múltiplas cenas/chamadas, não múltiplos blocos
+
+OUTRAS REGRAS:
+4. Hashtags devem ser extraídas SEM o símbolo #
+5. Se a data estiver vazia ou não especificada, retorne null
+6. NUNCA invente informações que não existem no documento
 
 Responda APENAS com JSON válido, sem markdown ou explicações.`;
 
