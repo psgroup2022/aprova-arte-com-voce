@@ -1,6 +1,6 @@
 import React from 'react';
 import { Layout } from '@/components/Layout';
-import { User, Bell, Shield, Palette, Globe, Users, RefreshCw } from 'lucide-react';
+import { User, Bell, Shield, Palette, Globe, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -11,12 +11,7 @@ import { useMirapautaIntegration } from '@/hooks/useMirapauta';
 import { Badge } from '@/components/ui/badge';
 
 export const Configuracoes = () => {
-  const { isConfigured, localProfiles, syncProfiles } = useMirapautaIntegration();
-  const isSyncing = syncProfiles.isPending;
-
-  const handleSyncProfiles = () => {
-    syncProfiles.mutate();
-  };
+  const { isConfigured, profiles } = useMirapautaIntegration();
 
   return (
     <Layout>
@@ -203,34 +198,21 @@ export const Configuracoes = () => {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
-                    <Label>Usuários Sincronizados</Label>
+                    <Label>Usuários do MiraPauta</Label>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {localProfiles.data?.length || 0} usuário(s) ativo(s) no sistema
-                  </p>
-                  <Button
-                    onClick={handleSyncProfiles}
-                    disabled={!isConfigured || isSyncing}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                    {isSyncing ? 'Sincronizando...' : 'Sincronizar Usuários'}
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    Importa usuários do MiraPauta e desativa os que não existem mais lá
+                    {profiles.data?.length || 0} usuário(s) encontrado(s) no MiraPauta
                   </p>
                 </div>
 
                 <Separator />
 
                 <div className="space-y-2">
-                  <Label>Sobre a Sincronização</Label>
+                  <Label>Sobre a Integração</Label>
                   <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                    <li>Importa novos usuários do MiraPauta</li>
-                    <li>Atualiza informações de usuários existentes</li>
-                    <li>Desativa usuários que não estão mais no MiraPauta</li>
-                    <li>Mantém histórico de aprovações e pautas</li>
+                    <li>Importa tarefas e clientes do MiraPauta</li>
+                    <li>Sincroniza dados automaticamente</li>
+                    <li>Mantém histórico de aprovações</li>
                   </ul>
                 </div>
               </CardContent>
