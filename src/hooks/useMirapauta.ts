@@ -190,10 +190,10 @@ export const useMirapautaTasks = () => {
 
       console.log('[MiraPauta] Profiles encontrados:', profiles?.length);
       if (profiles && profiles.length > 0) {
-        console.log('[MiraPauta] Profile IDs:', profiles.map((p: any) => p.id));
+        console.log('[MiraPauta] Profile nomes:', profiles.map((p: any) => p.nome));
       }
 
-      // Mapear clientes e profiles por ID
+      // Mapear clientes por ID
       const clientesMap = new Map<string, MirapautaCliente>();
       if (clientes) {
         clientes.forEach((cliente) => {
@@ -201,20 +201,27 @@ export const useMirapautaTasks = () => {
         });
       }
 
-      const profilesMap = new Map<string, MirapautaProfile>();
+      // Mapear profiles por NOME (assignee contém nome, não ID)
+      const profilesByNameMap = new Map<string, MirapautaProfile>();
       if (profiles) {
         profiles.forEach((profile) => {
-          profilesMap.set(profile.id, profile as MirapautaProfile);
+          const typedProfile = profile as MirapautaProfile;
+          if (typedProfile.nome) {
+            // Usar nome em lowercase para comparação case-insensitive
+            profilesByNameMap.set(typedProfile.nome.toLowerCase().trim(), typedProfile);
+          }
         });
       }
 
       // Combinar tasks com clientes e profiles
       const tasksWithData = (tasks || []).map((task) => {
         const typedTask = task as MirapautaTask;
-        const responsavel = typedTask.assignee ? profilesMap.get(typedTask.assignee) || null : null;
+        // Buscar responsável pelo NOME (assignee é o nome do usuário)
+        const assigneeName = typedTask.assignee ? typedTask.assignee.toLowerCase().trim() : null;
+        const responsavel = assigneeName ? profilesByNameMap.get(assigneeName) || null : null;
         
         if (typedTask.assignee && !responsavel) {
-          console.warn(`[MiraPauta] Assignee ${typedTask.assignee} não encontrado nos profiles`);
+          console.warn(`[MiraPauta] Assignee "${typedTask.assignee}" não encontrado nos profiles. Nomes disponíveis:`, [...profilesByNameMap.keys()]);
         }
         
         return {
