@@ -32,7 +32,7 @@ type TaskWithData = MirapautaTask & {
 };
 
 export const Integracoes = () => {
-  const { isConfigured, clientes, pautas, profiles, importClientes, importPautas } =
+  const { isConfigured, clientes, pautas, profiles, importClientes, importPautas, syncTasks } =
     useMirapautaIntegration();
   const tasks = useMirapautaTasks();
 
@@ -166,9 +166,21 @@ export const Integracoes = () => {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Integrações</h1>
-            <p className="text-slate-500 mt-1">Importe dados do MiraPauta</p>
+            <p className="text-slate-500 mt-1">Sincronize automaticamente tasks do MiraPauta</p>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              onClick={() => syncTasks.mutate()}
+              disabled={syncTasks.isPending}
+              className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700"
+            >
+              {syncTasks.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              Sincronizar Agora
+            </Button>
             <Badge
               variant="outline"
               className="bg-emerald-50 text-emerald-700 border-emerald-200 px-3 py-1"
@@ -178,6 +190,19 @@ export const Integracoes = () => {
             </Badge>
           </div>
         </div>
+
+        {/* Info sobre sync automático */}
+        <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="font-medium text-blue-900">Sincronização automática ativa</p>
+              <p className="text-sm text-blue-700">Tasks do MiraPauta são sincronizadas automaticamente a cada 15 minutos</p>
+            </div>
+          </div>
+        </Card>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
