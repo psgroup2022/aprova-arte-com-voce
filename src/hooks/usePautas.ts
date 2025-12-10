@@ -59,6 +59,77 @@ export const usePautas = () => {
   };
 
   const deletePauta = async (id: string): Promise<void> => {
+    // 1. Buscar arquivos da tabela pauta_arquivos
+    const { data: pautaArquivos } = await supabase
+      .from('pauta_arquivos')
+      .select('url')
+      .eq('pauta_id', id);
+
+    // 2. Buscar arquivos dos blocos via versões
+    const { data: versoes } = await supabase
+      .from('pauta_versoes')
+      .select('id')
+      .eq('pauta_id', id);
+
+    let blocoArquivosUrls: string[] = [];
+    if (versoes && versoes.length > 0) {
+      const versaoIds = versoes.map(v => v.id);
+      
+      const { data: blocos } = await supabase
+        .from('blocos_material')
+        .select('id')
+        .in('versao_id', versaoIds);
+
+      if (blocos && blocos.length > 0) {
+        const blocoIds = blocos.map(b => b.id);
+        
+        const { data: itens } = await supabase
+          .from('bloco_itens')
+          .select('id')
+          .in('bloco_id', blocoIds);
+
+        if (itens && itens.length > 0) {
+          const itemIds = itens.map(i => i.id);
+          
+          const { data: blocoArquivos } = await supabase
+            .from('bloco_arquivos')
+            .select('url')
+            .in('item_id', itemIds);
+
+          if (blocoArquivos) {
+            blocoArquivosUrls = blocoArquivos.map(a => a.url);
+          }
+        }
+      }
+    }
+
+    // 3. Extrair paths e excluir do storage
+    const allUrls = [
+      ...(pautaArquivos?.map(a => a.url) || []),
+      ...blocoArquivosUrls
+    ];
+
+    if (allUrls.length > 0) {
+      const paths = allUrls
+        .map(url => {
+          // URL format: https://xxx.supabase.co/storage/v1/object/public/pauta-arquivos/path/to/file
+          const match = url.match(/\/pauta-arquivos\/(.+)$/);
+          return match ? match[1] : null;
+        })
+        .filter((path): path is string => path !== null);
+
+      if (paths.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from('pauta-arquivos')
+          .remove(paths);
+
+        if (storageError) {
+          console.warn('Erro ao excluir arquivos do storage:', storageError);
+        }
+      }
+    }
+
+    // 4. Excluir a pauta (cascade cuida das relações)
     const { error } = await supabase
       .from('pautas')
       .delete()
