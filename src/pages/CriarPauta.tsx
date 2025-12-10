@@ -11,6 +11,7 @@ import { VersaoSelector } from '@/components/criar-pauta/VersaoSelector';
 import { PautaInfoBasicaV2 } from '@/components/criar-pauta/PautaInfoBasicaV2';
 import { BlocosContainer } from '@/components/criar-pauta/BlocosContainer';
 import { LegendaFinalSection } from '@/components/criar-pauta/LegendaFinalSection';
+import { BriefingUploadSection, ParsedBriefingData } from '@/components/criar-pauta/BriefingUploadSection';
 import { ApprovalLinkDisplay } from '@/components/ApprovalLinkDisplay';
 import { NovoClienteDialog } from '@/components/NovoClienteDialog';
 
@@ -19,6 +20,7 @@ export const CriarPauta = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [showNovoClienteDialog, setShowNovoClienteDialog] = useState(false);
+  const [briefingProcessed, setBriefingProcessed] = useState(false);
 
   const {
     formData,
@@ -34,12 +36,18 @@ export const CriarPauta = () => {
     setVersaoAtiva,
     updateTags,
     updateHashtagsPrincipais,
+    populateFromBriefing,
   } = usePautaFormV2();
 
   const { submitPauta, isSubmitting, approvalLink, setApprovalLink } = usePautaSubmit();
 
   const versaoAtiva = getVersaoAtiva();
   const isVersaoReadOnly = !versaoAtiva?.ativa;
+
+  const handleBriefingParsed = (data: ParsedBriefingData) => {
+    populateFromBriefing(data);
+    setBriefingProcessed(true);
+  };
 
   const handleSubmit = async (status: 'rascunho' | 'aguardando_aprovacao') => {
     if (!user) {
@@ -101,7 +109,7 @@ export const CriarPauta = () => {
             Criar Pauta
           </h1>
           <p className="text-muted-foreground mt-1">
-            Crie pautas com múltiplos formatos de conteúdo para aprovação
+            Faça upload do briefing ou crie manualmente os materiais para aprovação
           </p>
         </div>
       </div>
@@ -109,103 +117,131 @@ export const CriarPauta = () => {
       {/* Main Content */}
       <div className="p-6">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Versão Selector */}
-          <VersaoSelector
-            versoes={formData.versoes}
-            versaoAtiva={formData.versao_ativa}
-            onVersaoChange={setVersaoAtiva}
-            onCreateNewVersion={createNewVersion}
+          
+          {/* 1. Upload de Briefing - PRIMEIRO ITEM */}
+          <BriefingUploadSection
+            onBriefingParsed={handleBriefingParsed}
             disabled={isSubmitting}
           />
 
-          {/* Informações básicas da pauta */}
-          <div className="bg-card rounded-xl border-2 p-6">
-            <PautaInfoBasicaV2
-              titulo={formData.titulo}
-              clienteId={formData.cliente_id}
-              dataPrevista={formData.data_prevista}
-              tags={formData.tags}
-              observacoesInternas={formData.observacoes_internas}
-              onTituloChange={(value) => updateField('titulo', value)}
-              onClienteChange={(value) => updateField('cliente_id', value)}
-              onDataPrevistaChange={(value) => updateField('data_prevista', value)}
-              onTagsChange={updateTags}
-              onObservacoesChange={(value) => updateField('observacoes_internas', value)}
-              onNovoCliente={() => setShowNovoClienteDialog(true)}
-              disabled={isSubmitting || isVersaoReadOnly}
-            />
-          </div>
+          {/* Mostrar restante do formulário após processar briefing OU permitir criação manual */}
+          {(briefingProcessed || versaoAtiva?.blocos.length > 0) && (
+            <>
+              {/* Versão Selector */}
+              <VersaoSelector
+                versoes={formData.versoes}
+                versaoAtiva={formData.versao_ativa}
+                onVersaoChange={setVersaoAtiva}
+                onCreateNewVersion={createNewVersion}
+                disabled={isSubmitting}
+              />
 
-          {/* Blocos de Material */}
-          <BlocosContainer
-            blocos={versaoAtiva?.blocos || []}
-            onAddBloco={addBloco}
-            onRemoveBloco={removeBloco}
-            onUpdateBloco={updateBloco}
-            onAddItem={addItemToBloco}
-            onRemoveItem={removeItemFromBloco}
-            onUpdateItem={updateBlocoItem}
-            disabled={isSubmitting || isVersaoReadOnly}
-          />
+              {/* Informações básicas da pauta */}
+              <div className="bg-card rounded-xl border-2 p-6">
+                <PautaInfoBasicaV2
+                  titulo={formData.titulo}
+                  clienteId={formData.cliente_id}
+                  dataPrevista={formData.data_prevista}
+                  tags={formData.tags}
+                  observacoesInternas={formData.observacoes_internas}
+                  onTituloChange={(value) => updateField('titulo', value)}
+                  onClienteChange={(value) => updateField('cliente_id', value)}
+                  onDataPrevistaChange={(value) => updateField('data_prevista', value)}
+                  onTagsChange={updateTags}
+                  onObservacoesChange={(value) => updateField('observacoes_internas', value)}
+                  onNovoCliente={() => setShowNovoClienteDialog(true)}
+                  disabled={isSubmitting || isVersaoReadOnly}
+                  
+                />
+              </div>
 
-          {/* Legenda Final e Hashtags */}
-          <LegendaFinalSection
-            legenda={formData.legenda_final}
-            hashtags={formData.hashtags_principais}
-            onLegendaChange={(value) => updateField('legenda_final', value)}
-            onHashtagsChange={updateHashtagsPrincipais}
-            disabled={isSubmitting || isVersaoReadOnly}
-          />
+              {/* Blocos de Material */}
+              <BlocosContainer
+                blocos={versaoAtiva?.blocos || []}
+                onAddBloco={addBloco}
+                onRemoveBloco={removeBloco}
+                onUpdateBloco={updateBloco}
+                onAddItem={addItemToBloco}
+                onRemoveItem={removeItemFromBloco}
+                onUpdateItem={updateBlocoItem}
+                disabled={isSubmitting || isVersaoReadOnly}
+              />
 
-          {/* Link de aprovação (após criar) */}
-          {approvalLink && (
-            <ApprovalLinkDisplay
-              approvalLink={approvalLink}
-              onNavigateHome={() => navigate('/')}
-            />
+              {/* Legenda Final e Hashtags */}
+              <LegendaFinalSection
+                legenda={formData.legenda_final}
+                hashtags={formData.hashtags_principais}
+                onLegendaChange={(value) => updateField('legenda_final', value)}
+                onHashtagsChange={updateHashtagsPrincipais}
+                disabled={isSubmitting || isVersaoReadOnly}
+              />
+
+              {/* Link de aprovação (após criar) */}
+              {approvalLink && (
+                <ApprovalLinkDisplay
+                  approvalLink={approvalLink}
+                  onNavigateHome={() => navigate('/')}
+                />
+              )}
+
+              {/* Botões de ação */}
+              {!approvalLink && (
+                <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleSubmit('rascunho')}
+                    disabled={isSubmitting || isVersaoReadOnly}
+                    className="gap-2"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    Salvar Rascunho
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isSubmitting || isVersaoReadOnly}
+                    className="gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Visualizar
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    onClick={() => handleSubmit('aguardando_aprovacao')}
+                    disabled={isSubmitting || isVersaoReadOnly}
+                    className="gap-2"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    Enviar para Aprovação
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </>
           )}
 
-          {/* Botões de ação */}
-          {!approvalLink && (
-            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+          {/* Opção de criar manualmente se não processou briefing */}
+          {!briefingProcessed && versaoAtiva?.blocos.length === 0 && (
+            <div className="text-center py-8 border-2 border-dashed rounded-xl bg-muted/10">
+              <p className="text-muted-foreground mb-4">
+                Ou crie a pauta manualmente adicionando os blocos de material
+              </p>
               <Button
-                type="button"
                 variant="outline"
-                onClick={() => handleSubmit('rascunho')}
-                disabled={isSubmitting || isVersaoReadOnly}
-                className="gap-2"
+                onClick={() => setBriefingProcessed(true)}
               >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                Salvar Rascunho
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isSubmitting || isVersaoReadOnly}
-                className="gap-2"
-              >
-                <Eye className="h-4 w-4" />
-                Visualizar
-              </Button>
-              
-              <Button
-                type="button"
-                onClick={() => handleSubmit('aguardando_aprovacao')}
-                disabled={isSubmitting || isVersaoReadOnly}
-                className="gap-2"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-                Enviar para Aprovação
-                <ArrowRight className="h-4 w-4" />
+                Criar Manualmente
               </Button>
             </div>
           )}

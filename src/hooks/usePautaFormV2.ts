@@ -9,6 +9,7 @@ import {
   createEmptyItem,
   createEmptyVersao
 } from '@/types/pauta-form';
+import { ParsedBriefingData } from '@/components/criar-pauta/BriefingUploadSection';
 
 export const usePautaFormV2 = () => {
   const [formData, setFormData] = useState<PautaFormData>(createInitialFormData());
@@ -220,6 +221,60 @@ export const usePautaFormV2 = () => {
     });
   }, []);
 
+  // Preencher formulário a partir do briefing parseado
+  const populateFromBriefing = useCallback((data: ParsedBriefingData) => {
+    setFormData(prev => {
+      const newFormData = { ...prev };
+      
+      // Preencher campos básicos
+      if (data.titulo) newFormData.titulo = data.titulo;
+      if (data.tags) newFormData.tags = data.tags;
+      if (data.dataPrevista) newFormData.data_prevista = data.dataPrevista;
+      
+      // Criar blocos de material a partir dos materiais parseados
+      if (data.materiais && data.materiais.length > 0) {
+        const versoes = [...newFormData.versoes];
+        const versaoIndex = versoes.findIndex(v => v.numero === newFormData.versao_ativa);
+        
+        if (versaoIndex !== -1) {
+          const versao = { ...versoes[versaoIndex] };
+          
+          const novosBlocos: BlocoMaterial[] = data.materiais.map((material, blocoIndex) => {
+            const tipo = material.tipo as TipoMaterial;
+            
+            const itens: BlocoItem[] = material.itens.map((item, itemIndex) => ({
+              titulo: '',
+              assunto: '',
+              texto_conteudo: item.texto || '',
+              hashtags: item.hashtags?.join(' #') || '',
+              arquivos: [],
+              arquivosUrls: [],
+              ordem: itemIndex
+            }));
+            
+            // Se não há itens, criar pelo menos um vazio
+            if (itens.length === 0) {
+              itens.push(createEmptyItem(0));
+            }
+            
+            return {
+              tipo,
+              status: 'aguardando_midia' as const,
+              itens,
+              ordem: blocoIndex
+            };
+          });
+          
+          versao.blocos = novosBlocos;
+          versoes[versaoIndex] = versao;
+          newFormData.versoes = versoes;
+        }
+      }
+      
+      return newFormData;
+    });
+  }, []);
+
   return {
     formData,
     setFormData,
@@ -238,6 +293,7 @@ export const usePautaFormV2 = () => {
     updateTags,
     updateHashtagsPrincipais,
     resetForm,
-    reorderBlocos
+    reorderBlocos,
+    populateFromBriefing
   };
 };
