@@ -93,6 +93,10 @@ jobs:
           if [ -z "${{ secrets.VITE_SUPABASE_ANON_KEY }}" ]; then
             echo "⚠️  WARNING: VITE_SUPABASE_ANON_KEY secret not configured. Using fallback value for CI."
           fi
+      - name: Verify coverage dependency
+        run: |
+          echo "Checking package.json for @vitest/coverage-v8..."
+          grep -q "@vitest/coverage-v8" package.json && echo "✅ Coverage dependency found in package.json" || echo "❌ Coverage dependency missing!"
       - run: npm ci
       - run: npm run test:coverage
       - name: Upload coverage artifact
