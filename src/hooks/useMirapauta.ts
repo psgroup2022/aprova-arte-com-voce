@@ -316,189 +316,77 @@ export const useImportClientes = () => {
 };
 
 /**
- * Importar pautas do MiraPauta para o AprovaArte
+ * Importar tasks do MiraPauta como pautas no AprovaArte
  */
-export const useImportPautas = () => {
+export const useImportTasks = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (pautas: MirapautaPautaWithCliente[]) => {
-      if (!mirapautaClient) {
-        throw new Error('MiraPauta não está configurado');
-      }
-
+    mutationFn: async (tasks: (MirapautaTask & { cliente: MirapautaCliente | null; responsavel: MirapautaProfile | null })[]) => {
       const results = {
         imported: 0,
         skipped: 0,
         errors: [] as string[],
       };
 
-      // Buscar todas as tasks do MiraPauta de uma vez
-      const { data: allTasks, error: tasksError } = await mirapautaClient
-        .from('tasks')
-        .select('*')
-        .order('created_at', { ascending: false });
+      for (const task of tasks) {
+        // Verificar se já foi importada (pelo mirapauta_task_id)
+        const { data: existing } = await supabase
+          .from('pautas')
+          .select('id')
+          .eq('mirapauta_task_id', task.id)
+          .maybeSingle();
 
-      if (tasksError) {
-        console.error('[MiraPauta] Erro ao buscar tasks:', tasksError);
-        results.errors.push(`Erro ao buscar tasks: ${tasksError.message}`);
-      }
+        if (existing) {
+          results.skipped++;
+          continue;
+        }
 
-      // Buscar todos os profiles para mapear assignees
-      const { data: allProfiles, error: profilesError } = await mirapautaClient
-        .from('profiles')
-        .select('*');
-
-      if (profilesError) {
-        console.error('[MiraPauta] Erro ao buscar profiles:', profilesError);
-      }
-
-      // Criar mapa de profiles por ID
-      const profilesMap = new Map<string, MirapautaProfile>();
-      if (allProfiles) {
-        allProfiles.forEach((profile) => {
-          profilesMap.set(profile.id, profile as MirapautaProfile);
-        });
-      }
-
-      // Criar mapa de tasks por cliente_id
-      const tasksByCliente = new Map<string, MirapautaTask[]>();
-      if (allTasks) {
-        (allTasks as MirapautaTask[]).forEach((task) => {
-          if (task.cliente_id) {
-            if (!tasksByCliente.has(task.cliente_id)) {
-              tasksByCliente.set(task.cliente_id, []);
-            }
-            tasksByCliente.get(task.cliente_id)?.push(task);
-          }
-        });
-      }
-
-      for (const pauta of pautas) {
-        // Primeiro, garantir que o cliente existe no AprovaArte
-        if (pauta.clientes) {
-          // Verificar se cliente já existe
+        // Garantir que o cliente existe no AprovaArte
+        let clienteNome = task.cliente?.nome || 'Cliente não definido';
+        
+        if (task.cliente) {
           const { data: existingCliente } = await supabase
             .from('clientes')
             .select('id')
-            .eq('nome', pauta.clientes.nome)
-            .single();
+            .eq('nome', task.cliente.nome)
+            .maybeSingle();
 
           if (!existingCliente) {
-            // Criar cliente
             const { error: clienteError } = await supabase
               .from('clientes')
               .insert({
-                nome: pauta.clientes.nome,
+                nome: task.cliente.nome,
                 ativo: true,
-              })
-              .select('id')
-              .single();
+              });
 
             if (clienteError) {
-              results.errors.push(
-                `Erro ao criar cliente ${pauta.clientes.nome}: ${clienteError.message}`,
-              );
-              continue;
+              console.warn(`[Import] Erro ao criar cliente ${task.cliente.nome}:`, clienteError);
             }
           }
         }
 
-        // Mapear status do MiraPauta para AprovaArte
-        let status: 'rascunho' | 'aguardando_aprovacao' | 'aprovada' | 'rejeitada' =
-          'aguardando_aprovacao';
+        // Criar título da pauta
+        const titulo = task.title || `Pauta Importada - ${new Date().toLocaleDateString('pt-BR')}`;
 
-        if (
-          pauta.pauta_aprovada_status === 'concluido' ||
-          pauta.pauta_aprovada_status === 'aprovado'
-        ) {
-          status = 'aprovada';
-        } else if (pauta.revisao_cliente_status === 'rejeitado') {
-          status = 'rejeitada';
-        } else if (pauta.briefing_status === 'pendente' || !pauta.layout_status) {
-          status = 'rascunho';
-        }
+        // Inserir pauta no AprovaArte usando apenas campos válidos
+        const { error } = await supabase.from('pautas').insert({
+          titulo,
+          cliente: clienteNome,
+          status: 'rascunho' as const,
+          descricao: task.description || null,
+          data_prazo: task.prazo_entrega || null,
+          mirapauta_task_id: task.id,
+          mirapauta_cliente_id: task.cliente_id || null,
+          mirapauta_sincronizado_em: new Date().toISOString(),
+          observacoes: task.ticket_number ? `Ticket: #${task.ticket_number}` : null,
+        });
 
-        // Buscar tasks relacionadas a esta pauta (pelo cliente_id)
-        const tasks = pauta.cliente_id ? tasksByCliente.get(pauta.cliente_id) || [] : [];
-
-        // Se houver tasks, importar cada uma como uma pauta separada
-        // Caso contrário, importar apenas a pauta básica
-        if (tasks.length > 0) {
-          for (const task of tasks) {
-            // Buscar nome do assignee
-            const assigneeName = task.assignee ? profilesMap.get(task.assignee)?.nome : null;
-
-            // Criar título combinando cliente, task title e data
-            const titulo =
-              task.title ||
-              (pauta.clientes
-                ? `Pauta ${pauta.clientes.nome} - ${new Date(pauta.created_at).toLocaleDateString('pt-BR')}`
-                : `Pauta Importada - ${new Date(pauta.created_at).toLocaleDateString('pt-BR')}`);
-
-            // Preparar dados para inserção
-            const insertData = {
-              titulo,
-              cliente: pauta.clientes?.nome || 'Cliente não definido',
-              status,
-              mirapauta_id: pauta.id,
-              origem: 'mirapauta' as const,
-              // Dados da task
-              mirapauta_task_title: task.title,
-              mirapauta_descricao: task.description,
-              mirapauta_ticket: task.ticket_number,
-              mirapauta_assignee_id: task.assignee,
-              mirapauta_assignee_nome: assigneeName,
-              mirapauta_prazo_entrega: task.prazo_entrega,
-              mirapauta_data_inicio: task.data_inicio,
-              mirapauta_task_status: task.status,
-              mirapauta_peso: task.peso,
-              mirapauta_tempo_gasto: task.tempo_gasto,
-              // Usar prazo da task como data_prazo se disponível
-              data_prazo: task.prazo_entrega,
-              // Usar descrição da task como descricao se disponível
-              descricao: task.description,
-            };
-
-            // Inserir pauta no AprovaArte
-            const { error } = await supabase.from('pautas').insert(insertData);
-
-            if (error) {
-              if (error.code === '23505') {
-                // Unique violation - já existe
-                results.skipped++;
-              } else {
-                results.errors.push(
-                  `Erro ao importar task ${task.ticket_number || task.title}: ${error.message}`,
-                );
-              }
-            } else {
-              results.imported++;
-            }
-          }
+        if (error) {
+          console.error('[Import] Erro ao importar task:', error);
+          results.errors.push(`Erro ao importar "${task.title || 'task'}": ${error.message}`);
         } else {
-          // Importar pauta sem task associada
-          const titulo = pauta.clientes
-            ? `Pauta ${pauta.clientes.nome} - ${new Date(pauta.created_at).toLocaleDateString('pt-BR')}`
-            : `Pauta Importada - ${new Date(pauta.created_at).toLocaleDateString('pt-BR')}`;
-
-          const { error } = await supabase.from('pautas').insert({
-            titulo,
-            cliente: pauta.clientes?.nome || 'Cliente não definido',
-            status,
-            mirapauta_id: pauta.id,
-            origem: 'mirapauta' as const,
-          });
-
-          if (error) {
-            if (error.code === '23505') {
-              results.skipped++;
-            } else {
-              results.errors.push(`Erro ao importar pauta: ${error.message}`);
-            }
-          } else {
-            results.imported++;
-          }
+          results.imported++;
         }
       }
 
@@ -799,7 +687,7 @@ export const useMirapautaIntegration = () => {
   const profiles = useMirapautaProfiles();
   const localProfiles = useProfiles();
   const importClientes = useImportClientes();
-  const importPautas = useImportPautas();
+  const importTasks = useImportTasks();
   const syncProfiles = useSyncProfiles();
   const syncTasks = useSyncMirapautaTasks();
 
@@ -811,7 +699,7 @@ export const useMirapautaIntegration = () => {
     profiles,
     localProfiles,
     importClientes,
-    importPautas,
+    importTasks,
     syncProfiles,
     syncTasks,
   };

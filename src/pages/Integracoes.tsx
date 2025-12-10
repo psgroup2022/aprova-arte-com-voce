@@ -202,7 +202,7 @@ interface LocalProfile {
 }
 
 export const Integracoes = () => {
-  const { isConfigured, clientes, pautas, profiles, localProfiles, importClientes, importPautas, syncTasks } =
+  const { isConfigured, clientes, pautas, profiles, localProfiles, importClientes, importTasks, syncTasks } =
     useMirapautaIntegration();
   const tasks = useMirapautaTasks();
 
@@ -254,20 +254,12 @@ export const Integracoes = () => {
     }
   };
 
-  // Importar tasks selecionadas (usando pautas como base)
+  // Importar tasks selecionadas diretamente
   const handleImportTasks = () => {
-    if (tasks.data && pautas.data) {
-      // Mapear tasks para pautas
-      const pautasToImport = selectedTasks.size > 0 
-        ? pautas.data.filter((p) => {
-            // Encontrar tasks relacionadas ao cliente da pauta
-            const relatedTasks = tasks.data?.filter(t => t.cliente_id === p.cliente_id) || [];
-            return relatedTasks.some(t => selectedTasks.has(t.id));
-          })
-        : [];
-      
-      if (pautasToImport.length > 0) {
-        importPautas.mutate(pautasToImport);
+    if (tasks.data) {
+      const tasksToImport = tasks.data.filter((t) => selectedTasks.has(t.id));
+      if (tasksToImport.length > 0) {
+        importTasks.mutate(tasksToImport);
       }
       setSelectedTasks(new Set());
     }
@@ -462,10 +454,10 @@ export const Integracoes = () => {
               </div>
               <Button
                 onClick={handleImportTasks}
-                disabled={selectedTasks.size === 0 || importPautas.isPending}
+                disabled={selectedTasks.size === 0 || importTasks.isPending}
                 className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
               >
-                {importPautas.isPending ? (
+                {importTasks.isPending ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <Download className="w-4 h-4 mr-2" />
