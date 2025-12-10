@@ -22,12 +22,13 @@ export const BlocoUploadHeader: React.FC<BlocoUploadHeaderProps> = ({
   
   const isReels = tipoMaterial === 'reels';
   const isCarrossel = tipoMaterial === 'carrossel';
+  const isStory = tipoMaterial === 'story';
 
   // Para Reels: arquivo único no primeiro item
   const reelsVideo = isReels && itens[0]?.arquivos[0];
 
-  // Para Carrossel: todas as imagens dos itens
-  const carrosselImages = isCarrossel 
+  // Para Carrossel e Stories: todas as imagens dos itens
+  const batchImages = (isCarrossel || isStory) 
     ? itens.map((item, idx) => ({ index: idx, file: item.arquivos[0] })).filter(x => x.file)
     : [];
 
@@ -43,8 +44,8 @@ export const BlocoUploadHeader: React.FC<BlocoUploadHeaderProps> = ({
       }
       newItens[0] = { ...newItens[0], arquivos: [files[0]] };
       onUpdateItens(newItens);
-    } else if (isCarrossel) {
-      // Carrossel: cada imagem vira um slide
+    } else if (isCarrossel || isStory) {
+      // Carrossel/Stories: cada imagem vira um slide/tela
       const newItens: BlocoItem[] = files.map((file, idx) => {
         const existingItem = itens[idx];
         return {
@@ -76,7 +77,7 @@ export const BlocoUploadHeader: React.FC<BlocoUploadHeaderProps> = ({
     }
   };
 
-  const removeCarrosselImage = (itemIndex: number) => {
+  const removeBatchImage = (itemIndex: number) => {
     const newItens = itens.map((item, idx) => 
       idx === itemIndex ? { ...item, arquivos: [] } : item
     );
@@ -133,24 +134,27 @@ export const BlocoUploadHeader: React.FC<BlocoUploadHeaderProps> = ({
     );
   }
 
-  if (isCarrossel) {
+  if (isCarrossel || isStory) {
+    const label = isStory ? 'Imagens dos Stories' : 'Imagens do Carrossel';
+    const itemLabel = isStory ? 'telas' : 'slides';
+    
     return (
       <div className="p-4 border-b bg-muted/20">
         <div className="flex items-center justify-between mb-2">
-          <Label className="text-sm font-medium">Imagens do Carrossel</Label>
+          <Label className="text-sm font-medium">{label}</Label>
           <span className="text-xs text-muted-foreground">
-            {carrosselImages.length} de {itens.length} slides com imagem
+            {batchImages.length} de {itens.length} {itemLabel} com imagem
           </span>
         </div>
         
-        {carrosselImages.length > 0 && (
+        {batchImages.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
-            {carrosselImages.map(({ index, file }) => (
+            {batchImages.map(({ index, file }) => (
               <div key={index} className="relative group">
                 <div className="w-16 h-16 rounded-md overflow-hidden bg-muted border">
                   <img 
                     src={URL.createObjectURL(file)} 
-                    alt={`Slide ${index + 1}`}
+                    alt={`${isStory ? 'Tela' : 'Slide'} ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -159,7 +163,7 @@ export const BlocoUploadHeader: React.FC<BlocoUploadHeaderProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => removeCarrosselImage(index)}
+                  onClick={() => removeBatchImage(index)}
                   disabled={disabled}
                   className="absolute -top-1 -right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
                 >
@@ -183,10 +187,10 @@ export const BlocoUploadHeader: React.FC<BlocoUploadHeaderProps> = ({
             <Plus className="w-4 h-4 text-muted-foreground" />
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Selecione as imagens do carrossel
+            Selecione as imagens {isStory ? 'dos stories' : 'do carrossel'}
           </p>
           <p className="text-xs text-muted-foreground">
-            Cada imagem será associada a um slide
+            Cada imagem será associada a {isStory ? 'uma tela' : 'um slide'}
           </p>
         </div>
         <input
