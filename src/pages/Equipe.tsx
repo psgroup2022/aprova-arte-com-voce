@@ -5,11 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useMirapautaIntegration } from '@/hooks/useMirapauta';
+import { useMirapautaIntegration, LocalProfile } from '@/hooks/useMirapauta';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import type { Tables } from '@/integrations/supabase/types';
-
-type Profile = Tables<'profiles'>;
 
 export const Equipe = () => {
   const { isConfigured, localProfiles, syncProfiles } = useMirapautaIntegration();
@@ -20,8 +17,8 @@ export const Equipe = () => {
     syncProfiles.mutate();
   };
 
-  const teamMembers = localProfiles.data || [];
-  const activeMembers = teamMembers.filter((m: Profile) => m.ativo);
+  const teamMembers: LocalProfile[] = localProfiles.data || [];
+  const activeMembers = teamMembers.filter((m) => m.ativo);
 
   // Função para extrair iniciais do nome
   const getInitials = (name: string) => {
@@ -116,7 +113,7 @@ export const Equipe = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {teamMembers.map((member: Profile) => (
+                {teamMembers.map((member) => (
                   <div
                     key={member.id}
                     className="flex items-center justify-between p-4 border rounded-lg"

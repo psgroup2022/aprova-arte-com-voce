@@ -14,6 +14,19 @@ import type {
 } from '@/integrations/mirapauta';
 import { toast } from '@/hooks/use-toast';
 
+// Tipo local para profiles (enquanto types.ts não é regenerado)
+export interface LocalProfile {
+  id: string;
+  nome: string;
+  email: string | null;
+  avatar_url: string | null;
+  mirapauta_profile_id: string | null;
+  ativo: boolean;
+  sincronizado_em: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 /**
  * Buscar clientes do MiraPauta
  */
@@ -541,8 +554,8 @@ export const useSyncProfiles = () => {
 
       // Buscar profiles existentes no AprovaArte
       const { data: existingProfiles, error: existingError } = await supabase
-        .from('profiles')
-        .select('*');
+        .from('profiles' as any)
+        .select('*') as { data: LocalProfile[] | null; error: any };
 
       if (existingError) {
         console.error('[AprovaArte] Erro ao buscar profiles existentes:', existingError);
@@ -552,7 +565,7 @@ export const useSyncProfiles = () => {
       // Criar mapa de profiles existentes por mirapauta_profile_id
       const existingProfilesMap = new Map<string, { id: string; ativo: boolean }>();
       if (existingProfiles) {
-        existingProfiles.forEach((profile) => {
+        existingProfiles.forEach((profile: LocalProfile) => {
           if (profile.mirapauta_profile_id) {
             existingProfilesMap.set(profile.mirapauta_profile_id, {
               id: profile.id,
@@ -574,7 +587,7 @@ export const useSyncProfiles = () => {
         if (existingProfile) {
           // Atualizar profile existente
           const { error: updateError } = await supabase
-            .from('profiles')
+            .from('profiles' as any)
             .update({
               email: mirapautaProfile.email,
               nome: mirapautaProfile.nome || 'Usuário sem nome',
@@ -594,7 +607,7 @@ export const useSyncProfiles = () => {
           }
         } else {
           // Criar novo profile
-          const { error: insertError } = await supabase.from('profiles').insert({
+          const { error: insertError } = await supabase.from('profiles' as any).insert({
             mirapauta_profile_id: mirapautaProfile.id,
             email: mirapautaProfile.email,
             nome: mirapautaProfile.nome || 'Usuário sem nome',
@@ -616,14 +629,14 @@ export const useSyncProfiles = () => {
 
       // Desativar profiles que não estão mais no MiraPauta
       if (existingProfiles) {
-        for (const existingProfile of existingProfiles) {
+        for (const existingProfile of existingProfiles as LocalProfile[]) {
           if (
             existingProfile.mirapauta_profile_id &&
             !mirapautaProfileIds.has(existingProfile.mirapauta_profile_id) &&
             existingProfile.ativo
           ) {
             const { error: deactivateError } = await supabase
-              .from('profiles')
+              .from('profiles' as any)
               .update({
                 ativo: false,
                 sincronizado_em: new Date().toISOString(),
@@ -691,19 +704,19 @@ export const useSyncProfiles = () => {
 export const useProfiles = () => {
   return useQuery({
     queryKey: ['profiles'],
-    queryFn: async () => {
+    queryFn: async (): Promise<LocalProfile[]> => {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles' as any)
         .select('*')
         .eq('ativo', true)
-        .order('nome');
+        .order('nome') as { data: LocalProfile[] | null; error: any };
 
       if (error) {
         console.error('[AprovaArte] Erro ao buscar profiles:', error);
         throw error;
       }
 
-      return data;
+      return data || [];
     },
   });
 };
