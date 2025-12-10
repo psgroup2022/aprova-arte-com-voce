@@ -104,14 +104,8 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/pauta/:id"
-                element={
-                  <ProtectedRoute>
-                    <VisualizarPauta />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Rota pública para clientes aprovarem pautas */}
+              <Route path="/pauta/:id" element={<VisualizarPauta />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

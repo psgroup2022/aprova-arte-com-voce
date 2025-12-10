@@ -5,6 +5,7 @@ import { FileText, Upload, X, Loader2, Sparkles, CheckCircle2 } from 'lucide-rea
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import mammoth from 'mammoth';
 
 export interface ParsedBriefingData {
   titulo?: string;
@@ -36,24 +37,32 @@ export const BriefingUploadSection: React.FC<BriefingUploadSectionProps> = ({
   const [fileContent, setFileContent] = useState<string>('');
   const [isParsing, setIsParsing] = useState(false);
   const [isProcessed, setIsProcessed] = useState(false);
+  const [isReadingFile, setIsReadingFile] = useState(false);
 
   const readFileContent = async (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        resolve(content);
-      };
-      reader.onerror = reject;
-      
-      // Para arquivos de texto
-      if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+    // Para arquivos DOCX, usar mammoth.js
+    if (file.name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      return result.value;
+    }
+    
+    // Para TXT, ler como texto
+    if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = reject;
         reader.readAsText(file);
-      } else {
-        // Para DOCX/PDF, lemos como texto (simplificado - em produção usaríamos uma lib)
-        reader.readAsText(file);
-      }
-    });
+      });
+    }
+    
+    // Para PDF e DOC antigos, retornar mensagem informativa
+    if (file.name.endsWith('.pdf') || file.name.endsWith('.doc')) {
+      throw new Error('Formato PDF/DOC antigo não suportado. Use DOCX ou TXT.');
+    }
+    
+    throw new Error('Formato de arquivo não suportado');
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,22 +70,18 @@ export const BriefingUploadSection: React.FC<BriefingUploadSectionProps> = ({
     if (!selectedFile) return;
 
     const allowedTypes = [
-      'application/pdf',
-      'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/plain'
     ];
     
     const isAllowed = allowedTypes.includes(selectedFile.type) || 
       selectedFile.name.endsWith('.docx') || 
-      selectedFile.name.endsWith('.doc') ||
-      selectedFile.name.endsWith('.pdf') ||
       selectedFile.name.endsWith('.txt');
 
     if (!isAllowed) {
       toast({
         title: 'Formato não suportado',
-        description: 'Por favor, selecione um arquivo PDF, DOC, DOCX ou TXT.',
+        description: 'Por favor, selecione um arquivo DOCX ou TXT.',
         variant: 'destructive'
       });
       return;
@@ -93,17 +98,22 @@ export const BriefingUploadSection: React.FC<BriefingUploadSectionProps> = ({
 
     setFile(selectedFile);
     setIsProcessed(false);
+    setIsReadingFile(true);
     
     try {
       const content = await readFileContent(selectedFile);
       setFileContent(content);
+      console.log('Conteúdo extraído do documento:', content.substring(0, 500) + '...');
     } catch (error) {
       console.error('Erro ao ler arquivo:', error);
       toast({
         title: 'Erro ao ler arquivo',
-        description: 'Não foi possível ler o conteúdo do arquivo.',
+        description: error instanceof Error ? error.message : 'Não foi possível ler o conteúdo do arquivo.',
         variant: 'destructive'
       });
+      setFile(null);
+    } finally {
+      setIsReadingFile(false);
     }
   };
 
@@ -120,9 +130,13 @@ export const BriefingUploadSection: React.FC<BriefingUploadSectionProps> = ({
     setIsParsing(true);
 
     try {
+      console.log('Enviando para parse-briefing:', fileContent.substring(0, 300) + '...');
+      
       const { data, error } = await supabase.functions.invoke('parse-briefing', {
         body: { documentContent: fileContent }
       });
+
+      console.log('Resposta do parse-briefing:', data);
 
       if (error) throw error;
 
@@ -184,10 +198,11 @@ export const BriefingUploadSection: React.FC<BriefingUploadSectionProps> = ({
                 <p className="text-sm font-medium truncate">{file.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {(file.size / 1024).toFixed(1)} KB
+                  {isReadingFile && <span className="ml-2">• Lendo arquivo...</span>}
                   {isProcessed && <span className="text-green-600 dark:text-green-400 ml-2">• Processado com sucesso</span>}
                 </p>
               </div>
-              {!isParsing && (
+              {!isParsing && !isReadingFile && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -205,13 +220,18 @@ export const BriefingUploadSection: React.FC<BriefingUploadSectionProps> = ({
               <Button
                 type="button"
                 onClick={handleProcessFile}
-                disabled={disabled || isParsing}
+                disabled={disabled || isParsing || isReadingFile || !fileContent}
                 className="w-full gap-2"
               >
                 {isParsing ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Processando com IA...
+                  </>
+                ) : isReadingFile ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Lendo arquivo...
                   </>
                 ) : (
                   <>
@@ -236,7 +256,7 @@ export const BriefingUploadSection: React.FC<BriefingUploadSectionProps> = ({
               Arraste o arquivo ou clique para selecionar
             </p>
             <p className="text-sm text-muted-foreground">
-              PDF, DOC, DOCX ou TXT (máx. 10MB)
+              DOCX ou TXT (máx. 10MB)
             </p>
           </div>
         )}
@@ -244,7 +264,7 @@ export const BriefingUploadSection: React.FC<BriefingUploadSectionProps> = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pdf,.doc,.docx,.txt"
+          accept=".docx,.txt"
           onChange={handleFileChange}
           className="hidden"
           disabled={disabled}
