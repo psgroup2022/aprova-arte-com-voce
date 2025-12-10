@@ -141,7 +141,8 @@ export const useMirapautaProfiles = () => {
 };
 
 /**
- * Buscar tasks do MiraPauta com dados completos
+ * Buscar tasks/pautas do MiraPauta com dados completos
+ * Usa a tabela pautas do MiraPauta e mapeia last_updated_by como responsável
  */
 export const useMirapautaTasks = () => {
   return useQuery({
@@ -151,18 +152,20 @@ export const useMirapautaTasks = () => {
         throw new Error('MiraPauta não está configurado');
       }
 
-      console.log('[MiraPauta] Buscando tasks...');
+      console.log('[MiraPauta] Buscando pautas do MiraPauta...');
 
-      // Buscar tasks
-      const { data: tasks, error: tasksError } = await mirapautaClient
-        .from('tasks')
+      // Buscar pautas (tabela principal do MiraPauta)
+      const { data: pautas, error: pautasError } = await mirapautaClient
+        .from('pautas')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (tasksError) {
-        console.error('[MiraPauta] Erro ao buscar tasks:', tasksError);
-        throw tasksError;
+      if (pautasError) {
+        console.error('[MiraPauta] Erro ao buscar pautas:', pautasError);
+        throw pautasError;
       }
+
+      console.log('[MiraPauta] Pautas brutas encontradas:', pautas?.length);
 
       // Buscar clientes
       const { data: clientes, error: clientesError } = await mirapautaClient
@@ -182,6 +185,9 @@ export const useMirapautaTasks = () => {
         console.error('[MiraPauta] Erro ao buscar profiles:', profilesError);
       }
 
+      console.log('[MiraPauta] Profiles encontrados:', profiles?.length);
+      console.log('[MiraPauta] Clientes encontrados:', clientes?.length);
+
       // Mapear clientes e profiles por ID
       const clientesMap = new Map<string, MirapautaCliente>();
       if (clientes) {
@@ -197,17 +203,45 @@ export const useMirapautaTasks = () => {
         });
       }
 
-      // Combinar tasks com clientes e profiles
-      const tasksWithData = (tasks || []).map((task) => {
-        const typedTask = task as MirapautaTask;
+      // Combinar pautas com clientes e profiles
+      // Mapear estrutura da pauta para estrutura de task esperada
+      const tasksWithData = (pautas || []).map((pauta: any) => {
+        const cliente = pauta.cliente_id ? clientesMap.get(pauta.cliente_id) || null : null;
+        const responsavel = pauta.last_updated_by ? profilesMap.get(pauta.last_updated_by) || null : null;
+        
+        console.log(`[MiraPauta] Pauta ${pauta.id}: last_updated_by=${pauta.last_updated_by}, responsavel=${responsavel?.nome || 'não encontrado'}`);
+        
         return {
-          ...typedTask,
-          cliente: typedTask.cliente_id ? clientesMap.get(typedTask.cliente_id) || null : null,
-          responsavel: typedTask.assignee ? profilesMap.get(typedTask.assignee) || null : null,
+          // Campos da estrutura de task esperada
+          id: pauta.id,
+          title: cliente?.nome ? `Pauta ${cliente.nome}` : `Pauta ${pauta.id.slice(0, 8)}`,
+          description: pauta.pauta_status || null,
+          assignee: pauta.last_updated_by, // Usar last_updated_by como assignee
+          cliente_id: pauta.cliente_id,
+          prazo_entrega: null,
+          data_inicio: null,
+          display_order: null,
+          peso: null,
+          status: pauta.pauta_status || pauta.pauta_aprovada_status || 'pendente',
+          tempo_gasto: null,
+          ticket_number: null,
+          material_type_id: null,
+          material_quantity: null,
+          is_out_of_quota: null,
+          next_assignee: null,
+          linked_from_user: null,
+          trilha_eeduca_id: null,
+          created_at: pauta.created_at,
+          updated_at: pauta.updated_at,
+          // Dados enriquecidos
+          cliente,
+          responsavel,
         };
       });
 
-      console.log('[MiraPauta] Tasks encontradas:', tasksWithData.length);
+      console.log('[MiraPauta] Tasks processadas:', tasksWithData.length);
+      console.log('[MiraPauta] Tasks com responsável:', tasksWithData.filter(t => t.responsavel).length);
+      
       return tasksWithData;
     },
     enabled: isMirapautaConfigured(),
