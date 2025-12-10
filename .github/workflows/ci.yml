@@ -2,20 +2,23 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Default environment variables for all jobs
+# These are fallback values for CI - real secrets should be configured in GitHub Settings
+env:
+  VITE_SUPABASE_URL: "http://localhost:54321"
+  VITE_SUPABASE_ANON_KEY: "dummy-key-for-ci"
+  VITE_MIRAPAUTA_SUPABASE_URL: "http://localhost:54322"
+  VITE_MIRAPAUTA_SUPABASE_ANON_KEY: "dummy-mirapauta-key-for-ci"
+
 jobs:
   lint:
     runs-on: ubuntu-latest
-    env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'http://localhost:54321' }}
-      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'dummy-key-for-ci' }}
-      VITE_MIRAPAUTA_SUPABASE_URL: ${{ secrets.VITE_MIRAPAUTA_SUPABASE_URL || 'http://localhost:54322' }}
-      VITE_MIRAPAUTA_SUPABASE_ANON_KEY: ${{ secrets.VITE_MIRAPAUTA_SUPABASE_ANON_KEY || 'dummy-mirapauta-key-for-ci' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,36 +31,18 @@ jobs:
   typecheck:
     runs-on: ubuntu-latest
     needs: lint
-    env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'http://localhost:54321' }}
-      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'dummy-key-for-ci' }}
-      VITE_MIRAPAUTA_SUPABASE_URL: ${{ secrets.VITE_MIRAPAUTA_SUPABASE_URL || 'http://localhost:54322' }}
-      VITE_MIRAPAUTA_SUPABASE_ANON_KEY: ${{ secrets.VITE_MIRAPAUTA_SUPABASE_ANON_KEY || 'dummy-mirapauta-key-for-ci' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - name: Validate Supabase secrets
-        run: |
-          if [ -z "${{ secrets.VITE_SUPABASE_URL }}" ]; then
-            echo "⚠️  WARNING: VITE_SUPABASE_URL secret not configured. Using fallback value for CI."
-          fi
-          if [ -z "${{ secrets.VITE_SUPABASE_ANON_KEY }}" ]; then
-            echo "⚠️  WARNING: VITE_SUPABASE_ANON_KEY secret not configured. Using fallback value for CI."
-          fi
       - run: npm ci
       - run: npm run typecheck
 
   test:
     runs-on: ubuntu-latest
     needs: typecheck
-    env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'http://localhost:54321' }}
-      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'dummy-key-for-ci' }}
-      VITE_MIRAPAUTA_SUPABASE_URL: ${{ secrets.VITE_MIRAPAUTA_SUPABASE_URL || 'http://localhost:54322' }}
-      VITE_MIRAPAUTA_SUPABASE_ANON_KEY: ${{ secrets.VITE_MIRAPAUTA_SUPABASE_ANON_KEY || 'dummy-mirapauta-key-for-ci' }}
     strategy:
       fail-fast: false
       matrix:
@@ -66,7 +51,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
       - run: npm run test
@@ -74,29 +59,16 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     needs: typecheck
-    env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'http://localhost:54321' }}
-      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'dummy-key-for-ci' }}
-      VITE_MIRAPAUTA_SUPABASE_URL: ${{ secrets.VITE_MIRAPAUTA_SUPABASE_URL || 'http://localhost:54322' }}
-      VITE_MIRAPAUTA_SUPABASE_ANON_KEY: ${{ secrets.VITE_MIRAPAUTA_SUPABASE_ANON_KEY || 'dummy-mirapauta-key-for-ci' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - name: Validate Supabase secrets
-        run: |
-          if [ -z "${{ secrets.VITE_SUPABASE_URL }}" ]; then
-            echo "⚠️  WARNING: VITE_SUPABASE_URL secret not configured. Using fallback value for CI."
-          fi
-          if [ -z "${{ secrets.VITE_SUPABASE_ANON_KEY }}" ]; then
-            echo "⚠️  WARNING: VITE_SUPABASE_ANON_KEY secret not configured. Using fallback value for CI."
-          fi
       - name: Verify coverage dependency
         run: |
           echo "Checking package.json for @vitest/coverage-v8..."
-          grep -q "@vitest/coverage-v8" package.json && echo "✅ Coverage dependency found in package.json" || echo "❌ Coverage dependency missing!"
+          grep -q "@vitest/coverage-v8" package.json && echo "✅ Coverage dependency found" || echo "❌ Missing!"
       - run: npm ci
       - run: npm run test:coverage
       - name: Upload coverage artifact
@@ -110,11 +82,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: coverage
-    env:
-      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'http://localhost:54321' }}
-      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'dummy-key-for-ci' }}
-      VITE_MIRAPAUTA_SUPABASE_URL: ${{ secrets.VITE_MIRAPAUTA_SUPABASE_URL || 'http://localhost:54322' }}
-      VITE_MIRAPAUTA_SUPABASE_ANON_KEY: ${{ secrets.VITE_MIRAPAUTA_SUPABASE_ANON_KEY || 'dummy-mirapauta-key-for-ci' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
