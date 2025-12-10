@@ -76,9 +76,9 @@ const UserTasksTabs = ({
       });
   }, [tasks]);
 
-  const defaultTab = tasksByUser[0]?.[0] || 'sem-responsavel';
+  const defaultTab = 'todos';
 
-  if (tasksByUser.length === 0) {
+  if (tasks.length === 0) {
     return (
       <Card className="p-8 text-center">
         <ListTodo className="w-12 h-12 mx-auto text-slate-300 mb-4" />
@@ -87,9 +87,107 @@ const UserTasksTabs = ({
     );
   }
 
+  // Função para renderizar lista de tasks
+  const renderTaskList = (taskList: TaskWithData[]) => (
+    <div className="space-y-3">
+      {taskList.map((task) => {
+        const status = getTaskStatusDisplay(task.status);
+        return (
+          <Card
+            key={task.id}
+            className={`p-4 cursor-pointer transition-all hover:shadow-md ${
+              selectedTasks.has(task.id)
+                ? 'border-violet-300 bg-violet-50/50 ring-2 ring-violet-200'
+                : 'border-slate-200 hover:border-slate-300'
+            }`}
+            onClick={() => toggleTask(task.id)}
+          >
+            <div className="flex items-start gap-4">
+              <Checkbox
+                checked={selectedTasks.has(task.id)}
+                onCheckedChange={() => toggleTask(task.id)}
+                className="data-[state=checked]:bg-violet-600 mt-1"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h3 className="font-medium text-slate-900">
+                    {task.title || 'Sem título'}
+                  </h3>
+                  {task.ticket_number && (
+                    <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">
+                      <Hash className="w-3 h-3 mr-1" />
+                      {task.ticket_number}
+                    </Badge>
+                  )}
+                  <Badge variant="outline" className={status.className}>
+                    {status.label}
+                  </Badge>
+                </div>
+                
+                {task.description && (
+                  <p className="text-sm text-slate-500 mt-1 line-clamp-2">
+                    {task.description}
+                  </p>
+                )}
+                
+                <div className="flex items-center gap-4 mt-2 text-sm text-slate-500 flex-wrap">
+                  {task.responsavel && (
+                    <span className="flex items-center gap-1">
+                      <User className="w-3.5 h-3.5" />
+                      {task.responsavel.nome || task.responsavel.email}
+                    </span>
+                  )}
+                  {task.cliente && (
+                    <span className="flex items-center gap-1">
+                      <Building2 className="w-3.5 h-3.5" />
+                      {task.cliente.nome}
+                    </span>
+                  )}
+                  {task.prazo_entrega && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {new Date(task.prazo_entrega).toLocaleDateString('pt-BR')}
+                    </span>
+                  )}
+                  {task.peso && (
+                    <span className="flex items-center gap-1">
+                      <Weight className="w-3.5 h-3.5" />
+                      Peso: {task.peso}
+                    </span>
+                  )}
+                  {task.material_quantity && (
+                    <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">
+                      {task.material_quantity} material(is)
+                    </span>
+                  )}
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
+            </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+
   return (
     <Tabs defaultValue={defaultTab} className="space-y-4">
       <TabsList className="bg-slate-100 p-1 flex-wrap h-auto gap-1">
+        {/* Aba Todos */}
+        <TabsTrigger
+          value="todos"
+          className="data-[state=active]:bg-white flex items-center gap-2"
+        >
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white text-xs font-medium">
+            <Users className="w-3.5 h-3.5" />
+          </div>
+          <span>Todos</span>
+          <Badge variant="secondary" className="ml-1 text-xs">
+            {tasks.length}
+          </Badge>
+        </TabsTrigger>
+
+        {/* Abas por usuário */}
         {tasksByUser.map(([key, { profile, tasks: userTasks }]) => (
           <TabsTrigger
             key={key}
@@ -109,79 +207,15 @@ const UserTasksTabs = ({
         ))}
       </TabsList>
 
+      {/* Conteúdo da aba Todos */}
+      <TabsContent value="todos" className="space-y-3">
+        {renderTaskList(tasks)}
+      </TabsContent>
+
+      {/* Conteúdo das abas por usuário */}
       {tasksByUser.map(([key, { tasks: userTasks }]) => (
         <TabsContent key={key} value={key} className="space-y-3">
-          {userTasks.map((task) => {
-            const status = getTaskStatusDisplay(task.status);
-            return (
-              <Card
-                key={task.id}
-                className={`p-4 cursor-pointer transition-all hover:shadow-md ${
-                  selectedTasks.has(task.id)
-                    ? 'border-violet-300 bg-violet-50/50 ring-2 ring-violet-200'
-                    : 'border-slate-200 hover:border-slate-300'
-                }`}
-                onClick={() => toggleTask(task.id)}
-              >
-                <div className="flex items-start gap-4">
-                  <Checkbox
-                    checked={selectedTasks.has(task.id)}
-                    onCheckedChange={() => toggleTask(task.id)}
-                    className="data-[state=checked]:bg-violet-600 mt-1"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <h3 className="font-medium text-slate-900">
-                        {task.title || 'Sem título'}
-                      </h3>
-                      {task.ticket_number && (
-                        <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">
-                          <Hash className="w-3 h-3 mr-1" />
-                          {task.ticket_number}
-                        </Badge>
-                      )}
-                      <Badge variant="outline" className={status.className}>
-                        {status.label}
-                      </Badge>
-                    </div>
-                    
-                    {task.description && (
-                      <p className="text-sm text-slate-500 mt-1 line-clamp-2">
-                        {task.description}
-                      </p>
-                    )}
-                    
-                    <div className="flex items-center gap-4 mt-2 text-sm text-slate-500 flex-wrap">
-                      {task.cliente && (
-                        <span className="flex items-center gap-1">
-                          <Building2 className="w-3.5 h-3.5" />
-                          {task.cliente.nome}
-                        </span>
-                      )}
-                      {task.prazo_entrega && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          {new Date(task.prazo_entrega).toLocaleDateString('pt-BR')}
-                        </span>
-                      )}
-                      {task.peso && (
-                        <span className="flex items-center gap-1">
-                          <Weight className="w-3.5 h-3.5" />
-                          Peso: {task.peso}
-                        </span>
-                      )}
-                      {task.material_quantity && (
-                        <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">
-                          {task.material_quantity} material(is)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                </div>
-              </Card>
-            );
-          })}
+          {renderTaskList(userTasks)}
         </TabsContent>
       ))}
     </Tabs>
