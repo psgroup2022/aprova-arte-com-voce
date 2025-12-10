@@ -73,6 +73,7 @@ export const ArquivosPreview = ({
             const itemLabel = itemLabels[bloco.tipo_material] || itemLabels.default;
             const isCarrossel = bloco.tipo_material === 'carrossel';
             const isReels = bloco.tipo_material === 'reels';
+            const isStory = bloco.tipo_material === 'story';
 
             return (
               <div key={bloco.id} className="bg-card rounded-xl shadow-sm border overflow-hidden">
@@ -219,8 +220,88 @@ export const ArquivosPreview = ({
                     </div>
                   )}
 
+                  {/* STORIES - Preview lado a lado igual ao carrossel */}
+                  {isStory && (
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                      {bloco.itens.map((item, itemIndex) => (
+                        <div key={item.id} className="bg-background rounded-lg border overflow-hidden">
+                          <div className="relative bg-muted">
+                            {item.arquivos.length > 0 ? (
+                              item.arquivos.map(arquivo => (
+                                <div key={arquivo.id} className="relative">
+                                  {arquivo.tipo === 'video' ? (
+                                    <video 
+                                      src={arquivo.url} 
+                                      controls 
+                                      className="w-full h-auto max-h-64 object-contain"
+                                      preload="metadata"
+                                      playsInline
+                                    >
+                                      Seu navegador não suporta vídeos.
+                                    </video>
+                                  ) : (
+                                    <>
+                                      <img 
+                                        src={arquivo.url} 
+                                        alt={arquivo.nome_arquivo}
+                                        className="w-full h-auto max-h-64 object-contain cursor-pointer"
+                                        onClick={(e) => onImageClick(e, arquivo.id)}
+                                      />
+                                      {comentarios
+                                        .filter(c => c.arquivo_id === arquivo.id && c.x_coordenada && c.y_coordenada)
+                                        .map((comentario, pinIndex) => (
+                                          <div 
+                                            key={comentario.id}
+                                            className="absolute h-5 w-5 bg-primary rounded-full border-2 border-white flex items-center justify-center text-primary-foreground text-xs font-bold cursor-pointer"
+                                            style={{
+                                              left: `${comentario.x_coordenada}%`,
+                                              top: `${comentario.y_coordenada}%`,
+                                              transform: 'translate(-50%, -50%)'
+                                            }}
+                                            title={comentario.comentario}
+                                          >
+                                            {pinIndex + 1}
+                                          </div>
+                                        ))
+                                      }
+                                    </>
+                                  )}
+                                </div>
+                              ))
+                            ) : (
+                              <div className="aspect-[9/16] flex items-center justify-center text-muted-foreground text-sm">
+                                Sem mídia
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="p-3 space-y-2 border-t">
+                            <Badge variant="outline" className="text-xs">
+                              {itemLabel} {itemIndex + 1}
+                            </Badge>
+                            {item.titulo && (
+                              <p className="text-sm font-semibold text-foreground">{item.titulo}</p>
+                            )}
+                            {item.texto_conteudo && (
+                              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{item.texto_conteudo}</p>
+                            )}
+                            {item.hashtags && (
+                              <div className="flex flex-wrap gap-1 pt-1">
+                                {item.hashtags.split(/[,\s]+/).filter(Boolean).map((tag, i) => (
+                                  <Badge key={i} variant="secondary" className="text-xs px-1.5 py-0">
+                                    #{tag.replace('#', '').trim()}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {/* OUTROS TIPOS - Layout vertical */}
-                  {!isCarrossel && !isReels && (
+                  {!isCarrossel && !isReels && !isStory && (
                     <div className="space-y-6">
                       {bloco.itens.map((item, itemIndex) => (
                         <div key={item.id} className="bg-background rounded-lg border overflow-hidden">
