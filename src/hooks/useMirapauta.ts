@@ -128,6 +128,81 @@ export const useMirapautaProfiles = () => {
 };
 
 /**
+ * Buscar tasks do MiraPauta com dados completos
+ */
+export const useMirapautaTasks = () => {
+  return useQuery({
+    queryKey: ['mirapauta', 'tasks'],
+    queryFn: async () => {
+      if (!mirapautaClient) {
+        throw new Error('MiraPauta não está configurado');
+      }
+
+      console.log('[MiraPauta] Buscando tasks...');
+
+      // Buscar tasks
+      const { data: tasks, error: tasksError } = await mirapautaClient
+        .from('tasks')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (tasksError) {
+        console.error('[MiraPauta] Erro ao buscar tasks:', tasksError);
+        throw tasksError;
+      }
+
+      // Buscar clientes
+      const { data: clientes, error: clientesError } = await mirapautaClient
+        .from('clientes')
+        .select('*');
+
+      if (clientesError) {
+        console.error('[MiraPauta] Erro ao buscar clientes:', clientesError);
+      }
+
+      // Buscar profiles
+      const { data: profiles, error: profilesError } = await mirapautaClient
+        .from('profiles')
+        .select('*');
+
+      if (profilesError) {
+        console.error('[MiraPauta] Erro ao buscar profiles:', profilesError);
+      }
+
+      // Mapear clientes e profiles por ID
+      const clientesMap = new Map<string, MirapautaCliente>();
+      if (clientes) {
+        clientes.forEach((cliente) => {
+          clientesMap.set(cliente.id, cliente as MirapautaCliente);
+        });
+      }
+
+      const profilesMap = new Map<string, MirapautaProfile>();
+      if (profiles) {
+        profiles.forEach((profile) => {
+          profilesMap.set(profile.id, profile as MirapautaProfile);
+        });
+      }
+
+      // Combinar tasks com clientes e profiles
+      const tasksWithData = (tasks || []).map((task) => {
+        const typedTask = task as MirapautaTask;
+        return {
+          ...typedTask,
+          cliente: typedTask.cliente_id ? clientesMap.get(typedTask.cliente_id) || null : null,
+          responsavel: typedTask.assignee ? profilesMap.get(typedTask.assignee) || null : null,
+        };
+      });
+
+      console.log('[MiraPauta] Tasks encontradas:', tasksWithData.length);
+      return tasksWithData;
+    },
+    enabled: isMirapautaConfigured(),
+  });
+};
+
+
+/**
  * Importar clientes do MiraPauta para o AprovaArte
  */
 export const useImportClientes = () => {
@@ -425,236 +500,24 @@ export const useImportPautas = () => {
 };
 
 /**
- * Sincronizar usuários do MiraPauta com o sistema AprovaArte
- * Esta função:
- * 1. Busca todos os profiles do MiraPauta
- * 2. Insere/atualiza na tabela profiles do AprovaArte
- * 3. Desativa profiles que não estão mais no MiraPauta
- */
-export const useSyncProfiles = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!mirapautaClient) {
-        throw new Error('MiraPauta não está configurado');
-      }
-
-      const results = {
-        imported: 0,
-        updated: 0,
-        deactivated: 0,
-        errors: [] as string[],
-      };
-
-      console.log('[MiraPauta] Sincronizando profiles...');
-
-      // Buscar todos os profiles do MiraPauta
-      const { data: mirapautaProfiles, error: mirapautaError } = await mirapautaClient
-        .from('profiles')
-        .select('*');
-
-      if (mirapautaError) {
-        console.error('[MiraPauta] Erro ao buscar profiles:', mirapautaError);
-        throw mirapautaError;
-      }
-
-      if (!mirapautaProfiles || mirapautaProfiles.length === 0) {
-        throw new Error('Nenhum profile encontrado no MiraPauta');
-      }
-
-      console.log(`[MiraPauta] ${mirapautaProfiles.length} profiles encontrados no MiraPauta`);
-
-      // Buscar profiles existentes no AprovaArte
-      const { data: existingProfiles, error: existingError } = await supabase
-        .from('profiles')
-        .select('*');
-
-      if (existingError) {
-        console.error('[AprovaArte] Erro ao buscar profiles existentes:', existingError);
-        results.errors.push(`Erro ao buscar profiles existentes: ${existingError.message}`);
-      }
-
-      // Criar mapa de profiles existentes por mirapauta_profile_id
-      const existingProfilesMap = new Map<string, { id: string; ativo: boolean }>();
-      if (existingProfiles) {
-        existingProfiles.forEach((profile) => {
-          if (profile.mirapauta_profile_id) {
-            existingProfilesMap.set(profile.mirapauta_profile_id, {
-              id: profile.id,
-              ativo: profile.ativo,
-            });
-          }
-        });
-      }
-
-      // IDs dos profiles do MiraPauta (para identificar quais desativar)
-      const mirapautaProfileIds = new Set<string>();
-
-      // Importar/atualizar profiles do MiraPauta
-      for (const mirapautaProfile of mirapautaProfiles as MirapautaProfile[]) {
-        mirapautaProfileIds.add(mirapautaProfile.id);
-
-        const existingProfile = existingProfilesMap.get(mirapautaProfile.id);
-
-        if (existingProfile) {
-          // Atualizar profile existente
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({
-              email: mirapautaProfile.email,
-              nome: mirapautaProfile.nome || 'Usuário sem nome',
-              avatar_url: mirapautaProfile.avatar_url,
-              ativo: true,
-              sincronizado_em: new Date().toISOString(),
-            })
-            .eq('id', existingProfile.id);
-
-          if (updateError) {
-            results.errors.push(
-              `Erro ao atualizar profile ${mirapautaProfile.nome}: ${updateError.message}`,
-            );
-          } else {
-            results.updated++;
-            console.log(`[MiraPauta] Profile atualizado: ${mirapautaProfile.nome}`);
-          }
-        } else {
-          // Criar novo profile
-          const { error: insertError } = await supabase.from('profiles').insert({
-            mirapauta_profile_id: mirapautaProfile.id,
-            email: mirapautaProfile.email,
-            nome: mirapautaProfile.nome || 'Usuário sem nome',
-            avatar_url: mirapautaProfile.avatar_url,
-            ativo: true,
-            sincronizado_em: new Date().toISOString(),
-          });
-
-          if (insertError) {
-            results.errors.push(
-              `Erro ao criar profile ${mirapautaProfile.nome}: ${insertError.message}`,
-            );
-          } else {
-            results.imported++;
-            console.log(`[MiraPauta] Profile criado: ${mirapautaProfile.nome}`);
-          }
-        }
-      }
-
-      // Desativar profiles que não estão mais no MiraPauta
-      if (existingProfiles) {
-        for (const existingProfile of existingProfiles) {
-          if (
-            existingProfile.mirapauta_profile_id &&
-            !mirapautaProfileIds.has(existingProfile.mirapauta_profile_id) &&
-            existingProfile.ativo
-          ) {
-            const { error: deactivateError } = await supabase
-              .from('profiles')
-              .update({
-                ativo: false,
-                sincronizado_em: new Date().toISOString(),
-              })
-              .eq('id', existingProfile.id);
-
-            if (deactivateError) {
-              results.errors.push(
-                `Erro ao desativar profile ${existingProfile.nome}: ${deactivateError.message}`,
-              );
-            } else {
-              results.deactivated++;
-              console.log(`[MiraPauta] Profile desativado: ${existingProfile.nome}`);
-            }
-          }
-        }
-      }
-
-      console.log('[MiraPauta] Sincronização concluída:', results);
-      return results;
-    },
-    onSuccess: (results) => {
-      queryClient.invalidateQueries({ queryKey: ['profiles'] });
-
-      const totalChanges = results.imported + results.updated + results.deactivated;
-
-      if (totalChanges > 0) {
-        const messages = [];
-        if (results.imported > 0) messages.push(`${results.imported} importado(s)`);
-        if (results.updated > 0) messages.push(`${results.updated} atualizado(s)`);
-        if (results.deactivated > 0) messages.push(`${results.deactivated} desativado(s)`);
-
-        toast({
-          title: 'Usuários sincronizados!',
-          description: messages.join(', '),
-        });
-      } else {
-        toast({
-          title: 'Sincronização concluída',
-          description: 'Todos os usuários já estão atualizados.',
-        });
-      }
-
-      if (results.errors.length > 0) {
-        toast({
-          title: 'Alguns erros ocorreram',
-          description: results.errors.slice(0, 3).join('\n'),
-          variant: 'destructive',
-        });
-      }
-    },
-    onError: (error) => {
-      toast({
-        title: 'Erro ao sincronizar usuários',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
-        variant: 'destructive',
-      });
-    },
-  });
-};
-
-/**
- * Hook para buscar profiles do AprovaArte
- */
-export const useProfiles = () => {
-  return useQuery({
-    queryKey: ['profiles'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('ativo', true)
-        .order('nome');
-
-      if (error) {
-        console.error('[AprovaArte] Erro ao buscar profiles:', error);
-        throw error;
-      }
-
-      return data;
-    },
-  });
-};
-
-/**
  * Hook principal da integração
  */
 export const useMirapautaIntegration = () => {
   const isConfigured = isMirapautaConfigured();
   const clientes = useMirapautaClientes();
   const pautas = useMirapautaPautas();
+  const tasks = useMirapautaTasks();
   const profiles = useMirapautaProfiles();
-  const localProfiles = useProfiles();
   const importClientes = useImportClientes();
   const importPautas = useImportPautas();
-  const syncProfiles = useSyncProfiles();
 
   return {
     isConfigured,
     clientes,
     pautas,
+    tasks,
     profiles,
-    localProfiles,
     importClientes,
     importPautas,
-    syncProfiles,
   };
 };
