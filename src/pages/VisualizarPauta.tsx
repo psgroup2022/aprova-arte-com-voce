@@ -14,7 +14,7 @@ import { NotFoundState } from '@/components/pauta/NotFoundState';
 export const VisualizarPauta = () => {
   const { id } = useParams();
 
-  const { pauta, arquivos, comentarios, isLoading, error } = usePautaData(id!);
+  const { pauta, arquivos, blocos, comentarios, isLoading, error } = usePautaData(id!);
 
   const {
     newComment,
@@ -67,6 +67,7 @@ export const VisualizarPauta = () => {
       <div className="flex-grow flex flex-col md:flex-row">
         <ArquivosPreview
           arquivos={arquivos}
+          blocos={blocos}
           comentarios={comentarios}
           pendingPin={pendingPin}
           onImageClick={handleImageClick}
