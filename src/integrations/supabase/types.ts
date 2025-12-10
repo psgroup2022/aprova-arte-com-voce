@@ -267,6 +267,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      profiles: {
+        Row: {
+          id: string;
+          auth_user_id: string | null;
+          mirapauta_profile_id: string | null;
+          email: string | null;
+          nome: string;
+          avatar_url: string | null;
+          ativo: boolean;
+          sincronizado_em: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          auth_user_id?: string | null;
+          mirapauta_profile_id?: string | null;
+          email?: string | null;
+          nome: string;
+          avatar_url?: string | null;
+          ativo?: boolean;
+          sincronizado_em?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          auth_user_id?: string | null;
+          mirapauta_profile_id?: string | null;
+          email?: string | null;
+          nome?: string;
+          avatar_url?: string | null;
+          ativo?: boolean;
+          sincronizado_em?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

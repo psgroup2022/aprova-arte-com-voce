@@ -1,14 +1,23 @@
 import React from 'react';
 import { Layout } from '@/components/Layout';
-import { User, Bell, Shield, Palette, Globe } from 'lucide-react';
+import { User, Bell, Shield, Palette, Globe, Users, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { useMirapautaIntegration } from '@/hooks/useMirapauta';
+import { Badge } from '@/components/ui/badge';
 
 export const Configuracoes = () => {
+  const { isConfigured, localProfiles, syncProfiles } = useMirapautaIntegration();
+  const isSyncing = syncProfiles.isPending;
+
+  const handleSyncProfiles = () => {
+    syncProfiles.mutate();
+  };
+
   return (
     <Layout>
       <div className="p-6">
@@ -162,6 +171,67 @@ export const Configuracoes = () => {
                 <div>
                   <Label>Idioma</Label>
                   <p className="text-sm text-muted-foreground">Português (Brasil)</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Integração MiraPauta */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Globe className="h-5 w-5 mr-2" />
+                  Integração MiraPauta
+                </CardTitle>
+                <CardDescription>Sincronize usuários e dados do sistema MiraPauta</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Label>Status da Integração</Label>
+                    {isConfigured ? (
+                      <Badge variant="default" className="bg-green-500">
+                        Configurado
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive">Não Configurado</Badge>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <Label>Usuários Sincronizados</Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {localProfiles.data?.length || 0} usuário(s) ativo(s) no sistema
+                  </p>
+                  <Button
+                    onClick={handleSyncProfiles}
+                    disabled={!isConfigured || isSyncing}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {isSyncing ? 'Sincronizando...' : 'Sincronizar Usuários'}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Importa usuários do MiraPauta e desativa os que não existem mais lá
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <Label>Sobre a Sincronização</Label>
+                  <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                    <li>Importa novos usuários do MiraPauta</li>
+                    <li>Atualiza informações de usuários existentes</li>
+                    <li>Desativa usuários que não estão mais no MiraPauta</li>
+                    <li>Mantém histórico de aprovações e pautas</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
