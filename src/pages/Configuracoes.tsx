@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { User, Bell, Shield, Palette, Globe, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,72 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useMirapautaIntegration } from '@/hooks/useMirapauta';
 import { Badge } from '@/components/ui/badge';
+import { toast } from '@/hooks/use-toast';
+
+type ConfigTab = 'perfil' | 'notificacoes' | 'seguranca' | 'aparencia' | 'integracao';
 
 export const Configuracoes = () => {
   const { isConfigured, profiles } = useMirapautaIntegration();
+  const [activeTab, setActiveTab] = useState<ConfigTab>('perfil');
+  
+  // Profile state
+  const [nome, setNome] = useState('João Silva');
+  const [email, setEmail] = useState('joao@agencia.com');
+  const [empresa, setEmpresa] = useState('AgencyMaker');
+  
+  // Notifications state
+  const [emailNotifications, setEmailNotifications] = useState(false);
+  const [pushNotifications, setPushNotifications] = useState(false);
+  const [approvalNotifications, setApprovalNotifications] = useState(true);
+  
+  // Security state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // Appearance state
+  const [darkMode, setDarkMode] = useState(false);
+
+  const handleSaveProfile = () => {
+    toast({
+      title: "Perfil atualizado",
+      description: "Suas informações foram salvas com sucesso.",
+    });
+  };
+
+  const handleChangePassword = () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os campos de senha.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem.",
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({
+      title: "Senha alterada",
+      description: "Sua senha foi atualizada com sucesso.",
+    });
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+  };
+
+  const menuItems: { id: ConfigTab; label: string; icon: React.ElementType }[] = [
+    { id: 'perfil', label: 'Perfil', icon: User },
+    { id: 'notificacoes', label: 'Notificações', icon: Bell },
+    { id: 'seguranca', label: 'Segurança', icon: Shield },
+    { id: 'aparencia', label: 'Aparência', icon: Palette },
+    { id: 'integracao', label: 'Integração', icon: Globe },
+  ];
 
   return (
     <Layout>
@@ -33,26 +96,17 @@ export const Configuracoes = () => {
                 <CardTitle>Categorias</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start">
-                  <User className="h-4 w-4 mr-2" />
-                  Perfil
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <Bell className="h-4 w-4 mr-2" />
-                  Notificações
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Segurança
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <Palette className="h-4 w-4 mr-2" />
-                  Aparência
-                </Button>
-                <Button variant="ghost" className="w-full justify-start">
-                  <Globe className="h-4 w-4 mr-2" />
-                  Integração
-                </Button>
+                {menuItems.map((item) => (
+                  <Button
+                    key={item.id}
+                    variant={activeTab === item.id ? 'secondary' : 'ghost'}
+                    className="w-full justify-start"
+                    onClick={() => setActiveTab(item.id)}
+                  >
+                    <item.icon className="h-4 w-4 mr-2" />
+                    {item.label}
+                  </Button>
+                ))}
               </CardContent>
             </Card>
           </div>
@@ -60,163 +114,215 @@ export const Configuracoes = () => {
           {/* Configurações Detalhadas */}
           <div className="lg:col-span-2 space-y-6">
             {/* Perfil */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <User className="h-5 w-5 mr-2" />
-                  Perfil
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="nome">Nome</Label>
-                    <Input id="nome" defaultValue="João Silva" />
+            {activeTab === 'perfil' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Perfil
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="nome">Nome</Label>
+                      <Input 
+                        id="nome" 
+                        value={nome} 
+                        onChange={(e) => setNome(e.target.value)} 
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input 
+                        id="email" 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)} 
+                      />
+                    </div>
                   </div>
                   <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" defaultValue="joao@agencia.com" />
+                    <Label htmlFor="empresa">Empresa</Label>
+                    <Input 
+                      id="empresa" 
+                      value={empresa} 
+                      onChange={(e) => setEmpresa(e.target.value)} 
+                    />
                   </div>
-                </div>
-                <div>
-                  <Label htmlFor="empresa">Empresa</Label>
-                  <Input id="empresa" defaultValue="AgencyMaker" />
-                </div>
-                <Button>Salvar Alterações</Button>
-              </CardContent>
-            </Card>
+                  <Button onClick={handleSaveProfile}>Salvar Alterações</Button>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Notificações */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Bell className="h-5 w-5 mr-2" />
-                  Notificações
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="email-notifications">Notificações por Email</Label>
-                    <p className="text-sm text-muted-foreground">Receba atualizações por email</p>
+            {activeTab === 'notificacoes' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Bell className="h-5 w-5 mr-2" />
+                    Notificações
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="email-notifications">Notificações por Email</Label>
+                      <p className="text-sm text-muted-foreground">Receba atualizações por email</p>
+                    </div>
+                    <Switch 
+                      id="email-notifications" 
+                      checked={emailNotifications}
+                      onCheckedChange={setEmailNotifications}
+                    />
                   </div>
-                  <Switch id="email-notifications" />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="push-notifications">Notificações Push</Label>
-                    <p className="text-sm text-muted-foreground">Notificações no navegador</p>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="push-notifications">Notificações Push</Label>
+                      <p className="text-sm text-muted-foreground">Notificações no navegador</p>
+                    </div>
+                    <Switch 
+                      id="push-notifications" 
+                      checked={pushNotifications}
+                      onCheckedChange={setPushNotifications}
+                    />
                   </div>
-                  <Switch id="push-notifications" />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="approval-notifications">Aprovações</Label>
-                    <p className="text-sm text-muted-foreground">Quando pautas forem aprovadas</p>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label htmlFor="approval-notifications">Aprovações</Label>
+                      <p className="text-sm text-muted-foreground">Quando pautas forem aprovadas</p>
+                    </div>
+                    <Switch 
+                      id="approval-notifications" 
+                      checked={approvalNotifications}
+                      onCheckedChange={setApprovalNotifications}
+                    />
                   </div>
-                  <Switch id="approval-notifications" defaultChecked />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Segurança */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Shield className="h-5 w-5 mr-2" />
-                  Segurança
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="current-password">Senha Atual</Label>
-                  <Input id="current-password" type="password" />
-                </div>
-                <div>
-                  <Label htmlFor="new-password">Nova Senha</Label>
-                  <Input id="new-password" type="password" />
-                </div>
-                <div>
-                  <Label htmlFor="confirm-password">Confirmar Senha</Label>
-                  <Input id="confirm-password" type="password" />
-                </div>
-                <Button>Alterar Senha</Button>
-              </CardContent>
-            </Card>
+            {activeTab === 'seguranca' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Shield className="h-5 w-5 mr-2" />
+                    Segurança
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="current-password">Senha Atual</Label>
+                    <Input 
+                      id="current-password" 
+                      type="password" 
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="new-password">Nova Senha</Label>
+                    <Input 
+                      id="new-password" 
+                      type="password" 
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="confirm-password">Confirmar Senha</Label>
+                    <Input 
+                      id="confirm-password" 
+                      type="password" 
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                  </div>
+                  <Button onClick={handleChangePassword}>Alterar Senha</Button>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Aparência */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Palette className="h-5 w-5 mr-2" />
-                  Aparência
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Tema Escuro</Label>
-                    <p className="text-sm text-muted-foreground">Alternar para modo escuro</p>
+            {activeTab === 'aparencia' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Palette className="h-5 w-5 mr-2" />
+                    Aparência
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Tema Escuro</Label>
+                      <p className="text-sm text-muted-foreground">Alternar para modo escuro</p>
+                    </div>
+                    <Switch 
+                      checked={darkMode}
+                      onCheckedChange={setDarkMode}
+                    />
                   </div>
-                  <Switch />
-                </div>
-                <Separator />
-                <div>
-                  <Label>Idioma</Label>
-                  <p className="text-sm text-muted-foreground">Português (Brasil)</p>
-                </div>
-              </CardContent>
-            </Card>
+                  <Separator />
+                  <div>
+                    <Label>Idioma</Label>
+                    <p className="text-sm text-muted-foreground">Português (Brasil)</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Integração MiraPauta */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Globe className="h-5 w-5 mr-2" />
-                  Integração MiraPauta
-                </CardTitle>
-                <CardDescription>Sincronize usuários e dados do sistema MiraPauta</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Label>Status da Integração</Label>
-                    {isConfigured ? (
-                      <Badge variant="default" className="bg-green-500">
-                        Configurado
-                      </Badge>
-                    ) : (
-                      <Badge variant="destructive">Não Configurado</Badge>
-                    )}
+            {activeTab === 'integracao' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Globe className="h-5 w-5 mr-2" />
+                    Integração MiraPauta
+                  </CardTitle>
+                  <CardDescription>Sincronize usuários e dados do sistema MiraPauta</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Label>Status da Integração</Label>
+                      {isConfigured ? (
+                        <Badge variant="default" className="bg-green-500">
+                          Configurado
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">Não Configurado</Badge>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <Separator />
+                  <Separator />
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <Label>Usuários do MiraPauta</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <Label>Usuários do MiraPauta</Label>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {profiles.data?.length || 0} usuário(s) encontrado(s) no MiraPauta
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {profiles.data?.length || 0} usuário(s) encontrado(s) no MiraPauta
-                  </p>
-                </div>
 
-                <Separator />
+                  <Separator />
 
-                <div className="space-y-2">
-                  <Label>Sobre a Integração</Label>
-                  <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                    <li>Importa tarefas e clientes do MiraPauta</li>
-                    <li>Sincroniza dados automaticamente</li>
-                    <li>Mantém histórico de aprovações</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="space-y-2">
+                    <Label>Sobre a Integração</Label>
+                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>Importa tarefas e clientes do MiraPauta</li>
+                      <li>Sincroniza dados automaticamente</li>
+                      <li>Mantém histórico de aprovações</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
