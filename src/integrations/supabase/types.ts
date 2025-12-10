@@ -202,7 +202,9 @@ export type Database = {
           data_prazo: string | null
           descricao: string | null
           id: string
+          mirapauta_id: string | null
           observacoes: string | null
+          origem: string
           status: Database["public"]["Enums"]["pauta_status"]
           titulo: string
           updated_at: string
@@ -216,7 +218,9 @@ export type Database = {
           data_prazo?: string | null
           descricao?: string | null
           id?: string
+          mirapauta_id?: string | null
           observacoes?: string | null
+          origem?: string
           status?: Database["public"]["Enums"]["pauta_status"]
           titulo: string
           updated_at?: string
@@ -230,7 +234,9 @@ export type Database = {
           data_prazo?: string | null
           descricao?: string | null
           id?: string
+          mirapauta_id?: string | null
           observacoes?: string | null
+          origem?: string
           status?: Database["public"]["Enums"]["pauta_status"]
           titulo?: string
           updated_at?: string
