@@ -722,6 +722,47 @@ export const useProfiles = () => {
 };
 
 /**
+ * Hook para sincronização manual de tasks via edge function
+ */
+export const useSyncMirapautaTasks = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      console.log('[MiraPauta] Iniciando sincronização manual de tasks...');
+      
+      const { data, error } = await supabase.functions.invoke('sync-mirapauta', {
+        body: {},
+      });
+
+      if (error) {
+        console.error('[MiraPauta] Erro na sincronização:', error);
+        throw new Error(error.message || 'Erro ao sincronizar');
+      }
+
+      console.log('[MiraPauta] Resultado da sincronização:', data);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['pautas'] });
+      queryClient.invalidateQueries({ queryKey: ['mirapauta', 'tasks'] });
+
+      toast({
+        title: 'Sincronização concluída!',
+        description: data?.message || 'Tasks sincronizadas com sucesso',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Erro ao sincronizar',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+/**
  * Hook principal da integração
  */
 export const useMirapautaIntegration = () => {
@@ -734,6 +775,7 @@ export const useMirapautaIntegration = () => {
   const importClientes = useImportClientes();
   const importPautas = useImportPautas();
   const syncProfiles = useSyncProfiles();
+  const syncTasks = useSyncMirapautaTasks();
 
   return {
     isConfigured,
@@ -745,5 +787,6 @@ export const useMirapautaIntegration = () => {
     importClientes,
     importPautas,
     syncProfiles,
+    syncTasks,
   };
 };
