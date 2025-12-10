@@ -34,48 +34,31 @@ type TaskWithData = MirapautaTask & {
 // Componente de abas por usuário
 const UserTasksTabs = ({
   tasks,
-  localProfiles,
   selectedTasks,
   toggleTask,
   getTaskStatusDisplay,
 }: {
   tasks: TaskWithData[];
-  localProfiles: LocalProfile[];
   selectedTasks: Set<string>;
   toggleTask: (id: string) => void;
   getTaskStatusDisplay: (status: string | null) => { label: string; className: string };
 }) => {
-  // Criar mapa de profiles locais por mirapauta_profile_id
-  const localProfilesMap = React.useMemo(() => {
-    const map = new Map<string, LocalProfile>();
-    localProfiles.forEach((profile) => {
-      if (profile.mirapauta_profile_id) {
-        map.set(profile.mirapauta_profile_id, profile);
-      }
-    });
-    return map;
-  }, [localProfiles]);
-
-  // Agrupar tasks por responsável (usando profiles locais)
+  // Agrupar tasks por responsável (usando profiles do MiraPauta diretamente das tasks)
   const tasksByUser = React.useMemo(() => {
-    const grouped: Record<string, { profile: LocalProfile | null; tasks: TaskWithData[] }> = {};
-    
-    // Primeiro, criar grupos para todos os profiles locais ativos
-    localProfiles.filter(p => p.ativo).forEach((profile) => {
-      grouped[profile.id] = { profile, tasks: [] };
-    });
+    const grouped: Record<string, { profile: MirapautaProfile | null; tasks: TaskWithData[] }> = {};
     
     // Adicionar grupo para tarefas sem responsável
     grouped['sem-responsavel'] = { profile: null, tasks: [] };
     
-    // Distribuir tasks pelos grupos
+    // Distribuir tasks pelos grupos usando o responsavel (MirapautaProfile) da task
     tasks.forEach((task) => {
-      // Encontrar o profile local correspondente ao assignee da task
-      const assigneeId = task.responsavel?.id;
-      const localProfile = assigneeId ? localProfilesMap.get(assigneeId) : null;
+      const profile = task.responsavel;
       
-      if (localProfile) {
-        grouped[localProfile.id].tasks.push(task);
+      if (profile) {
+        if (!grouped[profile.id]) {
+          grouped[profile.id] = { profile, tasks: [] };
+        }
+        grouped[profile.id].tasks.push(task);
       } else {
         grouped['sem-responsavel'].tasks.push(task);
       }
@@ -87,11 +70,11 @@ const UserTasksTabs = ({
       .sort((a, b) => {
         if (a[0] === 'sem-responsavel') return 1;
         if (b[0] === 'sem-responsavel') return -1;
-        const nameA = a[1].profile?.nome || '';
-        const nameB = b[1].profile?.nome || '';
+        const nameA = a[1].profile?.nome || a[1].profile?.email || '';
+        const nameB = b[1].profile?.nome || b[1].profile?.email || '';
         return nameA.localeCompare(nameB);
       });
-  }, [tasks, localProfiles, localProfilesMap]);
+  }, [tasks]);
 
   const defaultTab = tasksByUser[0]?.[0] || 'sem-responsavel';
 
@@ -100,7 +83,6 @@ const UserTasksTabs = ({
       <Card className="p-8 text-center">
         <ListTodo className="w-12 h-12 mx-auto text-slate-300 mb-4" />
         <p className="text-slate-600">Nenhuma tarefa encontrada</p>
-        <p className="text-sm text-slate-400 mt-1">Sincronize os membros da equipe primeiro na aba "Usuários"</p>
       </Card>
     );
   }
@@ -510,7 +492,6 @@ export const Integracoes = () => {
             ) : (
               <UserTasksTabs
                 tasks={tasks.data as TaskWithData[]}
-                localProfiles={localProfiles.data || []}
                 selectedTasks={selectedTasks}
                 toggleTask={toggleTask}
                 getTaskStatusDisplay={getTaskStatusDisplay}
