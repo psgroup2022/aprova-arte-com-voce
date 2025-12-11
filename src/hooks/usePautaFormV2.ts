@@ -246,6 +246,7 @@ export const usePautaFormV2 = () => {
               titulo: '',
               assunto: '',
               texto_conteudo: item.texto || '',
+              legenda: '',
               hashtags: item.hashtags?.join(' #') || '',
               arquivos: [],
               arquivosUrls: [],
