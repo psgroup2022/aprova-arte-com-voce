@@ -27,13 +27,27 @@ vi.mock('@/integrations/supabase/client', () => ({
             select: () => ({ single: () => ({ data: { id: 'p1', ...payload }, error: null }) }),
           }),
         },
-      delete: () => deleteMock(table) || { eq: () => ({}) },
-      select: (...args: any[]) =>
-        selectMock(table, ...args) || { order: () => ({ data: [], error: null }) },
+      delete: () => {
+        deleteMock(table);
+        return { eq: () => ({ data: null, error: null }) };
+      },
+      select: (...args: any[]) => {
+        selectMock(table, ...args);
+        return {
+          order: () => ({ data: [], error: null }),
+          eq: () => ({ data: [], error: null }),
+          in: () => ({ data: [], error: null }),
+        };
+      },
       eq: (...args: any[]) =>
         eqMock(table, ...args) || { select: () => ({ single: () => ({ data: {}, error: null }) }) },
     }),
     auth: { getUser: authGetUserMock },
+    storage: {
+      from: () => ({
+        remove: () => ({ error: null }),
+      }),
+    },
   },
 }));
 
