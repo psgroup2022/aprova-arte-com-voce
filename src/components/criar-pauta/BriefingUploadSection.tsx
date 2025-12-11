@@ -16,6 +16,7 @@ export interface ParsedBriefingData {
     tipo: 'estatico' | 'carrossel' | 'story' | 'reels' | 'linkedin_artigo' | 'email' | 'whatsapp';
     itens: Array<{
       texto?: string;
+      chamada?: string;
       hashtags?: string[];
     }>;
     legenda?: string;

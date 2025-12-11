@@ -15,6 +15,11 @@ REGRAS CRÍTICAS:
 3. Se for Post Estático, use "estatico"
 4. Se for Stories (ou Story), use "story"
 
+IDENTIFICAÇÃO DE CAMPOS NO DOCUMENTO:
+- "Chamada:" ou "Chamada" seguido de texto = campo "chamada" (texto curto de destaque)
+- "Legenda:" ou "Legenda" seguido de texto = campo "legenda" (texto explicativo mais longo)
+- Hashtags geralmente aparecem no final com # (ex: #Finanças #Investimentos)
+
 CARROSSEL:
 - Cada slide deve ser um item separado no array "itens"
 - Associe cada chamada/texto ao slide correspondente (chamada 1 = slide 1, chamada 2 = slide 2, etc.)
@@ -32,6 +37,7 @@ OUTRAS REGRAS:
 4. Hashtags devem ser extraídas SEM o símbolo #
 5. Se a data estiver vazia ou não especificada, retorne null
 6. NUNCA invente informações que não existem no documento
+7. Cada post/material deve ter SEPARADAMENTE: chamada E legenda
 
 Responda APENAS com JSON válido, sem markdown ou explicações.`;
 
@@ -70,14 +76,20 @@ Retorne um JSON com esta estrutura exata:
       "tipo": "estatico" | "carrossel" | "story" | "reels",
       "itens": [
         {
-          "texto": "Texto/legenda do conteúdo",
+          "texto": "Texto/conteúdo principal",
+          "chamada": "Texto que vem após 'Chamada:' - frase curta de destaque",
           "hashtags": ["hashtag1", "hashtag2"]
         }
       ],
-      "legenda": "Legenda geral do material (se houver)"
+      "legenda": "Texto que vem após 'Legenda:' - texto explicativo mais longo"
     }
   ]
-}`;
+}
+
+IMPORTANTE: 
+- O campo "chamada" é o texto curto que aparece após "Chamada:" no documento
+- O campo "legenda" é o texto mais longo que aparece após "Legenda:" no documento
+- Ambos os campos devem ser extraídos separadamente`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
