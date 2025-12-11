@@ -7,9 +7,46 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import mammoth from 'mammoth';
 
+// Interface para slides de carrossel
+export interface CarrosselSlide {
+  numero: number;
+  titulo?: string;
+  conteudo?: string;
+}
+
+// Interface para cenas de reels
+export interface ReelsCena {
+  numero: number;
+  descricao?: string;
+}
+
+// Interface para telas de story
+export interface StoryTela {
+  numero: number;
+  conteudo?: string;
+}
+
+// Interface para cada post individual
+export interface ParsedPost {
+  data?: string;
+  titulo_post?: string;
+  tipo: 'estatico' | 'carrossel' | 'story' | 'reels' | 'linkedin_artigo' | 'email' | 'whatsapp';
+  chamada?: string;
+  legenda?: string;
+  artigo?: string;
+  hashtags?: string[];
+  slides?: CarrosselSlide[];
+  cenas?: ReelsCena[];
+  telas?: StoryTela[];
+}
+
+// Interface principal do briefing parseado
 export interface ParsedBriefingData {
   titulo?: string;
   cliente?: string;
+  ano?: number;
+  posts?: ParsedPost[];
+  // Compatibilidade com estrutura antiga
   dataPrevista?: string | null;
   tags?: string[];
   materiais?: Array<{
@@ -144,9 +181,12 @@ export const BriefingUploadSection: React.FC<BriefingUploadSectionProps> = ({
       if (data?.success && data?.data) {
         setIsProcessed(true);
         onBriefingParsed(data.data);
+        
+        // Conta posts ou materiais (compatibilidade)
+        const postCount = data.data.posts?.length || data.data.materiais?.length || 0;
         toast({
           title: 'Briefing processado!',
-          description: `Encontrados ${data.data.materiais?.length || 0} materiais.`,
+          description: `Encontrados ${postCount} posts.`,
         });
       } else if (data?.error) {
         throw new Error(data.error);

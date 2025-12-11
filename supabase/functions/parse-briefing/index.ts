@@ -7,37 +7,84 @@ const corsHeaders = {
 
 const SYSTEM_PROMPT = `Você é um assistente especializado em analisar documentos de briefing para criação de pautas de redes sociais.
 
-Analise o conteúdo do documento e extraia as informações no formato JSON estruturado abaixo.
+O documento de briefing contém MÚLTIPLOS POSTS independentes organizados por data de publicação.
+Cada post pode ser de diferentes tipos e tem sua própria estrutura.
+
+ESTRUTURA TÍPICA DO DOCUMENTO:
+[TÍTULO GERAL] - Ex: "VWPP REDES SOCIAIS – JANEIRO 2026"
+[SUBTÍTULO] - Ex: "BRIEFINGS"
+
+[Data] – [Título do Post]
+[Descrição/contexto do post]
+Chamada: [texto curto de destaque]
+Legenda: [texto explicativo mais longo]
+#hashtag1 #hashtag2 #hashtag3
+
+TIPOS DE MATERIAL (identificar automaticamente):
+
+1. POST ESTÁTICO:
+   - Tem apenas "Chamada:" e "Legenda:"
+   - Tipo: "estatico"
+
+2. CARROSSEL:
+   - Tem múltiplos cards/slides identificados por:
+     * "C1 –", "C2 –", "C3 –", "C4 –"
+     * "Card 1:", "Card 2:", "Card 3:"
+     * "Slide 1:", "Slide 2:", "Slide 3:"
+   - Cada card pode ter título e conteúdo
+   - Tem uma "Legenda:" única no final para todo o carrossel
+   - Tipo: "carrossel"
+
+3. ARTIGO (LinkedIn):
+   - Tem "Chamada:" curta
+   - Tem "Artigo:" com texto longo (múltiplos parágrafos)
+   - Tipo: "linkedin_artigo"
+
+4. REELS:
+   - Tem "Cena 1:", "Cena 2:", "Cena 3:"
+   - Cada cena tem descrição
+   - Tipo: "reels"
+
+5. STORIES:
+   - Tem "Tela 1:", "Tela 2:", "Tela 3:"
+   - Tipo: "story"
 
 REGRAS CRÍTICAS:
-1. Extraia EXATAMENTE o que está no documento, NÃO invente conteúdo
-2. Para "tipo", use apenas: "estatico", "carrossel", "story", "reels", "linkedin_artigo", "email", "whatsapp"
-3. Se for Post Estático, use "estatico"
-4. Se for Stories (ou Story), use "story"
 
-IDENTIFICAÇÃO DE CAMPOS NO DOCUMENTO:
-- "Chamada:" ou "Chamada" seguido de texto = campo "chamada" (texto curto de destaque)
-- "Legenda:" ou "Legenda" seguido de texto = campo "legenda" (texto explicativo mais longo)
-- Hashtags geralmente aparecem no final com # (ex: #Finanças #Investimentos)
+1. MÚLTIPLOS POSTS:
+   - Cada linha começando com data (DD/MM) é um POST SEPARADO
+   - Processe TODOS os posts do documento
+   - Retorne array "posts" com todos os posts encontrados
 
-CARROSSEL:
-- Cada slide deve ser um item separado no array "itens"
-- Associe cada chamada/texto ao slide correspondente (chamada 1 = slide 1, chamada 2 = slide 2, etc.)
+2. IDENTIFICAÇÃO DE TIPO:
+   - Se tem "C1 –", "C2 –" ou "Card 1:", "Slide 1:" = CARROSSEL
+   - Se tem "Artigo:" = LINKEDIN_ARTIGO
+   - Se tem "Cena 1:", "Cena 2:" = REELS
+   - Se tem "Tela 1:", "Tela 2:" = STORY
+   - Caso contrário = ESTÁTICO
 
-REELS:
-- OBRIGATÓRIO: Agrupe TODAS as chamadas/cenas em UM ÚNICO bloco do tipo "reels"
-- Cada chamada/cena vira um item no array "itens" (cena 1, cena 2, etc.)
-- Reels é UM vídeo com múltiplas cenas/chamadas, não múltiplos blocos
+3. CARROSSEL - ESTRUTURA:
+   - Cada C1, C2, C3, etc. é um SLIDE separado
+   - O texto após "C1 –" é o título do slide
+   - O texto entre este card e o próximo é o conteúdo do slide
+   - A "Legenda:" final se aplica a TODO o carrossel
+   - IMPORTANTE: Agrupe TODO o conteúdo de cada card corretamente
 
-STORIES:
-- "Card" e "Tela" são sinônimos - ambos representam um item do story
-- Cada Card ou Tela vira um item no array "itens" (tela 1, tela 2, etc.)
+4. HASHTAGS:
+   - Aparecem sempre no final do post (linhas com #)
+   - Extraia SEM o símbolo #
+   - Retorne como array: ["hashtag1", "hashtag2"]
+   - As hashtags NÃO devem aparecer na legenda
 
-OUTRAS REGRAS:
-4. Hashtags devem ser extraídas SEM o símbolo #
-5. Se a data estiver vazia ou não especificada, retorne null
-6. NUNCA invente informações que não existem no documento
-7. Cada post/material deve ter SEPARADAMENTE: chamada E legenda
+5. CLIENTE E DATAS:
+   - Cliente: busque no título (ex: "VWPP REDES SOCIAIS")
+   - Data de publicação: está no formato DD/MM antes do título do post
+   - Converta para ISO: "01/01" → "2026-01-01" (use o ano do título geral)
+
+6. CHAMADA vs LEGENDA:
+   - "Chamada:" = texto curto de destaque (título/headline)
+   - "Legenda:" = texto explicativo mais longo (body/caption)
+   - São campos SEPARADOS e OBRIGATÓRIOS (exceto artigos que usam "Artigo:")
 
 Responda APENAS com JSON válido, sem markdown ou explicações.`;
 
@@ -61,35 +108,63 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY não configurada");
     }
 
-    const userPrompt = `Analise este documento de briefing e extraia as informações:
+    const userPrompt = `Analise este documento de briefing de redes sociais e extraia TODOS os posts.
 
+DOCUMENTO:
 ${documentContent}
 
-Retorne um JSON com esta estrutura exata:
+Retorne um JSON com esta estrutura EXATA:
+
 {
-  "titulo": "Título da pauta",
-  "cliente": "Nome do cliente",
-  "dataPrevista": "2024-09-15" ou null,
-  "tags": ["tag1", "tag2"],
-  "materiais": [
+  "titulo": "Título geral do documento (ex: VWPP REDES SOCIAIS – JANEIRO 2026)",
+  "cliente": "Nome do cliente extraído do título",
+  "ano": 2026,
+  "posts": [
     {
-      "tipo": "estatico" | "carrossel" | "story" | "reels",
-      "itens": [
+      "data": "2026-01-01",
+      "titulo_post": "Título do post (texto após a data)",
+      "tipo": "estatico|carrossel|linkedin_artigo|reels|story",
+      "chamada": "Texto após 'Chamada:' (se houver)",
+      "legenda": "Texto após 'Legenda:' (se houver, SEM hashtags)",
+      "artigo": "Texto completo do artigo (apenas para tipo linkedin_artigo)",
+      "hashtags": ["tag1", "tag2", "tag3"],
+      
+      // Para CARROSSEL, adicione:
+      "slides": [
         {
-          "texto": "Texto/conteúdo principal",
-          "chamada": "Texto que vem após 'Chamada:' - frase curta de destaque",
-          "hashtags": ["hashtag1", "hashtag2"]
+          "numero": 1,
+          "titulo": "Título do card (texto após C1 – ou Card 1:)",
+          "conteudo": "Todo o conteúdo deste card até o próximo"
         }
       ],
-      "legenda": "Texto que vem após 'Legenda:' - texto explicativo mais longo"
+      
+      // Para REELS, adicione:
+      "cenas": [
+        {
+          "numero": 1,
+          "descricao": "Descrição da cena"
+        }
+      ],
+      
+      // Para STORIES, adicione:
+      "telas": [
+        {
+          "numero": 1,
+          "conteudo": "Conteúdo da tela"
+        }
+      ]
     }
   ]
 }
 
-IMPORTANTE: 
-- O campo "chamada" é o texto curto que aparece após "Chamada:" no documento
-- O campo "legenda" é o texto mais longo que aparece após "Legenda:" no documento
-- Ambos os campos devem ser extraídos separadamente`;
+LEMBRETES IMPORTANTES:
+1. Processe TODOS os posts (cada data DD/MM é um post)
+2. Identifique corretamente o tipo (carrossel tem C1, C2, C3...)
+3. Para carrosséis, agrupe TODO o conteúdo de cada card
+4. Extraia hashtags separadamente (sem #)
+5. Não inclua hashtags dentro da legenda
+6. Mantenha "chamada" e "legenda" como campos separados
+`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -143,6 +218,11 @@ IMPORTANTE:
       throw new Error("Resposta da IA não é um JSON válido");
     }
 
+    // Validação básica da estrutura
+    if (!parsedData.posts || !Array.isArray(parsedData.posts)) {
+      throw new Error("Estrutura JSON inválida: campo 'posts' ausente ou não é array");
+    }
+
     return new Response(
       JSON.stringify({ success: true, data: parsedData }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -151,7 +231,10 @@ IMPORTANTE:
   } catch (error) {
     console.error("Erro no parse-briefing:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : "Erro desconhecido",
+        details: error instanceof Error ? error.stack : undefined
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
