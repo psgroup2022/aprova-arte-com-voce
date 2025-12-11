@@ -23,6 +23,31 @@ export const useGenerateReviewDoc = () => {
     });
   };
 
+  const urlToBase64 = async (url: string): Promise<string> => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+      });
+    } catch (error) {
+      throw new Error(`Erro ao carregar imagem da URL: ${url}`);
+    }
+  };
+
+  const getImageFormat = (base64OrUrl: string): 'PNG' | 'JPEG' | 'WEBP' => {
+    if (base64OrUrl.includes('data:image/png') || base64OrUrl.toLowerCase().endsWith('.png')) {
+      return 'PNG';
+    }
+    if (base64OrUrl.includes('data:image/webp') || base64OrUrl.toLowerCase().endsWith('.webp')) {
+      return 'WEBP';
+    }
+    return 'JPEG'; // Default
+  };
+
   const generateReviewDoc = async (
     formData: PautaFormData,
     clienteNome: string
@@ -124,10 +149,21 @@ export const useGenerateReviewDoc = () => {
         (v) => v.numero === formData.versao_ativa
       );
 
+      console.log('🔍 Gerando documento de revisão...');
+      console.log(`   Versão ativa: ${formData.versao_ativa}`);
+      console.log(`   Blocos encontrados: ${versaoAtiva?.blocos.length || 0}`);
+
       if (versaoAtiva && versaoAtiva.blocos.length > 0) {
         for (let blocoIdx = 0; blocoIdx < versaoAtiva.blocos.length; blocoIdx++) {
           const bloco = versaoAtiva.blocos[blocoIdx];
           const config = MATERIAL_CONFIG[bloco.tipo];
+
+          console.log(`\n📦 Bloco ${blocoIdx + 1}: ${config.label}`);
+          console.log(`   Itens: ${bloco.itens.length}`);
+          bloco.itens.forEach((item, idx) => {
+            const totalArquivos = (item.arquivos?.length || 0) + (item.arquivosUrls?.length || 0);
+            console.log(`   - Item ${idx + 1}: ${totalArquivos} arquivo(s) (${item.arquivos?.length || 0} locais + ${item.arquivosUrls?.length || 0} URLs)`);
+          });
 
           checkNewPage(30);
 
@@ -204,7 +240,7 @@ export const useGenerateReviewDoc = () => {
               yPos += 7;
             }
 
-            // Arquivos/Mídias
+            // Arquivos/Mídias - Processar File objects (arquivos novos não salvos)
             if (item.arquivos && item.arquivos.length > 0) {
               for (const arquivo of item.arquivos) {
                 const isVideo = arquivo.type.startsWith('video/');
@@ -212,12 +248,17 @@ export const useGenerateReviewDoc = () => {
 
                 if (isImage) {
                   try {
+                    console.log(`📷 Processando imagem: ${arquivo.name} (${arquivo.type}, ${(arquivo.size / 1024).toFixed(2)}KB)`);
                     checkNewPage(80);
                     const base64 = await fileToBase64(arquivo);
+                    console.log(`✅ Base64 gerado (${base64.substring(0, 50)}...)`);
+                    const imgFormat = getImageFormat(base64);
+                    console.log(`🎨 Formato detectado: ${imgFormat}`);
                     const imgWidth = pageWidth - margin * 2;
                     const imgHeight = 60;
 
-                    doc.addImage(base64, 'JPEG', margin, yPos, imgWidth, imgHeight);
+                    doc.addImage(base64, imgFormat, margin, yPos, imgWidth, imgHeight);
+                    console.log(`✅ Imagem adicionada ao PDF na posição Y: ${yPos}`);
                     yPos += imgHeight + 5;
 
                     doc.setTextColor(...mutedColor);
@@ -227,9 +268,10 @@ export const useGenerateReviewDoc = () => {
                     doc.setTextColor(...textColor);
                     yPos += 8;
                   } catch (error) {
-                    console.error('Erro ao adicionar imagem:', error);
+                    console.error('❌ Erro ao adicionar imagem:', error);
+                    console.error('   Arquivo:', arquivo.name, arquivo.type);
                     doc.setTextColor(...mutedColor);
-                    doc.text(`[Imagem: ${arquivo.name}]`, margin, yPos);
+                    doc.text(`[Imagem: ${arquivo.name}] - Erro ao processar`, margin, yPos);
                     doc.setTextColor(...textColor);
                     yPos += 7;
                   }
@@ -240,6 +282,62 @@ export const useGenerateReviewDoc = () => {
 
                   doc.setTextColor(146, 64, 14); // yellow-800
                   doc.text(`🎬 Vídeo: ${arquivo.name}`, margin + 3, yPos + 4);
+                  doc.setTextColor(...textColor);
+                  yPos += 15;
+                }
+              }
+            }
+
+            // Arquivos/Mídias - Processar URLs (arquivos já salvos no Supabase)
+            if (item.arquivosUrls && item.arquivosUrls.length > 0) {
+              for (const url of item.arquivosUrls) {
+                const urlLower = url.toLowerCase();
+                const isVideo = urlLower.includes('.mp4') || urlLower.includes('.mov') ||
+                               urlLower.includes('.avi') || urlLower.includes('.webm');
+                const isImage = urlLower.includes('.jpg') || urlLower.includes('.jpeg') ||
+                               urlLower.includes('.png') || urlLower.includes('.gif') ||
+                               urlLower.includes('.webp');
+
+                if (isImage) {
+                  try {
+                    const fileName = url.split('/').pop() || 'imagem';
+                    console.log(`🌐 Processando imagem da URL: ${decodeURIComponent(fileName)}`);
+                    console.log(`   URL: ${url.substring(0, 80)}...`);
+                    checkNewPage(80);
+                    const base64 = await urlToBase64(url);
+                    console.log(`✅ Base64 gerado da URL (${base64.substring(0, 50)}...)`);
+                    const imgFormat = getImageFormat(url);
+                    console.log(`🎨 Formato detectado: ${imgFormat}`);
+                    const imgWidth = pageWidth - margin * 2;
+                    const imgHeight = 60;
+
+                    doc.addImage(base64, imgFormat, margin, yPos, imgWidth, imgHeight);
+                    console.log(`✅ Imagem da URL adicionada ao PDF na posição Y: ${yPos}`);
+                    yPos += imgHeight + 5;
+
+                    doc.setTextColor(...mutedColor);
+                    doc.setFontSize(8);
+                    doc.text(`📷 ${decodeURIComponent(fileName)}`, margin, yPos);
+                    doc.setFontSize(10);
+                    doc.setTextColor(...textColor);
+                    yPos += 8;
+                  } catch (error) {
+                    console.error('❌ Erro ao adicionar imagem da URL:', error);
+                    console.error('   URL:', url);
+                    const fileName = url.split('/').pop() || 'imagem';
+                    doc.setTextColor(...mutedColor);
+                    doc.text(`[Imagem: ${decodeURIComponent(fileName)}] - Erro ao processar URL`, margin, yPos);
+                    doc.setTextColor(...textColor);
+                    yPos += 7;
+                  }
+                } else if (isVideo) {
+                  checkNewPage(15);
+                  const fileName = url.split('/').pop() || 'vídeo';
+                  doc.setFillColor(254, 243, 199); // yellow-100
+                  doc.rect(margin, yPos - 3, pageWidth - margin * 2, 12, 'F');
+
+                  doc.setTextColor(146, 64, 14); // yellow-800
+                  doc.text(`🎬 Vídeo: ${decodeURIComponent(fileName)}`, margin + 3, yPos + 4);
                   doc.setTextColor(...textColor);
                   yPos += 15;
                 }
