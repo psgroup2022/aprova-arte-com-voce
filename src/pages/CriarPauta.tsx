@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { usePautaFormV2 } from '@/hooks/usePautaFormV2';
 import { usePautaSubmit } from '@/hooks/usePautaSubmit';
+import { useClientes } from '@/hooks/useClientes';
 import { VersaoSelector } from '@/components/criar-pauta/VersaoSelector';
 import { PautaInfoBasicaV2 } from '@/components/criar-pauta/PautaInfoBasicaV2';
 import { BlocosContainer } from '@/components/criar-pauta/BlocosContainer';
@@ -14,6 +15,7 @@ import { LegendaFinalSection } from '@/components/criar-pauta/LegendaFinalSectio
 import { BriefingUploadSection, ParsedBriefingData } from '@/components/criar-pauta/BriefingUploadSection';
 import { ApprovalLinkDisplay } from '@/components/ApprovalLinkDisplay';
 import { NovoClienteDialog } from '@/components/NovoClienteDialog';
+import { GenerateReviewDocButton } from '@/components/criar-pauta/GenerateReviewDocButton';
 
 export const CriarPauta = () => {
   const navigate = useNavigate();
@@ -40,9 +42,14 @@ export const CriarPauta = () => {
   } = usePautaFormV2();
 
   const { submitPauta, isSubmitting, approvalLink, setApprovalLink } = usePautaSubmit();
+  const { clientes } = useClientes();
 
   const versaoAtiva = getVersaoAtiva();
   const isVersaoReadOnly = !versaoAtiva?.ativa;
+
+  // Encontrar nome do cliente selecionado para o documento
+  const selectedCliente = clientes.find(c => c.id === formData.cliente_id);
+  const clienteNome = selectedCliente?.nome || '';
 
   const handleBriefingParsed = (data: ParsedBriefingData) => {
     populateFromBriefing(data);
@@ -144,14 +151,15 @@ export const CriarPauta = () => {
                   dataPrevista={formData.data_prevista}
                   tags={formData.tags}
                   observacoesInternas={formData.observacoes_internas}
+                  mirapautaTaskId={formData.mirapauta_task_id}
                   onTituloChange={(value) => updateField('titulo', value)}
                   onClienteChange={(value) => updateField('cliente_id', value)}
                   onDataPrevistaChange={(value) => updateField('data_prevista', value)}
                   onTagsChange={updateTags}
                   onObservacoesChange={(value) => updateField('observacoes_internas', value)}
+                  onMirapautaTaskChange={(value) => updateField('mirapauta_task_id', value)}
                   onNovoCliente={() => setShowNovoClienteDialog(true)}
                   disabled={isSubmitting || isVersaoReadOnly}
-                  
                 />
               </div>
 
@@ -187,6 +195,12 @@ export const CriarPauta = () => {
               {/* Botões de ação */}
               {!approvalLink && (
                 <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+                  <GenerateReviewDocButton
+                    formData={formData}
+                    clienteNome={clienteNome}
+                    disabled={isSubmitting || isVersaoReadOnly}
+                  />
+                  
                   <Button
                     type="button"
                     variant="outline"
