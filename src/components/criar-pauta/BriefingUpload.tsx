@@ -20,7 +20,7 @@ export const BriefingUpload: React.FC<BriefingUploadProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [isParsing, setIsParsing] = useState(false);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
 

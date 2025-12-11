@@ -15,7 +15,7 @@ interface GenerateDocResult {
 // Função para sanitizar nome de arquivo
 const sanitizeFilename = (filename: string): string => {
   return filename
-    .replace(/[^a-zA-Z0-9_\-]/g, '_')  // Remove caracteres especiais
+    .replace(/[^a-zA-Z0-9_-]/g, '_')  // Remove caracteres especiais
     .replace(/_{2,}/g, '_')  // Remove underscores duplicados
     .replace(/^_|_$/g, '');  // Remove underscores no início/fim
 };
@@ -29,7 +29,7 @@ export const useGenerateReviewDoc = () => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
+      reader.onerror = () => reject(new Error('Failed to read file'));
     });
   };
 
@@ -41,7 +41,7 @@ export const useGenerateReviewDoc = () => {
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
+        reader.onerror = () => reject(new Error('Failed to read blob'));
       });
     } catch (error) {
       throw new Error(`Erro ao carregar imagem da URL: ${url}`);

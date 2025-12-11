@@ -167,7 +167,7 @@ export const useMirapautaTasks = () => {
       console.log('[MiraPauta] Tasks brutas:', tasks?.length);
       if (tasks && tasks.length > 0) {
         console.log('[MiraPauta] Primeira task assignee:', tasks[0].assignee);
-        console.log('[MiraPauta] Assignees únicos:', [...new Set(tasks.map((t: any) => t.assignee).filter(Boolean))]);
+        console.log('[MiraPauta] Assignees únicos:', [...new Set(tasks.map((t) => (t as { assignee?: string }).assignee).filter(Boolean))]);
       }
 
       // Buscar clientes
@@ -190,7 +190,7 @@ export const useMirapautaTasks = () => {
 
       console.log('[MiraPauta] Profiles encontrados:', profiles?.length);
       if (profiles && profiles.length > 0) {
-        console.log('[MiraPauta] Profile nomes:', profiles.map((p: any) => p.nome));
+        console.log('[MiraPauta] Profile nomes:', profiles.map((p) => (p as { nome?: string }).nome));
       }
 
       // Mapear clientes por ID
@@ -343,7 +343,7 @@ export const useImportTasks = () => {
         }
 
         // Garantir que o cliente existe no AprovaArte
-        let clienteNome = task.cliente?.nome || 'Cliente não definido';
+        const clienteNome = task.cliente?.nome || 'Cliente não definido';
         
         if (task.cliente) {
           const { data: existingCliente } = await supabase
@@ -655,7 +655,7 @@ export const useSyncMirapautaTasks = () => {
       }
 
       console.log('[MiraPauta] Resultado da sincronização:', data);
-      return data;
+      return data as { message?: string } | null;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['pautas'] });
