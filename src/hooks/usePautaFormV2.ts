@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react';
-import { 
-  PautaFormData, 
-  BlocoMaterial, 
+import {
+  PautaFormData,
+  BlocoMaterial,
   BlocoItem,
   TipoMaterial,
   createInitialFormData,
   createEmptyBloco,
   createEmptyItem,
-  createEmptyVersao
+  createEmptyVersao,
 } from '@/types/pauta-form';
 import { ParsedBriefingData } from '@/components/criar-pauta/BriefingUploadSection';
 
@@ -17,184 +17,180 @@ export const usePautaFormV2 = () => {
 
   // Obter versão ativa
   const getVersaoAtiva = useCallback(() => {
-    return formData.versoes.find(v => v.numero === formData.versao_ativa) || formData.versoes[0];
+    return formData.versoes.find((v) => v.numero === formData.versao_ativa) || formData.versoes[0];
   }, [formData.versoes, formData.versao_ativa]);
 
   // Atualizar campo básico do formulário
-  const updateField = useCallback(<K extends keyof PautaFormData>(
-    field: K, 
-    value: PautaFormData[K]
-  ) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  }, []);
+  const updateField = useCallback(
+    <K extends keyof PautaFormData>(field: K, value: PautaFormData[K]) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    },
+    [],
+  );
 
   // Adicionar bloco de material
   const addBloco = useCallback((tipo: TipoMaterial) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const versoes = [...prev.versoes];
-      const versaoIndex = versoes.findIndex(v => v.numero === prev.versao_ativa);
-      
+      const versaoIndex = versoes.findIndex((v) => v.numero === prev.versao_ativa);
+
       if (versaoIndex === -1) return prev;
-      
+
       const versao = { ...versoes[versaoIndex] };
       const novoBloco = createEmptyBloco(tipo, versao.blocos.length);
       versao.blocos = [...versao.blocos, novoBloco];
       versoes[versaoIndex] = versao;
-      
+
       return { ...prev, versoes };
     });
   }, []);
 
   // Remover bloco de material
   const removeBloco = useCallback((blocoIndex: number) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const versoes = [...prev.versoes];
-      const versaoIndex = versoes.findIndex(v => v.numero === prev.versao_ativa);
-      
+      const versaoIndex = versoes.findIndex((v) => v.numero === prev.versao_ativa);
+
       if (versaoIndex === -1) return prev;
-      
+
       const versao = { ...versoes[versaoIndex] };
       versao.blocos = versao.blocos
         .filter((_, i) => i !== blocoIndex)
         .map((bloco, i) => ({ ...bloco, ordem: i }));
       versoes[versaoIndex] = versao;
-      
+
       return { ...prev, versoes };
     });
   }, []);
 
   // Atualizar bloco de material
-  const updateBloco = useCallback((
-    blocoIndex: number, 
-    updates: Partial<BlocoMaterial>
-  ) => {
-    setFormData(prev => {
+  const updateBloco = useCallback((blocoIndex: number, updates: Partial<BlocoMaterial>) => {
+    setFormData((prev) => {
       const versoes = [...prev.versoes];
-      const versaoIndex = versoes.findIndex(v => v.numero === prev.versao_ativa);
-      
+      const versaoIndex = versoes.findIndex((v) => v.numero === prev.versao_ativa);
+
       if (versaoIndex === -1) return prev;
-      
+
       const versao = { ...versoes[versaoIndex] };
-      versao.blocos = versao.blocos.map((bloco, i) => 
-        i === blocoIndex ? { ...bloco, ...updates } : bloco
+      versao.blocos = versao.blocos.map((bloco, i) =>
+        i === blocoIndex ? { ...bloco, ...updates } : bloco,
       );
       versoes[versaoIndex] = versao;
-      
+
       return { ...prev, versoes };
     });
   }, []);
 
   // Adicionar item ao bloco
   const addItemToBloco = useCallback((blocoIndex: number) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const versoes = [...prev.versoes];
-      const versaoIndex = versoes.findIndex(v => v.numero === prev.versao_ativa);
-      
+      const versaoIndex = versoes.findIndex((v) => v.numero === prev.versao_ativa);
+
       if (versaoIndex === -1) return prev;
-      
+
       const versao = { ...versoes[versaoIndex] };
       const bloco = { ...versao.blocos[blocoIndex] };
       const novoItem = createEmptyItem(bloco.itens.length);
       bloco.itens = [...bloco.itens, novoItem];
-      versao.blocos = versao.blocos.map((b, i) => i === blocoIndex ? bloco : b);
+      versao.blocos = versao.blocos.map((b, i) => (i === blocoIndex ? bloco : b));
       versoes[versaoIndex] = versao;
-      
+
       return { ...prev, versoes };
     });
   }, []);
 
   // Remover item do bloco
   const removeItemFromBloco = useCallback((blocoIndex: number, itemIndex: number) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const versoes = [...prev.versoes];
-      const versaoIndex = versoes.findIndex(v => v.numero === prev.versao_ativa);
-      
+      const versaoIndex = versoes.findIndex((v) => v.numero === prev.versao_ativa);
+
       if (versaoIndex === -1) return prev;
-      
+
       const versao = { ...versoes[versaoIndex] };
       const bloco = { ...versao.blocos[blocoIndex] };
       bloco.itens = bloco.itens
         .filter((_, i) => i !== itemIndex)
         .map((item, i) => ({ ...item, ordem: i }));
-      versao.blocos = versao.blocos.map((b, i) => i === blocoIndex ? bloco : b);
+      versao.blocos = versao.blocos.map((b, i) => (i === blocoIndex ? bloco : b));
       versoes[versaoIndex] = versao;
-      
+
       return { ...prev, versoes };
     });
   }, []);
 
   // Atualizar item do bloco
-  const updateBlocoItem = useCallback((
-    blocoIndex: number, 
-    itemIndex: number, 
-    updates: Partial<BlocoItem>
-  ) => {
-    setFormData(prev => {
-      const versoes = [...prev.versoes];
-      const versaoIndex = versoes.findIndex(v => v.numero === prev.versao_ativa);
-      
-      if (versaoIndex === -1) return prev;
-      
-      const versao = { ...versoes[versaoIndex] };
-      const bloco = { ...versao.blocos[blocoIndex] };
-      bloco.itens = bloco.itens.map((item, i) => 
-        i === itemIndex ? { ...item, ...updates } : item
-      );
-      versao.blocos = versao.blocos.map((b, i) => i === blocoIndex ? bloco : b);
-      versoes[versaoIndex] = versao;
-      
-      return { ...prev, versoes };
-    });
-  }, []);
+  const updateBlocoItem = useCallback(
+    (blocoIndex: number, itemIndex: number, updates: Partial<BlocoItem>) => {
+      setFormData((prev) => {
+        const versoes = [...prev.versoes];
+        const versaoIndex = versoes.findIndex((v) => v.numero === prev.versao_ativa);
+
+        if (versaoIndex === -1) return prev;
+
+        const versao = { ...versoes[versaoIndex] };
+        const bloco = { ...versao.blocos[blocoIndex] };
+        bloco.itens = bloco.itens.map((item, i) =>
+          i === itemIndex ? { ...item, ...updates } : item,
+        );
+        versao.blocos = versao.blocos.map((b, i) => (i === blocoIndex ? bloco : b));
+        versoes[versaoIndex] = versao;
+
+        return { ...prev, versoes };
+      });
+    },
+    [],
+  );
 
   // Criar nova versão (clonar atual)
   const createNewVersion = useCallback(() => {
-    setFormData(prev => {
-      const versaoAtual = prev.versoes.find(v => v.numero === prev.versao_ativa);
+    setFormData((prev) => {
+      const versaoAtual = prev.versoes.find((v) => v.numero === prev.versao_ativa);
       if (!versaoAtual) return prev;
-      
-      const novoNumero = Math.max(...prev.versoes.map(v => v.numero)) + 1;
-      
+
+      const novoNumero = Math.max(...prev.versoes.map((v) => v.numero)) + 1;
+
       // Desativar todas as versões anteriores
-      const versoesAtualizadas = prev.versoes.map(v => ({ ...v, ativa: false }));
-      
+      const versoesAtualizadas = prev.versoes.map((v) => ({ ...v, ativa: false }));
+
       // Clonar a versão atual
       const novaVersao: typeof versaoAtual = {
         ...versaoAtual,
         id: undefined,
         numero: novoNumero,
         ativa: true,
-        blocos: versaoAtual.blocos.map(bloco => ({
+        blocos: versaoAtual.blocos.map((bloco) => ({
           ...bloco,
           id: undefined,
-          itens: bloco.itens.map(item => ({
+          itens: bloco.itens.map((item) => ({
             ...item,
-            id: undefined
-          }))
-        }))
+            id: undefined,
+          })),
+        })),
       };
-      
+
       return {
         ...prev,
         versoes: [...versoesAtualizadas, novaVersao],
-        versao_ativa: novoNumero
+        versao_ativa: novoNumero,
       };
     });
   }, []);
 
   // Mudar versão ativa
   const setVersaoAtiva = useCallback((numero: number) => {
-    setFormData(prev => ({ ...prev, versao_ativa: numero }));
+    setFormData((prev) => ({ ...prev, versao_ativa: numero }));
   }, []);
 
   // Atualizar tags
   const updateTags = useCallback((tags: string[]) => {
-    setFormData(prev => ({ ...prev, tags }));
+    setFormData((prev) => ({ ...prev, tags }));
   }, []);
 
   // Atualizar hashtags principais
   const updateHashtagsPrincipais = useCallback((hashtags: string[]) => {
-    setFormData(prev => ({ ...prev, hashtags_principais: hashtags }));
+    setFormData((prev) => ({ ...prev, hashtags_principais: hashtags }));
   }, []);
 
   // Reset form
@@ -204,44 +200,143 @@ export const usePautaFormV2 = () => {
 
   // Reordenar blocos
   const reorderBlocos = useCallback((fromIndex: number, toIndex: number) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const versoes = [...prev.versoes];
-      const versaoIndex = versoes.findIndex(v => v.numero === prev.versao_ativa);
-      
+      const versaoIndex = versoes.findIndex((v) => v.numero === prev.versao_ativa);
+
       if (versaoIndex === -1) return prev;
-      
+
       const versao = { ...versoes[versaoIndex] };
       const blocos = [...versao.blocos];
       const [removed] = blocos.splice(fromIndex, 1);
       blocos.splice(toIndex, 0, removed);
       versao.blocos = blocos.map((bloco, i) => ({ ...bloco, ordem: i }));
       versoes[versaoIndex] = versao;
-      
+
       return { ...prev, versoes };
     });
   }, []);
 
   // Preencher formulário a partir do briefing parseado
   const populateFromBriefing = useCallback((data: ParsedBriefingData) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newFormData = { ...prev };
-      
+
       // Preencher campos básicos
       if (data.titulo) newFormData.titulo = data.titulo;
       if (data.tags) newFormData.tags = data.tags;
       if (data.dataPrevista) newFormData.data_prevista = data.dataPrevista;
-      
-      // Criar blocos de material a partir dos materiais parseados
-      if (data.materiais && data.materiais.length > 0) {
+
+      // Processar POSTS (estrutura nova retornada pelo parse-briefing)
+      if (data.posts && data.posts.length > 0) {
         const versoes = [...newFormData.versoes];
-        const versaoIndex = versoes.findIndex(v => v.numero === newFormData.versao_ativa);
-        
+        const versaoIndex = versoes.findIndex((v) => v.numero === newFormData.versao_ativa);
+
         if (versaoIndex !== -1) {
           const versao = { ...versoes[versaoIndex] };
-          
+
+          const novosBlocos: BlocoMaterial[] = data.posts.map((post, blocoIndex) => {
+            const tipo = post.tipo as TipoMaterial;
+            const itens: BlocoItem[] = [];
+
+            // Processar de acordo com o tipo do post
+            if (tipo === 'carrossel' && post.slides && post.slides.length > 0) {
+              // Para carrossel, cada slide é um item
+              post.slides.forEach((slide, index) => {
+                itens.push({
+                  titulo: slide.titulo || `Slide ${index + 1}`,
+                  assunto: '',
+                  texto_conteudo: slide.conteudo || '', // Conteúdo do card
+                  legenda: index === 0 ? post.legenda || '' : '', // Legenda apenas no primeiro slide
+                  hashtags: index === 0 ? post.hashtags?.map((h) => `#${h}`).join(' ') || '' : '', // Hashtags apenas no primeiro
+                  arquivos: [],
+                  arquivosUrls: [],
+                  ordem: index,
+                });
+              });
+            } else if (tipo === 'reels' && post.cenas && post.cenas.length > 0) {
+              // Para reels, cada cena é um item
+              post.cenas.forEach((cena, index) => {
+                itens.push({
+                  titulo: `Cena ${cena.numero}`,
+                  assunto: '',
+                  texto_conteudo: cena.descricao || '', // Descrição da cena
+                  legenda: index === 0 ? post.legenda || '' : '', // Legenda apenas na primeira cena
+                  hashtags: index === 0 ? post.hashtags?.map((h) => `#${h}`).join(' ') || '' : '',
+                  arquivos: [],
+                  arquivosUrls: [],
+                  ordem: index,
+                });
+              });
+            } else if (tipo === 'story' && post.telas && post.telas.length > 0) {
+              // Para stories, cada tela é um item
+              post.telas.forEach((tela, index) => {
+                itens.push({
+                  titulo: `Tela ${tela.numero}`,
+                  assunto: '',
+                  texto_conteudo: tela.conteudo || '', // Conteúdo da tela
+                  legenda: index === 0 ? post.legenda || '' : '', // Legenda apenas na primeira tela
+                  hashtags: index === 0 ? post.hashtags?.map((h) => `#${h}`).join(' ') || '' : '',
+                  arquivos: [],
+                  arquivosUrls: [],
+                  ordem: index,
+                });
+              });
+            } else if (tipo === 'linkedin_artigo') {
+              // Para artigos do LinkedIn
+              itens.push({
+                titulo: post.titulo_post || '',
+                assunto: '',
+                texto_conteudo: post.chamada || '', // Chamada curta
+                legenda: post.artigo || post.legenda || '', // Artigo completo na legenda
+                hashtags: post.hashtags?.map((h) => `#${h}`).join(' ') || '',
+                arquivos: [],
+                arquivosUrls: [],
+                ordem: 0,
+              });
+            } else {
+              // Para posts estáticos e outros tipos
+              itens.push({
+                titulo: post.titulo_post || '',
+                assunto: '',
+                texto_conteudo: post.chamada || '', // texto_conteudo é usado como "chamada"
+                legenda: post.legenda || '', // legenda separada
+                hashtags: post.hashtags?.map((h) => `#${h}`).join(' ') || '',
+                arquivos: [],
+                arquivosUrls: [],
+                ordem: 0,
+              });
+            }
+
+            // Se não há itens (caso inesperado), criar um vazio
+            if (itens.length === 0) {
+              itens.push(createEmptyItem(0));
+            }
+
+            return {
+              tipo,
+              status: 'aguardando_midia' as const,
+              itens,
+              ordem: blocoIndex,
+            };
+          });
+
+          versao.blocos = novosBlocos;
+          versoes[versaoIndex] = versao;
+          newFormData.versoes = versoes;
+        }
+      }
+      // Compatibilidade com estrutura antiga (materiais)
+      else if (data.materiais && data.materiais.length > 0) {
+        const versoes = [...newFormData.versoes];
+        const versaoIndex = versoes.findIndex((v) => v.numero === newFormData.versao_ativa);
+
+        if (versaoIndex !== -1) {
+          const versao = { ...versoes[versaoIndex] };
+
           const novosBlocos: BlocoMaterial[] = data.materiais.map((material, blocoIndex) => {
             const tipo = material.tipo as TipoMaterial;
-            
+
             const itens: BlocoItem[] = material.itens.map((item, itemIndex) => ({
               titulo: '',
               assunto: '',
@@ -250,28 +345,28 @@ export const usePautaFormV2 = () => {
               hashtags: item.hashtags?.join(' #') || '',
               arquivos: [],
               arquivosUrls: [],
-              ordem: itemIndex
+              ordem: itemIndex,
             }));
-            
+
             // Se não há itens, criar pelo menos um vazio
             if (itens.length === 0) {
               itens.push(createEmptyItem(0));
             }
-            
+
             return {
               tipo,
               status: 'aguardando_midia' as const,
               itens,
-              ordem: blocoIndex
+              ordem: blocoIndex,
             };
           });
-          
+
           versao.blocos = novosBlocos;
           versoes[versaoIndex] = versao;
           newFormData.versoes = versoes;
         }
       }
-      
+
       return newFormData;
     });
   }, []);
@@ -295,6 +390,6 @@ export const usePautaFormV2 = () => {
     updateHashtagsPrincipais,
     resetForm,
     reorderBlocos,
-    populateFromBriefing
+    populateFromBriefing,
   };
 };
