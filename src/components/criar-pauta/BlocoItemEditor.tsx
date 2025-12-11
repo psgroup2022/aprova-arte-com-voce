@@ -118,10 +118,10 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
         )}
 
         {/* Corpo/Texto do conteúdo */}
-        {(config.fields.texto || config.fields.corpo) && (
+        {(config.fields.chamada || config.fields.corpo) && (
           <div className="space-y-2">
             <Label htmlFor={`texto-${itemIndex}`}>
-              {config.fields.corpo ? 'Corpo' : tipoMaterial === 'reels' ? 'Chamada' : 'Texto'}
+              {config.fields.corpo ? 'Corpo' : (config.fieldLabels?.chamada || 'Chamada')}
             </Label>
             <Textarea
               id={`texto-${itemIndex}`}
@@ -129,17 +129,32 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
               onChange={(e) => onUpdate({ texto_conteudo: e.target.value })}
               placeholder={config.fields.corpo 
                 ? "Digite o conteúdo completo..." 
-                : tipoMaterial === 'reels' 
-                  ? "Digite a chamada desta cena..."
-                  : "Digite o texto da peça..."}
+                : `Digite a ${(config.fieldLabels?.chamada || 'chamada').toLowerCase()}...`}
               rows={config.fields.corpo ? 6 : 3}
               disabled={disabled}
             />
           </div>
         )}
 
-        {/* Hashtags */}
-        {config.fields.hashtags && (
+        {/* Legenda (separada da chamada) */}
+        {config.fields.legenda && (
+          <div className="space-y-2">
+            <Label htmlFor={`legenda-${itemIndex}`}>
+              {config.fieldLabels?.legenda || 'Legenda'}
+            </Label>
+            <Textarea
+              id={`legenda-${itemIndex}`}
+              value={item.legenda || ''}
+              onChange={(e) => onUpdate({ legenda: e.target.value })}
+              placeholder="Digite a legenda..."
+              rows={2}
+              disabled={disabled}
+            />
+          </div>
+        )}
+
+        {/* Hashtags (junto com legenda) */}
+        {config.fields.legenda && (
           <div className="space-y-2">
             <Label htmlFor={`hashtags-${itemIndex}`}>Hashtags</Label>
             <Input

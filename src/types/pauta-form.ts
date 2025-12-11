@@ -27,9 +27,13 @@ export const MATERIAL_CONFIG: Record<TipoMaterial, {
     titulo?: boolean;
     assunto?: boolean;
     corpo?: boolean;
-    texto?: boolean;
-    hashtags?: boolean;
+    chamada?: boolean; // Campo de chamada/texto
+    legenda?: boolean; // Campo de legenda (hashtags ficam junto)
     midia?: boolean;
+  };
+  fieldLabels?: {
+    chamada?: string;
+    legenda?: string;
   };
   singleUploadAtBlock?: boolean; // Upload único no nível do bloco (Reels = 1 vídeo, Carrossel = múltiplas imagens)
 }> = {
@@ -39,7 +43,8 @@ export const MATERIAL_CONFIG: Record<TipoMaterial, {
     itemLabel: 'Slide',
     hasMultipleItems: true,
     defaultItemCount: 3,
-    fields: { texto: true, hashtags: true, midia: true },
+    fields: { chamada: true, legenda: true, midia: true },
+    fieldLabels: { chamada: 'Chamada', legenda: 'Legenda' },
     singleUploadAtBlock: true
   },
   story: {
@@ -48,7 +53,9 @@ export const MATERIAL_CONFIG: Record<TipoMaterial, {
     itemLabel: 'Tela',
     hasMultipleItems: true,
     defaultItemCount: 1,
-    fields: { texto: true, hashtags: true, midia: true }
+    fields: { chamada: true, midia: true },
+    fieldLabels: { chamada: 'Chamada' },
+    singleUploadAtBlock: true
   },
   reels: {
     label: 'Reels',
@@ -56,7 +63,8 @@ export const MATERIAL_CONFIG: Record<TipoMaterial, {
     itemLabel: 'Cena',
     hasMultipleItems: true,
     defaultItemCount: 1,
-    fields: { texto: true, hashtags: true, midia: true },
+    fields: { chamada: true, legenda: true, midia: true },
+    fieldLabels: { chamada: 'Chamada', legenda: 'Legenda' },
     singleUploadAtBlock: true
   },
   estatico: {
@@ -65,7 +73,8 @@ export const MATERIAL_CONFIG: Record<TipoMaterial, {
     itemLabel: 'Peça',
     hasMultipleItems: false,
     defaultItemCount: 1,
-    fields: { texto: true, hashtags: true, midia: true }
+    fields: { chamada: true, legenda: true, midia: true },
+    fieldLabels: { chamada: 'Chamada', legenda: 'Legenda' }
   },
   linkedin_artigo: {
     label: 'LinkedIn Artigo',
@@ -89,7 +98,8 @@ export const MATERIAL_CONFIG: Record<TipoMaterial, {
     itemLabel: 'Mensagem',
     hasMultipleItems: false,
     defaultItemCount: 1,
-    fields: { texto: true }
+    fields: { chamada: true },
+    fieldLabels: { chamada: 'Texto' }
   }
 };
 
@@ -107,7 +117,8 @@ export interface BlocoItem {
   id?: string;
   titulo: string;
   assunto: string;
-  texto_conteudo: string;
+  texto_conteudo: string; // Usado como "chamada"
+  legenda: string; // Legenda separada da chamada
   hashtags: string;
   arquivos: File[];
   arquivosUrls: string[];
@@ -151,6 +162,7 @@ export const createEmptyItem = (ordem: number = 0): BlocoItem => ({
   titulo: '',
   assunto: '',
   texto_conteudo: '',
+  legenda: '',
   hashtags: '',
   arquivos: [],
   arquivosUrls: [],
