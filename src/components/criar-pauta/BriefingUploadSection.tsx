@@ -170,26 +170,33 @@ export const BriefingUploadSection: React.FC<BriefingUploadSectionProps> = ({
     try {
       console.log('Enviando para parse-briefing:', fileContent.substring(0, 300) + '...');
       
-      const { data, error } = await supabase.functions.invoke('parse-briefing', {
+      // Tipagem da resposta da Edge Function
+      interface ParseBriefingResponse {
+        success?: boolean;
+        data?: ParsedBriefingData;
+        error?: string;
+      }
+      
+      const { data: responseData, error } = await supabase.functions.invoke<ParseBriefingResponse>('parse-briefing', {
         body: { documentContent: fileContent }
       });
 
-      console.log('Resposta do parse-briefing:', data);
+      console.log('Resposta do parse-briefing:', responseData);
 
       if (error) throw error;
 
-      if (data?.success && data?.data) {
+      if (responseData?.success && responseData?.data) {
         setIsProcessed(true);
-        onBriefingParsed(data.data);
+        onBriefingParsed(responseData.data);
         
         // Conta posts ou materiais (compatibilidade)
-        const postCount = data.data.posts?.length || data.data.materiais?.length || 0;
+        const postCount = responseData.data.posts?.length || responseData.data.materiais?.length || 0;
         toast({
           title: 'Briefing processado!',
           description: `Encontrados ${postCount} posts.`,
         });
-      } else if (data?.error) {
-        throw new Error(data.error);
+      } else if (responseData?.error) {
+        throw new Error(responseData.error);
       }
     } catch (error) {
       console.error('Erro ao processar briefing:', error);

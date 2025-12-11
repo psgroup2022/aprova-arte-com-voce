@@ -11,7 +11,6 @@ import {
 import { 
   BlocoMaterial, 
   BlocoItem, 
-  TipoMaterial, 
   BlocoStatus,
   MATERIAL_CONFIG, 
   BLOCO_STATUS_LABELS 
@@ -63,7 +62,7 @@ const statusColorMap: Record<BlocoStatus, string> = {
 
 export const BlocoMaterialCard: React.FC<BlocoMaterialCardProps> = ({
   bloco,
-  blocoIndex,
+  blocoIndex: _blocoIndex,
   onUpdate,
   onRemove,
   onAddItem,

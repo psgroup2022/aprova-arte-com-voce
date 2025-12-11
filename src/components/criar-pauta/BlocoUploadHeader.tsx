@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { TipoMaterial, BlocoItem, createEmptyItem } from '@/types/pauta-form';
-import { Upload, X, Film, Image as ImageIcon, Plus } from 'lucide-react';
+import { X, Film, Image as ImageIcon, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BlocoUploadHeaderProps {
