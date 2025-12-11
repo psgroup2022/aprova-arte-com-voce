@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { useClientes } from '@/hooks/useClientes';
 import { TagManager } from '@/components/TagManager';
 import { BriefingUpload } from './BriefingUpload';
+import { TarefaVinculadaSelector } from './TarefaVinculadaSelector';
 
 interface PautaInfoBasicaV2Props {
   titulo: string;
@@ -26,11 +27,13 @@ interface PautaInfoBasicaV2Props {
   dataPrevista: string;
   tags: string[];
   observacoesInternas: string;
+  mirapautaTaskId?: string;
   onTituloChange: (value: string) => void;
   onClienteChange: (value: string) => void;
   onDataPrevistaChange: (value: string) => void;
   onTagsChange: (tags: string[]) => void;
   onObservacoesChange: (value: string) => void;
+  onMirapautaTaskChange?: (value: string) => void;
   onNovoCliente?: () => void;
   disabled?: boolean;
 }
@@ -41,11 +44,13 @@ export const PautaInfoBasicaV2: React.FC<PautaInfoBasicaV2Props> = ({
   dataPrevista,
   tags,
   observacoesInternas,
+  mirapautaTaskId,
   onTituloChange,
   onClienteChange,
   onDataPrevistaChange,
   onTagsChange,
   onObservacoesChange,
+  onMirapautaTaskChange,
   onNovoCliente,
   disabled = false
 }) => {
@@ -161,6 +166,15 @@ export const PautaInfoBasicaV2: React.FC<PautaInfoBasicaV2Props> = ({
           <TagManager tags={tags} onTagsChange={onTagsChange} />
         </div>
       </div>
+
+      {/* Tarefa Vinculada do MiraPauta */}
+      {onMirapautaTaskChange && (
+        <TarefaVinculadaSelector
+          value={mirapautaTaskId || ''}
+          onChange={onMirapautaTaskChange}
+          disabled={disabled}
+        />
+      )}
 
       {/* Upload de briefing */}
       <BriefingUpload disabled={disabled} />

@@ -155,6 +155,7 @@ export interface PautaFormData {
   hashtags_principais: string[];
   versoes: PautaVersao[];
   versao_ativa: number;
+  mirapauta_task_id?: string; // Tarefa vinculada do MiraPauta
 }
 
 // Função auxiliar para criar um item vazio
@@ -203,7 +204,8 @@ export const createInitialFormData = (): PautaFormData => ({
   legenda_final: '',
   hashtags_principais: [],
   versoes: [createEmptyVersao(1)],
-  versao_ativa: 1
+  versao_ativa: 1,
+  mirapauta_task_id: undefined
 });
 
 // Tipos legados para compatibilidade
