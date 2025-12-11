@@ -7,8 +7,18 @@ import { useToast } from '@/hooks/use-toast';
 interface GenerateDocResult {
   success: boolean;
   url?: string;
+  localUrl?: string;  // URL local (blob URL) quando não faz upload
+  downloadFilename?: string;
   error?: string;
 }
+
+// Função para sanitizar nome de arquivo
+const sanitizeFilename = (filename: string): string => {
+  return filename
+    .replace(/[^a-zA-Z0-9_\-]/g, '_')  // Remove caracteres especiais
+    .replace(/_{2,}/g, '_')  // Remove underscores duplicados
+    .replace(/^_|_$/g, '');  // Remove underscores no início/fim
+};
 
 export const useGenerateReviewDoc = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -46,6 +56,93 @@ export const useGenerateReviewDoc = () => {
       return 'WEBP';
     }
     return 'JPEG'; // Default
+  };
+
+  const getImageDimensions = (base64: string): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        resolve({ width: img.width, height: img.height });
+      };
+      img.onerror = reject;
+      img.src = base64;
+    });
+  };
+
+  // Proporções comuns de redes sociais
+  const SOCIAL_MEDIA_RATIOS = {
+    '4:5': 4 / 5,      // Instagram Feed Portrait (1080x1350)
+    '1:1': 1,          // Instagram Square (1080x1080)
+    '16:9': 16 / 9,    // YouTube, Landscape (1920x1080)
+    '9:16': 9 / 16,    // Instagram Stories, TikTok, Reels (1080x1920)
+  };
+
+  const detectRatio = (width: number, height: number): string => {
+    const ratio = width / height;
+    const tolerance = 0.02; // 2% de tolerância
+
+    for (const [name, value] of Object.entries(SOCIAL_MEDIA_RATIOS)) {
+      if (Math.abs(ratio - value) < tolerance) {
+        return name;
+      }
+    }
+    return 'custom';
+  };
+
+  const calculateProportionalDimensions = (
+    originalWidth: number,
+    originalHeight: number,
+    maxWidth: number,
+    maxHeight: number = 120  // Aumentado para acomodar melhor 9:16
+  ): { width: number; height: number; ratio: string } => {
+    const aspectRatio = originalWidth / originalHeight;
+    const detectedRatio = detectRatio(originalWidth, originalHeight);
+
+    let width: number;
+    let height: number;
+
+    // Otimizações por proporção
+    if (detectedRatio === '9:16') {
+      // Stories/Reels (vertical) - priorizar altura
+      height = Math.min(maxHeight, 110);
+      width = height * aspectRatio;
+      // Se largura exceder, recalcular
+      if (width > maxWidth * 0.6) {  // Não usar mais que 60% da largura para verticais
+        width = maxWidth * 0.6;
+        height = width / aspectRatio;
+      }
+    } else if (detectedRatio === '4:5') {
+      // Instagram Portrait - equilíbrio entre largura e altura
+      height = Math.min(maxHeight * 0.9, 95);
+      width = height * aspectRatio;
+      if (width > maxWidth * 0.7) {
+        width = maxWidth * 0.7;
+        height = width / aspectRatio;
+      }
+    } else if (detectedRatio === '16:9') {
+      // YouTube/Landscape - priorizar largura
+      width = maxWidth;
+      height = width / aspectRatio;
+      if (height > maxHeight * 0.6) {  // Limitar altura para não ocupar muito espaço
+        height = maxHeight * 0.6;
+        width = height * aspectRatio;
+      }
+    } else if (detectedRatio === '1:1') {
+      // Square - usar menor dimensão
+      const size = Math.min(maxWidth * 0.8, maxHeight * 0.8, 85);
+      width = size;
+      height = size;
+    } else {
+      // Custom ratio - comportamento padrão
+      width = maxWidth;
+      height = width / aspectRatio;
+      if (height > maxHeight) {
+        height = maxHeight;
+        width = height * aspectRatio;
+      }
+    }
+
+    return { width, height, ratio: detectedRatio };
   };
 
   const generateReviewDoc = async (
@@ -88,7 +185,7 @@ export const useGenerateReviewDoc = () => {
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
-      doc.text('Documento de Revisão', margin, 20);
+      doc.text('Sistema Aprova Pautas Mirador', margin, 20);
 
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
@@ -249,14 +346,27 @@ export const useGenerateReviewDoc = () => {
                 if (isImage) {
                   try {
                     console.log(`📷 Processando imagem: ${arquivo.name} (${arquivo.type}, ${(arquivo.size / 1024).toFixed(2)}KB)`);
-                    checkNewPage(80);
                     const base64 = await fileToBase64(arquivo);
                     console.log(`✅ Base64 gerado (${base64.substring(0, 50)}...)`);
+
+                    // Obter dimensões reais da imagem
+                    const imgDimensions = await getImageDimensions(base64);
+                    console.log(`📐 Dimensões originais: ${imgDimensions.width}x${imgDimensions.height}`);
+
                     const imgFormat = getImageFormat(base64);
                     console.log(`🎨 Formato detectado: ${imgFormat}`);
-                    const imgWidth = pageWidth - margin * 2;
-                    const imgHeight = 60;
 
+                    // Calcular dimensões proporcionais (max width = largura da página - margens, max height = 100mm)
+                    const maxWidth = pageWidth - margin * 2;
+                    const { width: imgWidth, height: imgHeight } = calculateProportionalDimensions(
+                      imgDimensions.width,
+                      imgDimensions.height,
+                      maxWidth,
+                      100  // altura máxima em mm
+                    );
+                    console.log(`📏 Dimensões no PDF: ${imgWidth.toFixed(2)}x${imgHeight.toFixed(2)}mm`);
+
+                    checkNewPage(imgHeight + 15);
                     doc.addImage(base64, imgFormat, margin, yPos, imgWidth, imgHeight);
                     console.log(`✅ Imagem adicionada ao PDF na posição Y: ${yPos}`);
                     yPos += imgHeight + 5;
@@ -303,14 +413,27 @@ export const useGenerateReviewDoc = () => {
                     const fileName = url.split('/').pop() || 'imagem';
                     console.log(`🌐 Processando imagem da URL: ${decodeURIComponent(fileName)}`);
                     console.log(`   URL: ${url.substring(0, 80)}...`);
-                    checkNewPage(80);
                     const base64 = await urlToBase64(url);
                     console.log(`✅ Base64 gerado da URL (${base64.substring(0, 50)}...)`);
+
+                    // Obter dimensões reais da imagem
+                    const imgDimensions = await getImageDimensions(base64);
+                    console.log(`📐 Dimensões originais: ${imgDimensions.width}x${imgDimensions.height}`);
+
                     const imgFormat = getImageFormat(url);
                     console.log(`🎨 Formato detectado: ${imgFormat}`);
-                    const imgWidth = pageWidth - margin * 2;
-                    const imgHeight = 60;
 
+                    // Calcular dimensões proporcionais
+                    const maxWidth = pageWidth - margin * 2;
+                    const { width: imgWidth, height: imgHeight } = calculateProportionalDimensions(
+                      imgDimensions.width,
+                      imgDimensions.height,
+                      maxWidth,
+                      100  // altura máxima em mm
+                    );
+                    console.log(`📏 Dimensões no PDF: ${imgWidth.toFixed(2)}x${imgHeight.toFixed(2)}mm`);
+
+                    checkNewPage(imgHeight + 15);
                     doc.addImage(base64, imgFormat, margin, yPos, imgWidth, imgHeight);
                     console.log(`✅ Imagem da URL adicionada ao PDF na posição Y: ${yPos}`);
                     yPos += imgHeight + 5;
@@ -409,33 +532,53 @@ export const useGenerateReviewDoc = () => {
         doc.text('Documento gerado pelo AprovaArte', margin, pageHeight - 10);
       }
 
-      // Gerar blob e fazer upload
+      // Gerar blob do PDF
       const pdfBlob = doc.output('blob');
-      const fileName = `revisao_${formData.titulo?.replace(/\s+/g, '_') || 'pauta'}_${Date.now()}.pdf`;
+      const sanitizedTitle = sanitizeFilename(formData.titulo || 'pauta');
+      const downloadFilename = `revisao_${sanitizedTitle}_${Date.now()}.pdf`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('pauta-arquivos')
-        .upload(`revisoes/${fileName}`, pdfBlob, {
-          contentType: 'application/pdf',
-          cacheControl: '3600',
-        });
+      // Criar URL local para download imediato
+      const localUrl = URL.createObjectURL(pdfBlob);
+      console.log('✅ PDF gerado localmente. Blob URL:', localUrl);
 
-      if (uploadError) {
-        throw new Error(`Erro ao fazer upload: ${uploadError.message}`);
+      // Tentar fazer upload para Supabase (opcional - não bloqueia se falhar)
+      let uploadedUrl: string | undefined;
+      try {
+        const fileName = `revisoes/${downloadFilename}`;
+        console.log('📤 Tentando upload para Supabase:', fileName);
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('pauta-arquivos')
+          .upload(fileName, pdfBlob, {
+            contentType: 'application/pdf',
+            cacheControl: '3600',
+          });
+
+        if (uploadError) {
+          console.warn('⚠️ Erro ao fazer upload (não crítico):', uploadError.message);
+        } else {
+          const { data: urlData } = supabase.storage
+            .from('pauta-arquivos')
+            .getPublicUrl(uploadData.path);
+          uploadedUrl = urlData.publicUrl;
+          console.log('✅ Upload concluído:', uploadedUrl);
+        }
+      } catch (uploadErr) {
+        console.warn('⚠️ Falha no upload (usando apenas download local):', uploadErr);
       }
-
-      const { data: urlData } = supabase.storage
-        .from('pauta-arquivos')
-        .getPublicUrl(uploadData.path);
 
       toast({
         title: 'Documento gerado com sucesso!',
-        description: 'O PDF de revisão foi criado e salvo.',
+        description: uploadedUrl
+          ? 'O PDF foi criado e salvo no servidor.'
+          : 'O PDF foi criado. Clique para baixar.',
       });
 
       return {
         success: true,
-        url: urlData.publicUrl,
+        url: uploadedUrl,
+        localUrl,
+        downloadFilename,
       };
     } catch (error) {
       console.error('Erro ao gerar documento:', error);

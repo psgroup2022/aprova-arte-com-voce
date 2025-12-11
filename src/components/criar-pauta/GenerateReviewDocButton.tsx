@@ -24,12 +24,27 @@ export const GenerateReviewDocButton: React.FC<GenerateReviewDocButtonProps> = (
 }) => {
   const { generateReviewDoc, isGenerating } = useGenerateReviewDoc();
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
+  const [localUrl, setLocalUrl] = useState<string | null>(null);
+  const [downloadFilename, setDownloadFilename] = useState<string>('revisao.pdf');
   const [showDialog, setShowDialog] = useState(false);
 
   const handleGenerate = async () => {
     const result = await generateReviewDoc(formData, clienteNome);
-    if (result.success && result.url) {
-      setGeneratedUrl(result.url);
+    if (result.success) {
+      setGeneratedUrl(result.url || null);
+      setLocalUrl(result.localUrl || null);
+      setDownloadFilename(result.downloadFilename || 'revisao.pdf');
+
+      // Se tem URL local, fazer download automático
+      if (result.localUrl && result.downloadFilename) {
+        const a = document.createElement('a');
+        a.href = result.localUrl;
+        a.download = result.downloadFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
       setShowDialog(true);
     }
   };
@@ -72,14 +87,27 @@ export const GenerateReviewDocButton: React.FC<GenerateReviewDocButtonProps> = (
           </DialogHeader>
 
           <div className="flex flex-col gap-4 pt-4">
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground mb-2">
-                Link do documento:
-              </p>
-              <p className="text-sm font-mono break-all text-foreground">
-                {generatedUrl}
-              </p>
-            </div>
+            {generatedUrl && (
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Link do documento (salvo no servidor):
+                </p>
+                <p className="text-sm font-mono break-all text-foreground">
+                  {generatedUrl}
+                </p>
+              </div>
+            )}
+
+            {!generatedUrl && localUrl && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-800 dark:text-blue-300 mb-2">
+                  ℹ️ Download iniciado automaticamente
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  O PDF foi gerado localmente. Se o download não iniciou, clique no botão abaixo.
+                </p>
+              </div>
+            )}
 
             <div className="flex gap-3 justify-end">
               <Button
@@ -91,11 +119,14 @@ export const GenerateReviewDocButton: React.FC<GenerateReviewDocButtonProps> = (
               <Button
                 variant="outline"
                 onClick={() => {
-                  if (generatedUrl) {
+                  const url = localUrl || generatedUrl;
+                  if (url) {
                     const a = document.createElement('a');
-                    a.href = generatedUrl;
-                    a.download = `revisao_${formData.titulo || 'pauta'}.pdf`;
+                    a.href = url;
+                    a.download = downloadFilename;
+                    document.body.appendChild(a);
                     a.click();
+                    document.body.removeChild(a);
                   }
                 }}
                 className="gap-2"
@@ -103,17 +134,17 @@ export const GenerateReviewDocButton: React.FC<GenerateReviewDocButtonProps> = (
                 <Download className="h-4 w-4" />
                 Baixar PDF
               </Button>
-              <Button
-                onClick={() => {
-                  if (generatedUrl) {
+              {generatedUrl && (
+                <Button
+                  onClick={() => {
                     window.open(generatedUrl, '_blank');
-                  }
-                }}
-                className="gap-2"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Abrir no Navegador
-              </Button>
+                  }}
+                  className="gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Abrir no Navegador
+                </Button>
+              )}
             </div>
           </div>
         </DialogContent>
