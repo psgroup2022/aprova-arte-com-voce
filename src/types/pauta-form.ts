@@ -82,7 +82,7 @@ export const MATERIAL_CONFIG: Record<TipoMaterial, {
     itemLabel: 'Artigo',
     hasMultipleItems: false,
     defaultItemCount: 1,
-    fields: { titulo: true, corpo: true }
+    fields: { titulo: true, corpo: true, midia: true }
   },
   email: {
     label: 'Email',
