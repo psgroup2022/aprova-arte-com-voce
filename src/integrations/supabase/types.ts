@@ -215,13 +215,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "comentarios_pontuais_arquivo_id_fkey"
-            columns: ["arquivo_id"]
-            isOneToOne: false
-            referencedRelation: "pauta_arquivos"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "comentarios_pontuais_pauta_id_fkey"
             columns: ["pauta_id"]
             isOneToOne: false
