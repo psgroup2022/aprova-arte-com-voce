@@ -50,7 +50,7 @@ export const useComentarios = (pautaId: string) => {
           respondido_por: null,
           resposta: null,
           // payload enviado pelo cliente
-          arquivo_id: comentario.arquivo_id,
+          arquivo_id: comentario.arquivo_id ?? null,
           comentario: comentario.comentario,
           pauta_id: comentario.pauta_id,
           x_coordenada: comentario.x_coordenada,
@@ -97,65 +97,10 @@ export const useComentarios = (pautaId: string) => {
     const sanitizedComment = sanitizeText(newComment);
 
     // Para comentários pontuais, arquivo_id vem do pendingPin
-    // Para comentários gerais, precisamos de um arquivo_id válido (buscar o primeiro da pauta)
-    let arquivoId = pendingPin?.arquivoId;
-    
-    if (!arquivoId) {
-      // Buscar primeiro arquivo da pauta para comentários gerais
-      const { data: arquivos } = await supabase
-        .from('pauta_arquivos')
-        .select('id')
-        .eq('pauta_id', pautaId)
-        .limit(1)
-        .single();
-      
-      if (!arquivos?.id) {
-        // Tentar buscar de bloco_arquivos via versão ativa
-        const { data: versao } = await supabase
-          .from('pauta_versoes')
-          .select('id')
-          .eq('pauta_id', pautaId)
-          .eq('ativa', true)
-          .limit(1)
-          .single();
-        
-        if (versao) {
-          const { data: blocos } = await supabase
-            .from('blocos_material')
-            .select('id')
-            .eq('versao_id', versao.id)
-            .limit(1);
-          
-          if (blocos && blocos.length > 0) {
-            const { data: blocoArquivos } = await supabase
-              .from('bloco_arquivos')
-              .select('id')
-              .eq('item_id', blocos[0].id)
-              .limit(1);
-            
-            // Se não encontrar nenhum arquivo, exibir erro
-            if (!blocoArquivos || blocoArquivos.length === 0) {
-              toast({
-                title: 'Erro',
-                description: 'Nenhum arquivo encontrado para associar o comentário',
-                variant: 'destructive',
-              });
-              return;
-            }
-          }
-        }
-        
-        toast({
-          title: 'Erro',
-          description: 'Nenhum arquivo encontrado para associar o comentário',
-          variant: 'destructive',
-        });
-        return;
-      }
-      arquivoId = arquivos.id;
-    }
+    // Para comentários gerais, arquivo_id é null
+    const arquivoId = pendingPin?.arquivoId ?? null;
 
-    const comentarioData: ComentarioInsert = {
+    const comentarioData = {
       pauta_id: pautaId,
       comentario: sanitizedComment,
       criado_por: user?.id ?? null,

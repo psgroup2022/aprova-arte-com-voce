@@ -169,7 +169,7 @@ export type Database = {
       }
       comentarios_pontuais: {
         Row: {
-          arquivo_id: string
+          arquivo_id: string | null
           comentario: string
           created_at: string
           criado_por: string | null
@@ -184,7 +184,7 @@ export type Database = {
           y_coordenada: number
         }
         Insert: {
-          arquivo_id: string
+          arquivo_id?: string | null
           comentario: string
           created_at?: string
           criado_por?: string | null
@@ -199,7 +199,7 @@ export type Database = {
           y_coordenada: number
         }
         Update: {
-          arquivo_id?: string
+          arquivo_id?: string | null
           comentario?: string
           created_at?: string
           criado_por?: string | null
