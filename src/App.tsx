@@ -10,6 +10,9 @@ const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default:
 const CriarPauta = lazy(() =>
   import('./pages/CriarPauta').then((m) => ({ default: m.CriarPauta })),
 );
+const EditarPauta = lazy(() =>
+  import('./pages/EditarPauta').then((m) => ({ default: m.EditarPauta })),
+);
 const VisualizarPauta = lazy(() =>
   import('./pages/VisualizarPauta').then((m) => ({ default: m.VisualizarPauta })),
 );
@@ -53,6 +56,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <CriarPauta />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/editar-pauta/:id"
+                element={
+                  <ProtectedRoute>
+                    <EditarPauta />
                   </ProtectedRoute>
                 }
               />
