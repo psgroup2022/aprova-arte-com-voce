@@ -50,7 +50,7 @@ export const useComentarios = (pautaId: string) => {
           respondido_por: null,
           resposta: null,
           // payload enviado pelo cliente
-          arquivo_id: comentario.arquivo_id,
+          arquivo_id: comentario.arquivo_id ?? null,
           comentario: comentario.comentario,
           pauta_id: comentario.pauta_id,
           x_coordenada: comentario.x_coordenada,
@@ -99,9 +99,9 @@ export const useComentarios = (pautaId: string) => {
     const comentarioData: ComentarioInsert = {
       pauta_id: pautaId,
       comentario: sanitizedComment,
-      criado_por: user?.id ?? (null as string | null),
+      criado_por: user?.id ?? null,
       // serão preenchidos abaixo
-      arquivo_id: '' as string,
+      arquivo_id: null,
       x_coordenada: 0,
       y_coordenada: 0,
     };
@@ -113,8 +113,8 @@ export const useComentarios = (pautaId: string) => {
       comentarioData.y_coordenada = Math.round(pendingPin.y);
       logger.debug('Comentário pontual', comentarioData);
     } else {
-      // Para comentários gerais, usar valores padrão
-      comentarioData.arquivo_id = 'geral';
+      // Para comentários gerais, usar NULL (sem arquivo associado)
+      comentarioData.arquivo_id = null;
       comentarioData.x_coordenada = 0;
       comentarioData.y_coordenada = 0;
       logger.debug('Comentário geral', comentarioData);

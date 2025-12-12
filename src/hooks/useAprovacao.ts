@@ -32,7 +32,7 @@ export const useAprovacao = (pautaId: string) => {
       if (comentario) {
         await supabase.from('comentarios_pontuais').insert({
           pauta_id: pautaId,
-          arquivo_id: 'geral',
+          arquivo_id: null,
           comentario,
           criado_por: null,
           x_coordenada: 0,

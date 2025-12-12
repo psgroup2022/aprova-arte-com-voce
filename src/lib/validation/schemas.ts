@@ -63,7 +63,10 @@ export const createPautaSchema = z.object({
 
   descricao: z
     .string()
-    .max(TEXT_LIMITS.DESCRICAO_MAX, `Descrição muito longa (máx: ${TEXT_LIMITS.DESCRICAO_MAX} caracteres)`)
+    .max(
+      TEXT_LIMITS.DESCRICAO_MAX,
+      `Descrição muito longa (máx: ${TEXT_LIMITS.DESCRICAO_MAX} caracteres)`,
+    )
     .optional()
     .nullable(),
 
@@ -71,13 +74,19 @@ export const createPautaSchema = z.object({
     .string()
     .trim()
     .min(1, 'Cliente é obrigatório')
-    .max(TEXT_LIMITS.CLIENTE_NOME_MAX, `Nome do cliente muito longo (máx: ${TEXT_LIMITS.CLIENTE_NOME_MAX})`),
+    .max(
+      TEXT_LIMITS.CLIENTE_NOME_MAX,
+      `Nome do cliente muito longo (máx: ${TEXT_LIMITS.CLIENTE_NOME_MAX})`,
+    ),
 
   data_prazo: dateTimeSchema.optional().nullable(),
 
   observacoes: z
     .string()
-    .max(TEXT_LIMITS.OBSERVACOES_MAX, `Observações muito longas (máx: ${TEXT_LIMITS.OBSERVACOES_MAX} caracteres)`)
+    .max(
+      TEXT_LIMITS.OBSERVACOES_MAX,
+      `Observações muito longas (máx: ${TEXT_LIMITS.OBSERVACOES_MAX} caracteres)`,
+    )
     .optional()
     .nullable(),
 
@@ -118,30 +127,20 @@ export const aprovacaoPautaSchema = z.object({
 export const createComentarioSchema = z.object({
   pauta_id: uuidSchema,
 
-  arquivo_id: z
-    .string()
-    .min(1, 'ID de arquivo é obrigatório')
-    .refine((val) => val === 'geral' || z.string().uuid().safeParse(val).success, {
-      message: 'ID de arquivo deve ser UUID ou "geral"',
-    }),
+  arquivo_id: z.string().uuid('ID de arquivo deve ser UUID válido').nullable(),
 
   comentario: z
     .string()
     .trim()
     .min(TEXT_LIMITS.COMENTARIO_MIN, 'Comentário não pode ser vazio')
-    .max(TEXT_LIMITS.COMENTARIO_MAX, `Comentário muito longo (máx: ${TEXT_LIMITS.COMENTARIO_MAX} caracteres)`),
+    .max(
+      TEXT_LIMITS.COMENTARIO_MAX,
+      `Comentário muito longo (máx: ${TEXT_LIMITS.COMENTARIO_MAX} caracteres)`,
+    ),
 
-  x_coordenada: z
-    .number()
-    .int()
-    .min(COORDINATES.MIN)
-    .max(COORDINATES.MAX),
+  x_coordenada: z.number().int().min(COORDINATES.MIN).max(COORDINATES.MAX),
 
-  y_coordenada: z
-    .number()
-    .int()
-    .min(COORDINATES.MIN)
-    .max(COORDINATES.MAX),
+  y_coordenada: z.number().int().min(COORDINATES.MIN).max(COORDINATES.MAX),
 
   criado_por: uuidSchema.nullable(),
 });
@@ -183,12 +182,7 @@ export const createClienteSchema = z.object({
     .min(1, 'Nome é obrigatório')
     .max(TEXT_LIMITS.CLIENTE_NOME_MAX, 'Nome muito longo'),
 
-  email: z
-    .string()
-    .email('Email inválido')
-    .optional()
-    .nullable()
-    .or(z.literal('')),
+  email: z.string().email('Email inválido').optional().nullable().or(z.literal('')),
 
   telefone: z
     .string()
@@ -255,7 +249,11 @@ export const fileMetadataSchema = z.object({
   nome_arquivo: z.string().min(1, 'Nome de arquivo obrigatório'),
   tipo: z.enum([FILE_TYPES.IMAGE, FILE_TYPES.VIDEO, FILE_TYPES.DOCUMENT] as [string, ...string[]]),
   url: z.string().url('URL inválida'),
-  tamanho: z.number().int().positive('Tamanho deve ser positivo').max(FILE_LIMITS.MAX_SIZE, 'Arquivo muito grande'),
+  tamanho: z
+    .number()
+    .int()
+    .positive('Tamanho deve ser positivo')
+    .max(FILE_LIMITS.MAX_SIZE, 'Arquivo muito grande'),
   ordem: z.number().int().min(0),
 });
 
@@ -274,12 +272,14 @@ export const loginSchema = z.object({
 /**
  * Schema: Signup
  */
-export const signupSchema = loginSchema.extend({
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Senhas não conferem',
-  path: ['confirmPassword'],
-});
+export const signupSchema = loginSchema
+  .extend({
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Senhas não conferem',
+    path: ['confirmPassword'],
+  });
 
 // ============================================================================
 // HELPER FUNCTIONS
