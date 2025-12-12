@@ -2,7 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Eye, ImageIcon, Trash2, Share2, MoreHorizontal, User2 } from 'lucide-react';
+import { Calendar, Eye, ImageIcon, Trash2, Share2, MoreHorizontal, User2, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   AlertDialog,
@@ -187,6 +187,12 @@ export const PautaCard = ({ pauta, onDelete, isDeleting }: PautaCardProps) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to={`/editar-pauta/${pauta.id}`} className="flex items-center">
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Editar pauta
+                  </Link>
+                </DropdownMenuItem>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <DropdownMenuItem

@@ -1,0 +1,314 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Layout } from '@/components/Layout';
+import { Button } from '@/components/ui/button';
+import { Loader2, ArrowRight, Save, Eye, Send, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { usePautaEdit } from '@/hooks/usePautaEdit';
+import { usePautaUpdate } from '@/hooks/usePautaUpdate';
+import { usePautaFormV2 } from '@/hooks/usePautaFormV2';
+import { useClientes } from '@/hooks/useClientes';
+import { VersaoSelector } from '@/components/criar-pauta/VersaoSelector';
+import { PautaInfoBasicaV2 } from '@/components/criar-pauta/PautaInfoBasicaV2';
+import { BlocosContainer } from '@/components/criar-pauta/BlocosContainer';
+import { LegendaFinalSection } from '@/components/criar-pauta/LegendaFinalSection';
+import { ApprovalLinkDisplay } from '@/components/ApprovalLinkDisplay';
+import { NovoClienteDialog } from '@/components/NovoClienteDialog';
+import { GenerateReviewDocButton } from '@/components/criar-pauta/GenerateReviewDocButton';
+
+export const EditarPauta = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [showNovoClienteDialog, setShowNovoClienteDialog] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  // Carregar dados existentes
+  const { formData: loadedData, isLoading: isLoadingPauta, error: loadError, pautaId } = usePautaEdit(id);
+
+  // Hook do formulário
+  const {
+    formData,
+    setFormData,
+    getVersaoAtiva,
+    updateField,
+    addBloco,
+    removeBloco,
+    updateBloco,
+    addItemToBloco,
+    removeItemFromBloco,
+    updateBlocoItem,
+    createNewVersion,
+    setVersaoAtiva,
+    updateTags,
+    updateHashtagsPrincipais,
+  } = usePautaFormV2();
+
+  // Hook de update
+  const { updatePauta, isUpdating, approvalLink, setApprovalLink } = usePautaUpdate();
+  const { clientes } = useClientes();
+
+  // Inicializar formulário com dados carregados
+  useEffect(() => {
+    if (loadedData && !initialized) {
+      setFormData(loadedData);
+      setInitialized(true);
+    }
+  }, [loadedData, initialized, setFormData]);
+
+  const versaoAtiva = getVersaoAtiva();
+  const isVersaoReadOnly = !versaoAtiva?.ativa;
+
+  // Encontrar nome do cliente selecionado
+  const selectedCliente = clientes.find(c => c.id === formData.cliente_id);
+  const clienteNome = selectedCliente?.nome || '';
+
+  const handleSubmit = async (status: 'rascunho' | 'aguardando_aprovacao') => {
+    if (!user) {
+      toast({
+        title: 'Erro',
+        description: 'Você precisa estar logado para editar uma pauta',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!pautaId) {
+      toast({
+        title: 'Erro',
+        description: 'ID da pauta não encontrado',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!formData.titulo || !formData.cliente_id) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Título e cliente são obrigatórios',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await updatePauta(pautaId, formData, user.id, status);
+    } catch (error) {
+      // Erro já tratado no hook
+    }
+  };
+
+  const handleClienteCreated = (clienteId: string) => {
+    updateField('cliente_id', clienteId);
+    setShowNovoClienteDialog(false);
+  };
+
+  // Estados de carregamento e erro
+  if (!user) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <p className="text-muted-foreground">
+              Você precisa estar logado para editar uma pauta.
+            </p>
+            <Button className="mt-4" onClick={() => navigate('/login')}>
+              Fazer Login
+            </Button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isLoadingPauta) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="text-muted-foreground mt-4">Carregando pauta...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <p className="text-destructive">{loadError}</p>
+            <Button className="mt-4" onClick={() => navigate('/')}>
+              Voltar ao Dashboard
+            </Button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      {/* Header */}
+      <div className="border-b bg-card">
+        <div className="p-6">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                Editar Pauta
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Faça alterações e crie novas versões para revisão
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          
+          {/* Versão Selector */}
+          <VersaoSelector
+            versoes={formData.versoes}
+            versaoAtiva={formData.versao_ativa}
+            onVersaoChange={setVersaoAtiva}
+            onCreateNewVersion={createNewVersion}
+            disabled={isUpdating}
+          />
+
+          {/* Aviso de versão bloqueada */}
+          {isVersaoReadOnly && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-amber-800 text-sm">
+                <strong>Versão bloqueada:</strong> Esta versão foi concluída e não pode ser editada. 
+                Clique em "Criar nova versão" para fazer alterações.
+              </p>
+            </div>
+          )}
+
+          {/* Informações básicas da pauta */}
+          <div className="bg-card rounded-xl border-2 p-6">
+            <PautaInfoBasicaV2
+              titulo={formData.titulo}
+              clienteId={formData.cliente_id}
+              dataPrevista={formData.data_prevista}
+              tags={formData.tags}
+              observacoesInternas={formData.observacoes_internas}
+              mirapautaTaskId={formData.mirapauta_task_id}
+              onTituloChange={(value) => updateField('titulo', value)}
+              onClienteChange={(value) => updateField('cliente_id', value)}
+              onDataPrevistaChange={(value) => updateField('data_prevista', value)}
+              onTagsChange={updateTags}
+              onObservacoesChange={(value) => updateField('observacoes_internas', value)}
+              onMirapautaTaskChange={(value) => updateField('mirapauta_task_id', value)}
+              onNovoCliente={() => setShowNovoClienteDialog(true)}
+              disabled={isUpdating || isVersaoReadOnly}
+            />
+          </div>
+
+          {/* Blocos de Material */}
+          <BlocosContainer
+            blocos={versaoAtiva?.blocos || []}
+            onAddBloco={addBloco}
+            onRemoveBloco={removeBloco}
+            onUpdateBloco={updateBloco}
+            onAddItem={addItemToBloco}
+            onRemoveItem={removeItemFromBloco}
+            onUpdateItem={updateBlocoItem}
+            disabled={isUpdating || isVersaoReadOnly}
+          />
+
+          {/* Legenda Final e Hashtags */}
+          <LegendaFinalSection
+            legenda={formData.legenda_final}
+            hashtags={formData.hashtags_principais}
+            onLegendaChange={(value) => updateField('legenda_final', value)}
+            onHashtagsChange={updateHashtagsPrincipais}
+            disabled={isUpdating || isVersaoReadOnly}
+          />
+
+          {/* Link de aprovação (após atualizar) */}
+          {approvalLink && (
+            <ApprovalLinkDisplay
+              approvalLink={approvalLink}
+              onNavigateHome={() => navigate('/')}
+            />
+          )}
+
+          {/* Botões de ação */}
+          {!approvalLink && (
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+              <GenerateReviewDocButton
+                formData={formData}
+                clienteNome={clienteNome}
+                disabled={isUpdating || isVersaoReadOnly}
+              />
+              
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleSubmit('rascunho')}
+                disabled={isUpdating || isVersaoReadOnly}
+                className="gap-2"
+              >
+                {isUpdating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Salvar Alterações
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isUpdating || isVersaoReadOnly}
+                className="gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                Visualizar
+              </Button>
+              
+              <Button
+                type="button"
+                onClick={() => handleSubmit('aguardando_aprovacao')}
+                disabled={isUpdating || isVersaoReadOnly}
+                className="gap-2"
+              >
+                {isUpdating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                Enviar para Aprovação
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Dialog novo cliente */}
+      <NovoClienteDialog
+        open={showNovoClienteDialog}
+        onOpenChange={setShowNovoClienteDialog}
+        onClienteCreated={handleClienteCreated}
+      />
+    </Layout>
+  );
+};
