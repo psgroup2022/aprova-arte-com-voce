@@ -30,14 +30,24 @@ export const useAprovacao = (pautaId: string) => {
 
       // Adicionar comentário de aprovação se houver
       if (comentario) {
-        await supabase.from('comentarios_pontuais').insert({
-          pauta_id: pautaId,
-          arquivo_id: null,
-          comentario,
-          criado_por: null,
-          x_coordenada: 0,
-          y_coordenada: 0,
-        });
+        // Buscar primeiro arquivo da pauta para associar o comentário
+        const { data: arquivos } = await supabase
+          .from('pauta_arquivos')
+          .select('id')
+          .eq('pauta_id', pautaId)
+          .limit(1)
+          .single();
+        
+        if (arquivos?.id) {
+          await supabase.from('comentarios_pontuais').insert({
+            pauta_id: pautaId,
+            arquivo_id: arquivos.id,
+            comentario,
+            criado_por: null,
+            x_coordenada: 0,
+            y_coordenada: 0,
+          });
+        }
       }
 
       return pautaData;

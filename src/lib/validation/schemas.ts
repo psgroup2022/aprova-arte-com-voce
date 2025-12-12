@@ -127,7 +127,7 @@ export const aprovacaoPautaSchema = z.object({
 export const createComentarioSchema = z.object({
   pauta_id: uuidSchema,
 
-  arquivo_id: z.string().uuid('ID de arquivo deve ser UUID válido').nullable(),
+  arquivo_id: z.string().uuid('ID de arquivo deve ser UUID válido'),
 
   comentario: z
     .string()
