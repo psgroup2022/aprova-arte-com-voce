@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Document, Packer, Paragraph, TextRun, ImageRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle } from 'docx';
+import { Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType } from 'docx';
 import { PautaFormData, MATERIAL_CONFIG } from '@/types/pauta-form';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -63,7 +63,6 @@ export const useGenerateReviewDoc = () => {
     let width = Math.min(originalWidth, maxWidthPx);
     let height = width / aspectRatio;
 
-    // Limitar altura máxima
     const maxHeightPx = 400;
     if (height > maxHeightPx) {
       height = maxHeightPx;
@@ -92,19 +91,20 @@ export const useGenerateReviewDoc = () => {
     setIsGenerating(true);
 
     try {
-      const children: (Paragraph | Table)[] = [];
+      const children: Paragraph[] = [];
 
-      // === HEADER SIMPLES: Data e Título ===
+      // === CABEÇALHO DO DOCUMENTO ===
       children.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: new Date().toLocaleDateString('pt-BR'),
-              size: 22,
-              color: '6B7280',
+              text: 'SRP Mirador - Sistema de Revisão de Pautas',
+              bold: true,
+              size: 28,
             }),
           ],
-          spacing: { after: 200 },
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 100 },
         })
       );
 
@@ -112,12 +112,48 @@ export const useGenerateReviewDoc = () => {
         new Paragraph({
           children: [
             new TextRun({
-              text: formData.titulo || 'Sem título',
-              bold: true,
-              size: 36,
+              text: `Cliente: ${clienteNome}`,
+              size: 24,
             }),
           ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 100 },
+        })
+      );
+
+      // Linha divisória
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: '─────────────────────────────────────────────────────────────',
+              color: '9CA3AF',
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
           spacing: { after: 400 },
+        })
+      );
+
+      // === DATA E TÍTULO ===
+      const dataFormatada = formData.data_prevista 
+        ? new Date(formData.data_prevista).toLocaleDateString('pt-BR')
+        : new Date().toLocaleDateString('pt-BR');
+      
+      const tituloTexto = formData.titulo 
+        ? `${dataFormatada} - ${formData.titulo}`
+        : dataFormatada;
+
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: tituloTexto,
+              bold: true,
+              size: 28,
+            }),
+          ],
+          spacing: { after: 300 },
         })
       );
 
@@ -137,45 +173,14 @@ export const useGenerateReviewDoc = () => {
 
           console.log(`\n📦 Bloco ${blocoIdx + 1}: ${config.label}`);
 
-          // Itens do bloco - sem header de tipo
           for (let itemIdx = 0; itemIdx < bloco.itens.length; itemIdx++) {
             const item = bloco.itens[itemIdx];
 
-            // Chamada - texto original sem label
-            if (item.texto_conteudo) {
-              children.push(
-                new Paragraph({
-                  text: item.texto_conteudo,
-                  spacing: { before: 200, after: 150 },
-                })
-              );
-            }
+            // ORDEM: 1. Imagem, 2. Chamada, 3. Legenda
 
-            // Legenda - texto original sem label
-            if (item.legenda) {
-              children.push(
-                new Paragraph({
-                  text: item.legenda,
-                  spacing: { after: 150 },
-                })
-              );
-            }
-
-            // Hashtags - texto original sem label
-            if (item.hashtags) {
-              children.push(
-                new Paragraph({
-                  text: item.hashtags,
-                  spacing: { after: 100 },
-                  run: { color: '6B7280' },
-                })
-              );
-            }
-
-            // Processar arquivos (File objects)
+            // 1. IMAGENS - Processar arquivos (File objects)
             if (item.arquivos && item.arquivos.length > 0) {
               for (const arquivo of item.arquivos) {
-                const isVideo = arquivo.type.startsWith('video/');
                 const isImage = arquivo.type.startsWith('image/');
 
                 if (isImage) {
@@ -194,54 +199,20 @@ export const useGenerateReviewDoc = () => {
                             type: 'png',
                           }),
                         ],
-                        spacing: { before: 100, after: 50 },
-                      })
-                    );
-
-                    children.push(
-                      new Paragraph({
-                        children: [
-                          new TextRun({ text: `📷 ${arquivo.name}`, size: 18, color: '6B7280' }),
-                        ],
-                        spacing: { after: 150 },
+                        spacing: { before: 100, after: 150 },
                       })
                     );
                   } catch (error) {
                     console.error('❌ Erro ao adicionar imagem:', error);
-                    children.push(
-                      new Paragraph({
-                        children: [
-                          new TextRun({ text: `[Imagem: ${arquivo.name}] - Erro ao processar`, color: '9CA3AF' }),
-                        ],
-                        spacing: { after: 100 },
-                      })
-                    );
                   }
-                } else if (isVideo) {
-                  children.push(
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: `🎬 Vídeo: ${arquivo.name}`,
-                          bold: true,
-                          color: '92400E',
-                          shading: { fill: 'FEF3C7' },
-                        }),
-                      ],
-                      shading: { fill: 'FEF3C7' },
-                      spacing: { before: 100, after: 150 },
-                    })
-                  );
                 }
               }
             }
 
-            // Processar URLs (arquivos salvos no Supabase)
+            // 1. IMAGENS - Processar URLs (arquivos salvos no Supabase)
             if (item.arquivosUrls && item.arquivosUrls.length > 0) {
               for (const url of item.arquivosUrls) {
                 const urlLower = url.toLowerCase();
-                const isVideo = urlLower.includes('.mp4') || urlLower.includes('.mov') ||
-                               urlLower.includes('.avi') || urlLower.includes('.webm');
                 const isImage = urlLower.includes('.jpg') || urlLower.includes('.jpeg') ||
                                urlLower.includes('.png') || urlLower.includes('.gif') ||
                                urlLower.includes('.webp');
@@ -264,75 +235,37 @@ export const useGenerateReviewDoc = () => {
                             type: 'png',
                           }),
                         ],
-                        spacing: { before: 100, after: 50 },
-                      })
-                    );
-
-                    children.push(
-                      new Paragraph({
-                        children: [
-                          new TextRun({ text: `📷 ${decodeURIComponent(fileName)}`, size: 18, color: '6B7280' }),
-                        ],
-                        spacing: { after: 150 },
+                        spacing: { before: 100, after: 150 },
                       })
                     );
                   } catch (error) {
                     console.error('❌ Erro ao adicionar imagem da URL:', error);
-                    const fileName = url.split('/').pop() || 'imagem';
-                    children.push(
-                      new Paragraph({
-                        children: [
-                          new TextRun({ text: `[Imagem: ${decodeURIComponent(fileName)}] - Erro ao processar`, color: '9CA3AF' }),
-                        ],
-                        spacing: { after: 100 },
-                      })
-                    );
                   }
-                } else if (isVideo) {
-                  const fileName = url.split('/').pop() || 'vídeo';
-                  children.push(
-                    new Paragraph({
-                      children: [
-                        new TextRun({ text: `🎬 Vídeo: ${decodeURIComponent(fileName)}`, bold: true }),
-                      ],
-                      shading: { fill: 'FEF3C7' },
-                      spacing: { before: 100, after: 50 },
-                    })
-                  );
-                  children.push(
-                    new Paragraph({
-                      children: [
-                        new TextRun({ text: 'Link: ', bold: true }),
-                        new TextRun({ text: url, color: '3B82F6' }),
-                      ],
-                      spacing: { after: 150 },
-                    })
-                  );
                 }
               }
             }
+
+            // 2. CHAMADA - texto original
+            if (item.texto_conteudo) {
+              children.push(
+                new Paragraph({
+                  text: item.texto_conteudo,
+                  spacing: { before: 200, after: 150 },
+                })
+              );
+            }
+
+            // 3. LEGENDA - texto original
+            if (item.legenda) {
+              children.push(
+                new Paragraph({
+                  text: item.legenda,
+                  spacing: { after: 200 },
+                })
+              );
+            }
           }
         }
-      }
-
-      // === LEGENDA FINAL - texto original sem label ===
-      if (formData.legenda_final) {
-        children.push(
-          new Paragraph({
-            text: formData.legenda_final,
-            spacing: { before: 300, after: 100 },
-          })
-        );
-      }
-
-      // === HASHTAGS PRINCIPAIS - texto original sem label ===
-      if (formData.hashtags_principais && formData.hashtags_principais.length > 0) {
-        children.push(
-          new Paragraph({
-            text: formData.hashtags_principais.join(' '),
-            spacing: { before: 200, after: 100 },
-          })
-        );
       }
 
       // Criar documento
