@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle } from 'docx';
+import { Document, Packer, Paragraph, TextRun, ImageRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle } from 'docx';
 import { PautaFormData, MATERIAL_CONFIG } from '@/types/pauta-form';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -94,15 +94,14 @@ export const useGenerateReviewDoc = () => {
     try {
       const children: (Paragraph | Table)[] = [];
 
-      // === HEADER ===
+      // === HEADER SIMPLES: Data e Título ===
       children.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: 'Sistema Aprova Pautas Mirador',
-              bold: true,
-              size: 48,
-              color: '3B82F6',
+              text: new Date().toLocaleDateString('pt-BR'),
+              size: 22,
+              color: '6B7280',
             }),
           ],
           spacing: { after: 200 },
@@ -113,71 +112,14 @@ export const useGenerateReviewDoc = () => {
         new Paragraph({
           children: [
             new TextRun({
-              text: `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`,
-              size: 20,
-              color: '6B7280',
+              text: formData.titulo || 'Sem título',
+              bold: true,
+              size: 36,
             }),
           ],
           spacing: { after: 400 },
         })
       );
-
-      // === INFORMAÇÕES BÁSICAS ===
-      children.push(
-        new Paragraph({
-          text: 'Informações da Pauta',
-          heading: HeadingLevel.HEADING_1,
-          spacing: { before: 400, after: 200 },
-        })
-      );
-
-      // Título
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({ text: 'Título: ', bold: true }),
-            new TextRun({ text: formData.titulo || 'Sem título' }),
-          ],
-          spacing: { after: 100 },
-        })
-      );
-
-      // Cliente
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({ text: 'Cliente: ', bold: true }),
-            new TextRun({ text: clienteNome || 'Não definido' }),
-          ],
-          spacing: { after: 100 },
-        })
-      );
-
-      // Data prevista
-      if (formData.data_prevista) {
-        children.push(
-          new Paragraph({
-            children: [
-              new TextRun({ text: 'Data Prevista: ', bold: true }),
-              new TextRun({ text: new Date(formData.data_prevista).toLocaleDateString('pt-BR') }),
-            ],
-            spacing: { after: 100 },
-          })
-        );
-      }
-
-      // Tags
-      if (formData.tags.length > 0) {
-        children.push(
-          new Paragraph({
-            children: [
-              new TextRun({ text: 'Tags: ', bold: true }),
-              new TextRun({ text: formData.tags.join(', ') }),
-            ],
-            spacing: { after: 100 },
-          })
-        );
-      }
 
       // === BLOCOS DE MATERIAL ===
       const versaoAtiva = formData.versoes.find(
@@ -195,85 +137,37 @@ export const useGenerateReviewDoc = () => {
 
           console.log(`\n📦 Bloco ${blocoIdx + 1}: ${config.label}`);
 
-          // Header do bloco
-          children.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: config.label,
-                  bold: true,
-                  size: 32,
-                  color: '3B82F6',
-                }),
-              ],
-              spacing: { before: 400, after: 200 },
-              shading: { fill: 'F3F4F6' },
-            })
-          );
-
-          // Itens do bloco
+          // Itens do bloco - sem header de tipo
           for (let itemIdx = 0; itemIdx < bloco.itens.length; itemIdx++) {
             const item = bloco.itens[itemIdx];
 
-            // Título do item
-            children.push(
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: `${config.itemLabel} ${itemIdx + 1}`,
-                    bold: true,
-                    size: 26,
-                  }),
-                ],
-                spacing: { before: 300, after: 150 },
-              })
-            );
-
-            // Texto/Chamada
+            // Chamada - texto original sem label
             if (item.texto_conteudo) {
               children.push(
                 new Paragraph({
-                  children: [
-                    new TextRun({ text: 'Chamada:', bold: true }),
-                  ],
-                  spacing: { after: 50 },
-                })
-              );
-              children.push(
-                new Paragraph({
                   text: item.texto_conteudo,
-                  spacing: { after: 100 },
+                  spacing: { before: 200, after: 150 },
                 })
               );
             }
 
-            // Legenda
+            // Legenda - texto original sem label
             if (item.legenda) {
               children.push(
                 new Paragraph({
-                  children: [
-                    new TextRun({ text: 'Legenda:', bold: true }),
-                  ],
-                  spacing: { after: 50 },
-                })
-              );
-              children.push(
-                new Paragraph({
                   text: item.legenda,
-                  spacing: { after: 100 },
+                  spacing: { after: 150 },
                 })
               );
             }
 
-            // Hashtags
+            // Hashtags - texto original sem label
             if (item.hashtags) {
               children.push(
                 new Paragraph({
-                  children: [
-                    new TextRun({ text: 'Hashtags: ', bold: true, color: '6B7280' }),
-                    new TextRun({ text: item.hashtags, color: '6B7280' }),
-                  ],
+                  text: item.hashtags,
                   spacing: { after: 100 },
+                  run: { color: '6B7280' },
                 })
               );
             }
@@ -421,80 +315,25 @@ export const useGenerateReviewDoc = () => {
         }
       }
 
-      // === LEGENDA FINAL ===
+      // === LEGENDA FINAL - texto original sem label ===
       if (formData.legenda_final) {
         children.push(
           new Paragraph({
-            text: 'Legenda Final',
-            heading: HeadingLevel.HEADING_1,
-            spacing: { before: 400, after: 200 },
-          })
-        );
-        children.push(
-          new Paragraph({
             text: formData.legenda_final,
-            spacing: { after: 100 },
+            spacing: { before: 300, after: 100 },
           })
         );
       }
 
-      // === HASHTAGS PRINCIPAIS ===
+      // === HASHTAGS PRINCIPAIS - texto original sem label ===
       if (formData.hashtags_principais && formData.hashtags_principais.length > 0) {
         children.push(
           new Paragraph({
-            children: [
-              new TextRun({ text: 'Hashtags Principais: ', bold: true, color: '6B7280' }),
-              new TextRun({ text: formData.hashtags_principais.join(' '), color: '6B7280' }),
-            ],
+            text: formData.hashtags_principais.join(' '),
             spacing: { before: 200, after: 100 },
           })
         );
       }
-
-      // === OBSERVAÇÕES ===
-      if (formData.observacoes_internas) {
-        children.push(
-          new Paragraph({
-            text: 'Observações Internas',
-            heading: HeadingLevel.HEADING_1,
-            spacing: { before: 400, after: 200 },
-          })
-        );
-        children.push(
-          new Paragraph({
-            text: formData.observacoes_internas,
-            spacing: { after: 100 },
-          })
-        );
-      }
-
-      // === FOOTER ===
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: '─'.repeat(50),
-              color: 'D1D5DB',
-            }),
-          ],
-          spacing: { before: 400 },
-        })
-      );
-
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: 'Documento gerado automaticamente pelo Sistema Aprova Pautas Mirador',
-              size: 18,
-              color: '9CA3AF',
-              italics: true,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 100 },
-        })
-      );
 
       // Criar documento
       const doc = new Document({
