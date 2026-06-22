@@ -7,7 +7,6 @@ import {
   createInitialFormData,
   createEmptyBloco,
   createEmptyItem,
-  createEmptyVersao,
 } from '@/types/pauta-form';
 import { ParsedBriefingData } from '@/components/criar-pauta/BriefingUploadSection';
 
@@ -283,12 +282,30 @@ export const usePautaFormV2 = () => {
                 });
               });
             } else if (tipo === 'linkedin_artigo') {
-              // Para artigos do LinkedIn
+              // Para artigos do LinkedIn: o editor mostra "Título" + "Corpo" (texto_conteudo).
+              // O corpo do artigo precisa ir para texto_conteudo, senão fica invisível.
+              const corpoArtigo = post.artigo || post.legenda || '';
+              const chamada = post.chamada?.trim();
               itens.push({
                 titulo: post.titulo_post || '',
                 assunto: '',
-                texto_conteudo: post.chamada || '', // Chamada curta
-                legenda: post.artigo || post.legenda || '', // Artigo completo na legenda
+                texto_conteudo:
+                  chamada && corpoArtigo
+                    ? `${chamada}\n\n${corpoArtigo}`
+                    : corpoArtigo || chamada || '',
+                legenda: '',
+                hashtags: post.hashtags?.map((h) => `#${h}`).join(' ') || '',
+                arquivos: [],
+                arquivosUrls: [],
+                ordem: 0,
+              });
+            } else if (tipo === 'email') {
+              // Para email: o editor mostra "Assunto" + "Corpo" (texto_conteudo).
+              itens.push({
+                titulo: '',
+                assunto: post.titulo_post || '',
+                texto_conteudo: post.legenda || post.chamada || '',
+                legenda: '',
                 hashtags: post.hashtags?.map((h) => `#${h}`).join(' ') || '',
                 arquivos: [],
                 arquivosUrls: [],

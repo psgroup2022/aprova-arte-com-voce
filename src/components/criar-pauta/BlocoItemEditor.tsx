@@ -26,7 +26,7 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
   onRemove,
   canRemove,
   disabled = false,
-  hideUpload = false
+  hideUpload = false,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const config = MATERIAL_CONFIG[tipoMaterial];
@@ -39,8 +39,8 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
   };
 
   const removeFile = (fileIndex: number) => {
-    onUpdate({ 
-      arquivos: item.arquivos.filter((_, i) => i !== fileIndex) 
+    onUpdate({
+      arquivos: item.arquivos.filter((_, i) => i !== fileIndex),
     });
   };
 
@@ -51,20 +51,18 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
   };
 
   // Para Carrossel: mostra preview da imagem associada (read-only)
-  const showCarrosselPreview = tipoMaterial === 'carrossel' && hideUpload && item.arquivos.length > 0;
+  const showCarrosselPreview =
+    tipoMaterial === 'carrossel' && hideUpload && item.arquivos.length > 0;
 
   return (
-    <div className={cn(
-      "p-4 rounded-lg border bg-card space-y-4",
-      disabled && "opacity-60"
-    )}>
+    <div className={cn('p-4 rounded-lg border bg-card space-y-4', disabled && 'opacity-60')}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Preview da imagem do slide (Carrossel) */}
           {showCarrosselPreview && (
             <div className="w-12 h-12 rounded-md overflow-hidden bg-muted border flex-shrink-0">
-              <img 
-                src={URL.createObjectURL(item.arquivos[0])} 
+              <img
+                src={URL.createObjectURL(item.arquivos[0])}
                 alt={`Slide ${itemIndex + 1}`}
                 className="w-full h-full object-cover"
               />
@@ -121,15 +119,17 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
         {(config.fields.chamada || config.fields.corpo) && (
           <div className="space-y-2">
             <Label htmlFor={`texto-${itemIndex}`}>
-              {config.fields.corpo ? 'Corpo' : (config.fieldLabels?.chamada || 'Chamada')}
+              {config.fields.corpo ? 'Corpo' : config.fieldLabels?.chamada || 'Chamada'}
             </Label>
             <Textarea
               id={`texto-${itemIndex}`}
               value={item.texto_conteudo}
               onChange={(e) => onUpdate({ texto_conteudo: e.target.value })}
-              placeholder={config.fields.corpo 
-                ? "Digite o conteúdo completo..." 
-                : `Digite a ${(config.fieldLabels?.chamada || 'chamada').toLowerCase()}...`}
+              placeholder={
+                config.fields.corpo
+                  ? 'Digite o conteúdo completo...'
+                  : `Digite a ${(config.fieldLabels?.chamada || 'chamada').toLowerCase()}...`
+              }
               rows={config.fields.corpo ? 6 : 3}
               disabled={disabled}
             />
@@ -153,8 +153,8 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
           </div>
         )}
 
-        {/* Hashtags (junto com legenda) */}
-        {config.fields.legenda && (
+        {/* Hashtags (junto com legenda ou corpo) */}
+        {(config.fields.legenda || config.fields.corpo) && (
           <div className="space-y-2">
             <Label htmlFor={`hashtags-${itemIndex}`}>Hashtags</Label>
             <Input
@@ -171,7 +171,7 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
         {config.fields.midia && !hideUpload && (
           <div className="space-y-2">
             <Label>Mídia</Label>
-            
+
             {/* Arquivos já adicionados */}
             {item.arquivos.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
@@ -202,9 +202,9 @@ export const BlocoItemEditor: React.FC<BlocoItemEditorProps> = ({
             <div
               onClick={() => !disabled && fileInputRef.current?.click()}
               className={cn(
-                "border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors",
-                "hover:border-primary hover:bg-primary/5",
-                disabled && "cursor-not-allowed opacity-50"
+                'border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors',
+                'hover:border-primary hover:bg-primary/5',
+                disabled && 'cursor-not-allowed opacity-50',
               )}
             >
               <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />

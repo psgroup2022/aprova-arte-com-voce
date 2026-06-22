@@ -49,11 +49,17 @@ export const GenerateReviewDocButton: React.FC<GenerateReviewDocButtonProps> = (
     }
   };
 
-  const versaoAtiva = formData.versoes.find(
-    (v) => v.numero === formData.versao_ativa
-  );
-  const hasMidias = versaoAtiva?.blocos.some((bloco) =>
-    bloco.itens.some((item) => item.arquivos && item.arquivos.length > 0)
+  const versaoAtiva = formData.versoes.find((v) => v.numero === formData.versao_ativa);
+  const hasConteudo = versaoAtiva?.blocos.some((bloco) =>
+    bloco.itens.some(
+      (item) =>
+        (item.arquivos && item.arquivos.length > 0) ||
+        (item.arquivosUrls && item.arquivosUrls.length > 0) ||
+        item.titulo ||
+        item.assunto ||
+        item.texto_conteudo ||
+        item.legenda,
+    ),
   );
 
   return (
@@ -62,9 +68,13 @@ export const GenerateReviewDocButton: React.FC<GenerateReviewDocButtonProps> = (
         type="button"
         variant="outline"
         onClick={handleGenerate}
-        disabled={disabled || isGenerating || !hasMidias}
+        disabled={disabled || isGenerating || !hasConteudo}
         className="gap-2"
-        title={!hasMidias ? 'Adicione mídias primeiro para gerar o documento' : undefined}
+        title={
+          !hasConteudo
+            ? 'Adicione conteúdo (mídia ou texto) primeiro para gerar o documento'
+            : undefined
+        }
       >
         {isGenerating ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -92,9 +102,7 @@ export const GenerateReviewDocButton: React.FC<GenerateReviewDocButtonProps> = (
                 <p className="text-sm text-muted-foreground mb-2">
                   Link do documento (salvo no servidor):
                 </p>
-                <p className="text-sm font-mono break-all text-foreground">
-                  {generatedUrl}
-                </p>
+                <p className="text-sm font-mono break-all text-foreground">{generatedUrl}</p>
               </div>
             )}
 
@@ -110,10 +118,7 @@ export const GenerateReviewDocButton: React.FC<GenerateReviewDocButtonProps> = (
             )}
 
             <div className="flex gap-3 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => setShowDialog(false)}
-              >
+              <Button variant="outline" onClick={() => setShowDialog(false)}>
                 Fechar
               </Button>
               <Button

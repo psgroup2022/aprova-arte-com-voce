@@ -76,7 +76,7 @@ export const VisualizarPauta = () => {
         />
 
         {/* Feedback Section */}
-        <div className="w-full md:w-2/5 border-l border-gray-200 flex flex-col">
+        <div className="w-full md:w-2/5 border-l border-gray-200 flex flex-col md:sticky md:top-[81px] md:self-start md:h-[calc(100vh-81px)] md:overflow-y-auto">
           <ApprovalActions
             selectedApproval={selectedApproval}
             onApprovalClick={handleApprovalClick}

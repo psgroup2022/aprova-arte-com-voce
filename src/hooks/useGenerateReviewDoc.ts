@@ -37,7 +37,10 @@ export const useGenerateReviewDoc = () => {
     return response.arrayBuffer();
   };
 
-  const getImageDimensions = (arrayBuffer: ArrayBuffer, mimeType: string): Promise<{ width: number; height: number }> => {
+  const getImageDimensions = (
+    arrayBuffer: ArrayBuffer,
+    mimeType: string,
+  ): Promise<{ width: number; height: number }> => {
     return new Promise((resolve, reject) => {
       const blob = new Blob([arrayBuffer], { type: mimeType });
       const url = URL.createObjectURL(blob);
@@ -57,7 +60,7 @@ export const useGenerateReviewDoc = () => {
   const calculateDocxDimensions = (
     originalWidth: number,
     originalHeight: number,
-    maxWidthPx: number = 500
+    maxWidthPx: number = 500,
   ): { width: number; height: number } => {
     const aspectRatio = originalWidth / originalHeight;
     let width = Math.min(originalWidth, maxWidthPx);
@@ -75,18 +78,18 @@ export const useGenerateReviewDoc = () => {
   const getMimeType = (filename: string): string => {
     const ext = filename.toLowerCase().split('.').pop();
     const mimeTypes: Record<string, string> = {
-      'jpg': 'image/jpeg',
-      'jpeg': 'image/jpeg',
-      'png': 'image/png',
-      'gif': 'image/gif',
-      'webp': 'image/webp',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      gif: 'image/gif',
+      webp: 'image/webp',
     };
     return mimeTypes[ext || ''] || 'image/jpeg';
   };
 
   const generateReviewDoc = async (
     formData: PautaFormData,
-    clienteNome: string
+    clienteNome: string,
   ): Promise<GenerateDocResult> => {
     setIsGenerating(true);
 
@@ -105,7 +108,7 @@ export const useGenerateReviewDoc = () => {
           ],
           alignment: AlignmentType.CENTER,
           spacing: { after: 100 },
-        })
+        }),
       );
 
       children.push(
@@ -118,7 +121,7 @@ export const useGenerateReviewDoc = () => {
           ],
           alignment: AlignmentType.CENTER,
           spacing: { after: 100 },
-        })
+        }),
       );
 
       // Linha divisória
@@ -132,17 +135,15 @@ export const useGenerateReviewDoc = () => {
           ],
           alignment: AlignmentType.CENTER,
           spacing: { after: 400 },
-        })
+        }),
       );
 
       // === DATA E TÍTULO ===
-      const dataFormatada = formData.data_prevista 
+      const dataFormatada = formData.data_prevista
         ? new Date(formData.data_prevista).toLocaleDateString('pt-BR')
         : new Date().toLocaleDateString('pt-BR');
-      
-      const tituloTexto = formData.titulo 
-        ? `${dataFormatada} - ${formData.titulo}`
-        : dataFormatada;
+
+      const tituloTexto = formData.titulo ? `${dataFormatada} - ${formData.titulo}` : dataFormatada;
 
       children.push(
         new Paragraph({
@@ -154,13 +155,11 @@ export const useGenerateReviewDoc = () => {
             }),
           ],
           spacing: { after: 300 },
-        })
+        }),
       );
 
       // === BLOCOS DE MATERIAL ===
-      const versaoAtiva = formData.versoes.find(
-        (v) => v.numero === formData.versao_ativa
-      );
+      const versaoAtiva = formData.versoes.find((v) => v.numero === formData.versao_ativa);
 
       console.log('🔍 Gerando documento de revisão (DOCX)...');
       console.log(`   Versão ativa: ${formData.versao_ativa}`);
@@ -176,7 +175,36 @@ export const useGenerateReviewDoc = () => {
           for (let itemIdx = 0; itemIdx < bloco.itens.length; itemIdx++) {
             const item = bloco.itens[itemIdx];
 
-            // ORDEM: 1. Imagem, 2. Chamada, 3. Legenda
+            // ORDEM: 1. Título/Assunto, 2. Imagem, 3. Chamada/Corpo, 4. Legenda, 5. Hashtags
+
+            // 0a. TÍTULO do item (LinkedIn Artigo)
+            if (item.titulo) {
+              children.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: item.titulo,
+                      bold: true,
+                      size: 26,
+                    }),
+                  ],
+                  spacing: { before: 200, after: 150 },
+                }),
+              );
+            }
+
+            // 0b. ASSUNTO do item (Email)
+            if (item.assunto) {
+              children.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({ text: 'Assunto: ', bold: true }),
+                    new TextRun({ text: item.assunto }),
+                  ],
+                  spacing: { before: 200, after: 150 },
+                }),
+              );
+            }
 
             // 1. IMAGENS - Processar arquivos (File objects)
             if (item.arquivos && item.arquivos.length > 0) {
@@ -188,7 +216,10 @@ export const useGenerateReviewDoc = () => {
                     console.log(`📷 Processando imagem: ${arquivo.name}`);
                     const arrayBuffer = await fileToArrayBuffer(arquivo);
                     const dimensions = await getImageDimensions(arrayBuffer, arquivo.type);
-                    const { width, height } = calculateDocxDimensions(dimensions.width, dimensions.height);
+                    const { width, height } = calculateDocxDimensions(
+                      dimensions.width,
+                      dimensions.height,
+                    );
 
                     children.push(
                       new Paragraph({
@@ -200,7 +231,7 @@ export const useGenerateReviewDoc = () => {
                           }),
                         ],
                         spacing: { before: 100, after: 150 },
-                      })
+                      }),
                     );
                   } catch (error) {
                     console.error('❌ Erro ao adicionar imagem:', error);
@@ -213,9 +244,12 @@ export const useGenerateReviewDoc = () => {
             if (item.arquivosUrls && item.arquivosUrls.length > 0) {
               for (const url of item.arquivosUrls) {
                 const urlLower = url.toLowerCase();
-                const isImage = urlLower.includes('.jpg') || urlLower.includes('.jpeg') ||
-                               urlLower.includes('.png') || urlLower.includes('.gif') ||
-                               urlLower.includes('.webp');
+                const isImage =
+                  urlLower.includes('.jpg') ||
+                  urlLower.includes('.jpeg') ||
+                  urlLower.includes('.png') ||
+                  urlLower.includes('.gif') ||
+                  urlLower.includes('.webp');
 
                 if (isImage) {
                   try {
@@ -224,7 +258,10 @@ export const useGenerateReviewDoc = () => {
                     const arrayBuffer = await urlToArrayBuffer(url);
                     const mimeType = getMimeType(fileName);
                     const dimensions = await getImageDimensions(arrayBuffer, mimeType);
-                    const { width, height } = calculateDocxDimensions(dimensions.width, dimensions.height);
+                    const { width, height } = calculateDocxDimensions(
+                      dimensions.width,
+                      dimensions.height,
+                    );
 
                     children.push(
                       new Paragraph({
@@ -236,7 +273,7 @@ export const useGenerateReviewDoc = () => {
                           }),
                         ],
                         spacing: { before: 100, after: 150 },
-                      })
+                      }),
                     );
                   } catch (error) {
                     console.error('❌ Erro ao adicionar imagem da URL:', error);
@@ -251,7 +288,7 @@ export const useGenerateReviewDoc = () => {
                 new Paragraph({
                   text: item.texto_conteudo,
                   spacing: { before: 200, after: 150 },
-                })
+                }),
               );
             }
 
@@ -261,7 +298,22 @@ export const useGenerateReviewDoc = () => {
                 new Paragraph({
                   text: item.legenda,
                   spacing: { after: 200 },
-                })
+                }),
+              );
+            }
+
+            // 4. HASHTAGS
+            if (item.hashtags) {
+              children.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: item.hashtags,
+                      color: '2563EB',
+                    }),
+                  ],
+                  spacing: { after: 200 },
+                }),
               );
             }
           }
@@ -270,10 +322,12 @@ export const useGenerateReviewDoc = () => {
 
       // Criar documento
       const doc = new Document({
-        sections: [{
-          properties: {},
-          children,
-        }],
+        sections: [
+          {
+            properties: {},
+            children,
+          },
+        ],
       });
 
       // Gerar blob

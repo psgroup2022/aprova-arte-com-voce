@@ -1,121 +1,269 @@
-# Welcome to your Lovable project
+# AprovaArte — Plataforma de Aprovação de Pautas
 
-## Project info
+> Sistema web para agências de comunicação gerenciarem o ciclo completo de aprovação de artes e materiais criativos por clientes.
 
-**URL**: https://lovable.dev/projects/44272730-8708-4b09-ba3f-4ab3f8e5196a
+---
 
-## How can I edit this code?
+## Visão Geral
 
-There are several ways of editing your application.
+O **AprovaArte** é uma plataforma SaaS desenvolvida para agências digitais que precisam enviar pautas (briefings de materiais) para aprovação dos clientes de forma estruturada. O sistema permite:
 
-**Use Lovable**
+- Criar e organizar **pautas** com múltiplos materiais (posts, stories, banners, etc.)
+- Compartilhar um **link público** com o cliente para visualização e aprovação
+- O cliente pode **aprovar, rejeitar ou deixar comentários pontuais** diretamente sobre as imagens
+- Integração bidirecional com o **MiraPauta** para importar tarefas e sincronizar clientes/usuários
+- Geração automática de **documentos Word (.docx)** de revisão com imagens e textos
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/44272730-8708-4b09-ba3f-4ab3f8e5196a) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## Stack Tecnológica
 
-**Use your preferred IDE**
+| Camada               | Tecnologia                                              |
+| -------------------- | ------------------------------------------------------- |
+| **Frontend**         | React 18 + TypeScript + Vite                            |
+| **UI**               | shadcn/ui + Tailwind CSS                                |
+| **Estado / Cache**   | TanStack React Query v5                                 |
+| **Roteamento**       | React Router DOM v6                                     |
+| **Backend / Auth**   | Supabase (PostgreSQL + Auth + Storage + Edge Functions) |
+| **Formulários**      | React Hook Form + Zod                                   |
+| **Exportação**       | docx (Word) + jsPDF                                     |
+| **Monitoramento**    | Sentry                                                  |
+| **Testes**           | Vitest + Testing Library                                |
+| **Linting / Format** | ESLint + Prettier + Husky                               |
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Estrutura do Projeto
 
-Follow these steps:
+```
+aprova-arte-com-voce/
+├── src/
+│   ├── components/         # Componentes reutilizáveis
+│   │   ├── ui/             # Biblioteca shadcn/ui
+│   │   ├── pauta/          # Componentes específicos de pauta
+│   │   └── criar-pauta/    # Componentes do fluxo de criação
+│   ├── hooks/              # Custom hooks com toda a lógica de negócio
+│   ├── integrations/
+│   │   ├── supabase/       # Client, tipos gerados e queries
+│   │   └── mirapauta/      # Client e tipos da integração MiraPauta
+│   ├── pages/              # Páginas da aplicação (uma por rota)
+│   ├── types/              # Tipos TypeScript globais
+│   ├── utils/              # Utilitários (logger, sanitize, etc.)
+│   └── lib/                # Schemas de validação e error handler
+├── supabase/
+│   ├── functions/          # Edge Functions (Deno)
+│   │   ├── parse-briefing/ # Parseia briefings importados
+│   │   └── sync-mirapauta/ # Sincronização automática com MiraPauta
+│   └── migrations/         # Histórico completo de migrações SQL
+├── scripts/                # Scripts auxiliares de desenvolvimento
+└── public/                 # Assets estáticos
+```
+
+---
+
+## Páginas e Rotas
+
+| Rota                | Componente        | Descrição                                   | Acesso      |
+| ------------------- | ----------------- | ------------------------------------------- | ----------- |
+| `/`                 | `Dashboard`       | Listagem de pautas com filtros e stats      | Autenticado |
+| `/auth`             | `Auth`            | Login / Cadastro via Supabase Auth          | Público     |
+| `/criar-pauta`      | `CriarPauta`      | Formulário multi-etapa para nova pauta      | Autenticado |
+| `/editar-pauta/:id` | `EditarPauta`     | Edição de pauta existente                   | Autenticado |
+| `/pauta/:id`        | `VisualizarPauta` | Visualização pública para o cliente aprovar | **Público** |
+| `/agenda`           | `Agenda`          | Calendário de prazos das pautas             | Autenticado |
+| `/mensagens`        | `Mensagens`       | Central de mensagens e notificações         | Autenticado |
+| `/relatorios`       | `Relatorios`      | Relatórios de aprovação e métricas          | Autenticado |
+| `/equipe`           | `Equipe`          | Gerenciamento de membros da equipe          | Autenticado |
+| `/integracoes`      | `Integracoes`     | Integração com MiraPauta                    | Autenticado |
+| `/configuracoes`    | `Configuracoes`   | Preferências de perfil e sistema            | Autenticado |
+
+---
+
+## Funcionalidades Principais
+
+### 📋 Pautas
+
+- Criação de pautas com múltiplos **blocos de material** (post, story, banner, carrossel, reels, etc.)
+- Cada bloco suporta: imagens/arquivos, texto de chamada, legenda e configurações específicas
+- Versionamento de pautas (versões v1, v2…)
+- Status: `rascunho` → `aguardando_aprovacao` → `aprovada` | `rejeitada`
+- Link de aprovação único e público por pauta
+
+### ✅ Aprovação pelo Cliente
+
+- Rota `/pauta/:id` acessível sem login
+- Cliente visualiza as peças e pode aprovar ou rejeitar com justificativa
+- **Comentários pontuais**: o cliente clica diretamente sobre a imagem para marcar um ponto e deixar um comentário (coordenadas X/Y em percentual)
+- Comentários podem ser respondidos, editados e marcados como resolvidos pela equipe
+
+### 🔗 Integração MiraPauta
+
+- Conexão via Supabase separado (variáveis `VITE_MIRAPAUTA_*`)
+- Importação de **clientes**, **pautas** e **tarefas** do MiraPauta
+- Sincronização automática de tarefas via Edge Function a cada 15 minutos
+- Visualização de tarefas por responsável em abas
+
+### 📄 Geração de Documentos
+
+- Exportação de pauta em formato **Word (.docx)** com imagens e textos formatados
+- Upload automático do documento para o Supabase Storage
+
+---
+
+## Configuração do Ambiente
+
+### Pré-requisitos
+
+- Node.js 18 ou 20
+- npm (ou bun)
+- Conta no [Supabase](https://supabase.com)
+
+### Instalação
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1. Clone o repositório
+git clone <URL_DO_REPOSITÓRIO>
+cd aprova-arte-com-voce
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. Instale as dependências
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. Configure as variáveis de ambiente
+cp .env.example .env
+# Edite o .env com suas credenciais
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. Inicie o servidor de desenvolvimento
 npm run dev
+# Acesse: http://localhost:8080
 ```
 
-**Edit a file directly in GitHub**
+### Variáveis de Ambiente
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+| Variável                           | Obrigatória | Descrição                                 |
+| ---------------------------------- | ----------- | ----------------------------------------- |
+| `VITE_SUPABASE_URL`                | ✅          | URL do projeto Supabase principal         |
+| `VITE_SUPABASE_ANON_KEY`           | ✅          | Chave anônima pública do Supabase         |
+| `VITE_MIRAPAUTA_SUPABASE_URL`      | ⚙️          | URL do Supabase do MiraPauta (integração) |
+| `VITE_MIRAPAUTA_SUPABASE_ANON_KEY` | ⚙️          | Chave anônima do MiraPauta                |
+| `VITE_SENTRY_DSN`                  | 🔵          | DSN do Sentry para monitoramento de erros |
+| `VITE_APP_VERSION`                 | 🔵          | Versão da aplicação (padrão: `1.0.0`)     |
 
-**Use GitHub Codespaces**
+> ⚙️ Necessária apenas se usar a integração com MiraPauta  
+> 🔵 Opcional
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+**Atenção**: Nunca exponha a chave de serviço (`service_role`) do Supabase no frontend. Use-a apenas em contextos server-side (Edge Functions ou GitHub Actions com runner self-hosted).
 
-## What technologies are used for this project?
+### Configuração do Supabase
 
-This project is built with:
+1. Crie um projeto em [supabase.com](https://supabase.com)
+2. Em **Authentication → URL Configuration**, adicione:
+   - Site URL: `http://localhost:8080`
+   - Redirect URLs: `http://localhost:8080`
+3. Execute as migrações em ordem via Supabase CLI:
+   ```sh
+   supabase db push
+   ```
+4. O sistema usa RLS (Row Level Security) — garanta que as políticas estejam habilitadas ao criar novas tabelas.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## Environment Variables
+## Scripts npm
 
-Create a `.env` file (copy from `.env.example`). Required for local dev & CI:
+| Script          | Comando                 | Descrição                             |
+| --------------- | ----------------------- | ------------------------------------- |
+| `dev`           | `npm run dev`           | Servidor Vite em `localhost:8080`     |
+| `build`         | `npm run build`         | Build de produção em `dist/`          |
+| `build:dev`     | `npm run build:dev`     | Build em modo desenvolvimento         |
+| `preview`       | `npm run preview`       | Pré-visualização do build             |
+| `lint`          | `npm run lint`          | ESLint sobre `src/`                   |
+| `typecheck`     | `npm run typecheck`     | Verificação TypeScript (sem emissão)  |
+| `format`        | `npm run format`        | Formata com Prettier                  |
+| `test`          | `npm run test`          | Executa testes com Vitest (sem watch) |
+| `test:watch`    | `npm run test:watch`    | Testes em modo watch                  |
+| `test:coverage` | `npm run test:coverage` | Testes com relatório de cobertura     |
+
+O relatório de cobertura é gerado em `coverage/` — abra `coverage/index.html` para visualizar o HTML.
+
+---
+
+## CI / CD
+
+Pipeline via **GitHub Actions** (`.github/workflows/ci.yml`) — roda em push e PRs:
+
+1. **Lint** — ESLint
+2. **Typecheck** — `tsc --noEmit`
+3. **Test Matrix** — Node 18 e 20
+4. **Coverage** — Node 20, sobe o artefato `coverage/`
+5. **Build** — Sobe o artefato `dist/`
+
+### Secrets necessários no repositório
 
 ```
-VITE_SUPABASE_URL=https://<your-project>.supabase.co
-VITE_SUPABASE_ANON_KEY=ey...
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
 ```
 
-Do NOT expose the service role key in the frontend (never prefix with `VITE_`). Use it only in server-side automation (GitHub Action self‑hosted runner or Supabase CLI locally).
+Os artefatos de CI ficam disponíveis por **7 dias**.
 
-## CI Pipeline
+---
 
-GitHub Actions workflow (`.github/workflows/ci.yml`) runs on push / PR:
+## Banco de Dados
 
-1. Lint (eslint)
-2. Typecheck (tsc noEmit)
-3. Test matrix (Node 18 & 20)
-4. Coverage (Node 20) – uploads `coverage/` artifact
-5. Build – uploads production `dist/` artifact
+O schema principal inclui as seguintes tabelas (simplificado):
 
-Add the following repository secrets so the build & tests using Supabase client can initialize:
+| Tabela                 | Descrição                                         |
+| ---------------------- | ------------------------------------------------- |
+| `pautas`               | Pautas com status, cliente, prazo e conteúdo JSON |
+| `clientes`             | Clientes cadastrados na agência                   |
+| `comentarios_pontuais` | Comentários com coordenadas X/Y sobre as imagens  |
+| `profiles`             | Usuários sincronizados do MiraPauta               |
+| `audit_logs`           | Log de auditoria de todas as operações            |
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+As migrações estão em `supabase/migrations/` em ordem cronológica.
 
-Artifacts retain for 7 days.
+---
 
-## Scripts
+## Edge Functions
 
-Useful npm scripts:
+| Função           | Trigger               | Descrição                                            |
+| ---------------- | --------------------- | ---------------------------------------------------- |
+| `sync-mirapauta` | Manual / Cron (15min) | Busca tarefas do MiraPauta e cria/atualiza pautas    |
+| `parse-briefing` | Manual                | Parseia briefings importados para o formato de pauta |
 
-| Script        | Purpose                           |
-| ------------- | --------------------------------- |
-| dev           | Start Vite dev server (port 8080) |
-| build         | Production build                  |
-| lint          | ESLint over `src`                 |
-| typecheck     | Strict TypeScript check           |
-| test          | Vitest run (no watch)             |
-| test:watch    | Vitest watch mode                 |
-| test:coverage | Vitest with coverage report       |
+---
 
-Coverage output stored in `coverage/` (lcov + summary). You can view HTML report by opening `coverage/index.html` after running `npm run test:coverage` locally.
+## Segurança
 
-## Security Notes
+- RLS habilitado em todas as tabelas — cada usuário acessa apenas seus próprios dados
+- Inputs sanitizados via `isomorphic-dompurify` antes de persistir
+- Validação de formulários com **Zod** antes de enviar ao banco
+- Chave de serviço do Supabase jamais exposta no frontend
+- Audit log de operações sensíveis
+- Detalhes completos: [SECURITY.md](./SECURITY.md)
 
-Keep the Supabase service role key only in secure backend contexts. RLS policies enforce row ownership; ensure they stay enabled when adding new tables.
+---
 
-## How can I deploy this project?
+## Deploy
 
-Simply open [Lovable](https://lovable.dev/projects/44272730-8708-4b09-ba3f-4ab3f8e5196a) and click on Share -> Publish.
+O projeto pode ser publicado em qualquer hospedagem estática (Vercel, Netlify, Cloudflare Pages):
 
-## Can I connect a custom domain to my Lovable project?
+1. Configure as variáveis de ambiente na plataforma de hospedagem
+2. Execute `npm run build`
+3. Faça deploy da pasta `dist/`
 
-Yes, you can!
+Ou utilize a plataforma **Lovable**: abra o projeto em [lovable.dev](https://lovable.dev/projects/44272730-8708-4b09-ba3f-4ab3f8e5196a) e clique em **Share → Publish**.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Contribuindo
+
+1. Faça um fork e crie um branch a partir de `main`
+2. Instale as dependências: `npm install`
+3. O Husky rodará lint + format automaticamente no commit (via `lint-staged`)
+4. Abra um Pull Request com descrição clara da mudança
+
+---
+
+## Licença
+
+Proprietário — todos os direitos reservados.

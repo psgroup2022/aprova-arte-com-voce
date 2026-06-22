@@ -2,12 +2,12 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -18,7 +18,6 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useClientes } from '@/hooks/useClientes';
 import { TagManager } from '@/components/TagManager';
-import { BriefingUpload } from './BriefingUpload';
 import { TarefaVinculadaSelector } from './TarefaVinculadaSelector';
 
 interface PautaInfoBasicaV2Props {
@@ -52,7 +51,7 @@ export const PautaInfoBasicaV2: React.FC<PautaInfoBasicaV2Props> = ({
   onObservacoesChange,
   onMirapautaTaskChange,
   onNovoCliente,
-  disabled = false
+  disabled = false,
 }) => {
   const { clientes, isLoading } = useClientes();
   const selectedDate = dataPrevista ? new Date(dataPrevista) : undefined;
@@ -80,8 +79,8 @@ export const PautaInfoBasicaV2: React.FC<PautaInfoBasicaV2Props> = ({
           Cliente <span className="text-destructive">*</span>
         </Label>
         <div className="flex gap-2">
-          <Select 
-            value={clienteId} 
+          <Select
+            value={clienteId}
             onValueChange={onClienteChange}
             disabled={disabled || isLoading}
           >
@@ -95,9 +94,7 @@ export const PautaInfoBasicaV2: React.FC<PautaInfoBasicaV2Props> = ({
                     <Building2 className="w-4 h-4 text-muted-foreground" />
                     <span>{cliente.nome}</span>
                     {cliente.empresa && (
-                      <span className="text-muted-foreground text-xs">
-                        ({cliente.empresa})
-                      </span>
+                      <span className="text-muted-foreground text-xs">({cliente.empresa})</span>
                     )}
                   </div>
                 </SelectItem>
@@ -105,12 +102,7 @@ export const PautaInfoBasicaV2: React.FC<PautaInfoBasicaV2Props> = ({
             </SelectContent>
           </Select>
           {onNovoCliente && (
-            <Button 
-              type="button" 
-              variant="outline"
-              onClick={onNovoCliente}
-              disabled={disabled}
-            >
+            <Button type="button" variant="outline" onClick={onNovoCliente} disabled={disabled}>
               <Plus className="w-4 h-4" />
             </Button>
           )}
@@ -130,26 +122,22 @@ export const PautaInfoBasicaV2: React.FC<PautaInfoBasicaV2Props> = ({
               <Button
                 variant="outline"
                 className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !selectedDate && "text-muted-foreground"
+                  'w-full justify-start text-left font-normal',
+                  !selectedDate && 'text-muted-foreground',
                 )}
                 disabled={disabled}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? (
-                  format(selectedDate, "PPP", { locale: ptBR })
-                ) : (
-                  "Selecione uma data"
-                )}
+                {selectedDate
+                  ? format(selectedDate, 'PPP', { locale: ptBR })
+                  : 'Selecione uma data'}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={(date) => 
-                  onDataPrevistaChange(date ? date.toISOString() : '')
-                }
+                onSelect={(date) => onDataPrevistaChange(date ? date.toISOString() : '')}
                 locale={ptBR}
                 initialFocus
               />
@@ -175,9 +163,6 @@ export const PautaInfoBasicaV2: React.FC<PautaInfoBasicaV2Props> = ({
           disabled={disabled}
         />
       )}
-
-      {/* Upload de briefing */}
-      <BriefingUpload disabled={disabled} />
 
       {/* Observações internas */}
       <div className="space-y-2">

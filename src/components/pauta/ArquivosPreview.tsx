@@ -1,8 +1,8 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Expand, Download, MessageCircle } from "lucide-react";
-import { ComentarioPontual, PendingPin } from "@/types/comentario";
-import { Badge } from "@/components/ui/badge";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Expand, Download, MessageCircle } from 'lucide-react';
+import { ComentarioPontual, PendingPin } from '@/types/comentario';
+import { Badge } from '@/components/ui/badge';
 
 interface Arquivo {
   id: string;
@@ -51,19 +51,25 @@ const itemLabels: Record<string, string> = {
   carrossel: 'Slide',
   reels: 'Cena',
   story: 'Tela',
-  default: 'Peça'
+  default: 'Peça',
 };
 
-export const ArquivosPreview = ({ 
-  arquivos, 
-  comentarios, 
-  pendingPin, 
-  onImageClick, 
-  descricao, 
+export const ArquivosPreview = ({
+  arquivos,
+  comentarios,
+  pendingPin,
+  onImageClick,
+  descricao,
   onShowAddComment,
   blocos = [],
 }: ArquivosPreviewProps) => {
-  const hasBlocos = blocos.length > 0 && blocos.some(b => b.itens.length > 0);
+  const hasBlocos = blocos.length > 0 && blocos.some((b) => b.itens.length > 0);
+
+  const pinNumberById = new Map(
+    comentarios
+      .filter((c) => c.arquivo_id && c.x_coordenada && c.y_coordenada)
+      .map((c, i) => [c.id, i + 1] as const),
+  );
 
   if (hasBlocos) {
     return (
@@ -84,7 +90,10 @@ export const ArquivosPreview = ({
                       {tipoLabels[bloco.tipo_material] || bloco.tipo_material}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
-                      • {bloco.itens.length} {bloco.itens.length === 1 ? itemLabel.toLowerCase() : `${itemLabel.toLowerCase()}s`}
+                      • {bloco.itens.length}{' '}
+                      {bloco.itens.length === 1
+                        ? itemLabel.toLowerCase()
+                        : `${itemLabel.toLowerCase()}s`}
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground">
@@ -98,34 +107,42 @@ export const ArquivosPreview = ({
                   {isCarrossel && (
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                       {bloco.itens.map((item, itemIndex) => (
-                        <div key={item.id} className="bg-background rounded-lg border overflow-hidden">
+                        <div
+                          key={item.id}
+                          className="bg-background rounded-lg border overflow-hidden"
+                        >
                           <div className="relative bg-muted">
                             {item.arquivos.length > 0 ? (
-                              item.arquivos.map(arquivo => (
+                              item.arquivos.map((arquivo) => (
                                 <div key={arquivo.id} className="relative">
-                                  <img 
-                                    src={arquivo.url} 
+                                  <img
+                                    src={arquivo.url}
                                     alt={arquivo.nome_arquivo}
                                     className="w-full h-auto max-h-64 object-contain cursor-pointer"
                                     onClick={(e) => onImageClick(e, arquivo.id)}
                                   />
                                   {comentarios
-                                    .filter(c => c.arquivo_id === arquivo.id && c.x_coordenada && c.y_coordenada)
+                                    .filter(
+                                      (c) =>
+                                        c.arquivo_id === arquivo.id &&
+                                        c.x_coordenada &&
+                                        c.y_coordenada,
+                                    )
                                     .map((comentario, pinIndex) => (
-                                      <div 
+                                      <div
                                         key={comentario.id}
+                                        id={`comment-pin-${comentario.id}`}
                                         className="absolute h-5 w-5 bg-primary rounded-full border-2 border-white flex items-center justify-center text-primary-foreground text-xs font-bold cursor-pointer"
                                         style={{
                                           left: `${comentario.x_coordenada}%`,
                                           top: `${comentario.y_coordenada}%`,
-                                          transform: 'translate(-50%, -50%)'
+                                          transform: 'translate(-50%, -50%)',
                                         }}
                                         title={comentario.comentario}
                                       >
-                                        {pinIndex + 1}
+                                        {pinNumberById.get(comentario.id)}
                                       </div>
-                                    ))
-                                  }
+                                    ))}
                                 </div>
                               ))
                             ) : (
@@ -134,7 +151,7 @@ export const ArquivosPreview = ({
                               </div>
                             )}
                           </div>
-                          
+
                           <div className="p-3 space-y-2 border-t">
                             <Badge variant="outline" className="text-xs">
                               {itemLabel} {itemIndex + 1}
@@ -143,15 +160,24 @@ export const ArquivosPreview = ({
                               <p className="text-sm font-semibold text-foreground">{item.titulo}</p>
                             )}
                             {item.texto_conteudo && (
-                              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{item.texto_conteudo}</p>
+                              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                {item.texto_conteudo}
+                              </p>
                             )}
                             {item.hashtags && (
                               <div className="flex flex-wrap gap-1 pt-1">
-                                {item.hashtags.split(/[,\s]+/).filter(Boolean).map((tag, i) => (
-                                  <Badge key={i} variant="secondary" className="text-xs px-1.5 py-0">
-                                    #{tag.replace('#', '').trim()}
-                                  </Badge>
-                                ))}
+                                {item.hashtags
+                                  .split(/[,\s]+/)
+                                  .filter(Boolean)
+                                  .map((tag, i) => (
+                                    <Badge
+                                      key={i}
+                                      variant="secondary"
+                                      className="text-xs px-1.5 py-0"
+                                    >
+                                      #{tag.replace('#', '').trim()}
+                                    </Badge>
+                                  ))}
                               </div>
                             )}
                           </div>
@@ -165,15 +191,15 @@ export const ArquivosPreview = ({
                     <div className="space-y-4">
                       {(() => {
                         const videoArquivo = bloco.itens
-                          .flatMap(item => item.arquivos)
-                          .find(arq => arq.tipo === 'video');
-                        
+                          .flatMap((item) => item.arquivos)
+                          .find((arq) => arq.tipo === 'video');
+
                         if (videoArquivo) {
                           return (
                             <div className="bg-black rounded-lg overflow-hidden max-w-md mx-auto">
-                              <video 
-                                src={videoArquivo.url} 
-                                controls 
+                              <video
+                                src={videoArquivo.url}
+                                controls
                                 className="w-full aspect-[9/16] object-contain"
                                 preload="metadata"
                                 playsInline
@@ -199,18 +225,25 @@ export const ArquivosPreview = ({
                             </Badge>
                             <div className="flex-1 space-y-1">
                               {item.titulo && (
-                                <p className="text-sm font-semibold text-foreground">{item.titulo}</p>
+                                <p className="text-sm font-semibold text-foreground">
+                                  {item.titulo}
+                                </p>
                               )}
                               {item.texto_conteudo && (
-                                <p className="text-sm text-foreground whitespace-pre-wrap">{item.texto_conteudo}</p>
+                                <p className="text-sm text-foreground whitespace-pre-wrap">
+                                  {item.texto_conteudo}
+                                </p>
                               )}
                               {item.hashtags && (
                                 <div className="flex flex-wrap gap-1 pt-1">
-                                  {item.hashtags.split(/[,\s]+/).filter(Boolean).map((tag, i) => (
-                                    <Badge key={i} variant="secondary" className="text-xs">
-                                      #{tag.replace('#', '').trim()}
-                                    </Badge>
-                                  ))}
+                                  {item.hashtags
+                                    .split(/[,\s]+/)
+                                    .filter(Boolean)
+                                    .map((tag, i) => (
+                                      <Badge key={i} variant="secondary" className="text-xs">
+                                        #{tag.replace('#', '').trim()}
+                                      </Badge>
+                                    ))}
                                 </div>
                               )}
                             </div>
@@ -224,15 +257,18 @@ export const ArquivosPreview = ({
                   {isStory && (
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                       {bloco.itens.map((item, itemIndex) => (
-                        <div key={item.id} className="bg-background rounded-lg border overflow-hidden">
+                        <div
+                          key={item.id}
+                          className="bg-background rounded-lg border overflow-hidden"
+                        >
                           <div className="relative bg-muted">
                             {item.arquivos.length > 0 ? (
-                              item.arquivos.map(arquivo => (
+                              item.arquivos.map((arquivo) => (
                                 <div key={arquivo.id} className="relative">
                                   {arquivo.tipo === 'video' ? (
-                                    <video 
-                                      src={arquivo.url} 
-                                      controls 
+                                    <video
+                                      src={arquivo.url}
+                                      controls
                                       className="w-full h-auto max-h-64 object-contain"
                                       preload="metadata"
                                       playsInline
@@ -241,29 +277,34 @@ export const ArquivosPreview = ({
                                     </video>
                                   ) : (
                                     <>
-                                      <img 
-                                        src={arquivo.url} 
+                                      <img
+                                        src={arquivo.url}
                                         alt={arquivo.nome_arquivo}
                                         className="w-full h-auto max-h-64 object-contain cursor-pointer"
                                         onClick={(e) => onImageClick(e, arquivo.id)}
                                       />
                                       {comentarios
-                                        .filter(c => c.arquivo_id === arquivo.id && c.x_coordenada && c.y_coordenada)
+                                        .filter(
+                                          (c) =>
+                                            c.arquivo_id === arquivo.id &&
+                                            c.x_coordenada &&
+                                            c.y_coordenada,
+                                        )
                                         .map((comentario, pinIndex) => (
-                                          <div 
+                                          <div
                                             key={comentario.id}
+                                            id={`comment-pin-${comentario.id}`}
                                             className="absolute h-5 w-5 bg-primary rounded-full border-2 border-white flex items-center justify-center text-primary-foreground text-xs font-bold cursor-pointer"
                                             style={{
                                               left: `${comentario.x_coordenada}%`,
                                               top: `${comentario.y_coordenada}%`,
-                                              transform: 'translate(-50%, -50%)'
+                                              transform: 'translate(-50%, -50%)',
                                             }}
                                             title={comentario.comentario}
                                           >
-                                            {pinIndex + 1}
+                                            {pinNumberById.get(comentario.id)}
                                           </div>
-                                        ))
-                                      }
+                                        ))}
                                     </>
                                   )}
                                 </div>
@@ -274,7 +315,7 @@ export const ArquivosPreview = ({
                               </div>
                             )}
                           </div>
-                          
+
                           <div className="p-3 space-y-2 border-t">
                             <Badge variant="outline" className="text-xs">
                               {itemLabel} {itemIndex + 1}
@@ -283,15 +324,24 @@ export const ArquivosPreview = ({
                               <p className="text-sm font-semibold text-foreground">{item.titulo}</p>
                             )}
                             {item.texto_conteudo && (
-                              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{item.texto_conteudo}</p>
+                              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                {item.texto_conteudo}
+                              </p>
                             )}
                             {item.hashtags && (
                               <div className="flex flex-wrap gap-1 pt-1">
-                                {item.hashtags.split(/[,\s]+/).filter(Boolean).map((tag, i) => (
-                                  <Badge key={i} variant="secondary" className="text-xs px-1.5 py-0">
-                                    #{tag.replace('#', '').trim()}
-                                  </Badge>
-                                ))}
+                                {item.hashtags
+                                  .split(/[,\s]+/)
+                                  .filter(Boolean)
+                                  .map((tag, i) => (
+                                    <Badge
+                                      key={i}
+                                      variant="secondary"
+                                      className="text-xs px-1.5 py-0"
+                                    >
+                                      #{tag.replace('#', '').trim()}
+                                    </Badge>
+                                  ))}
                               </div>
                             )}
                           </div>
@@ -304,16 +354,19 @@ export const ArquivosPreview = ({
                   {!isCarrossel && !isReels && !isStory && (
                     <div className="space-y-6">
                       {bloco.itens.map((item, itemIndex) => (
-                        <div key={item.id} className="bg-background rounded-lg border overflow-hidden">
+                        <div
+                          key={item.id}
+                          className="bg-background rounded-lg border overflow-hidden"
+                        >
                           <div className="flex flex-col lg:flex-row">
                             <div className="lg:w-1/2 bg-muted">
                               {item.arquivos.length > 0 ? (
-                                item.arquivos.map(arquivo => (
+                                item.arquivos.map((arquivo) => (
                                   <div key={arquivo.id} className="relative">
                                     {arquivo.tipo === 'video' ? (
-                                      <video 
-                                        src={arquivo.url} 
-                                        controls 
+                                      <video
+                                        src={arquivo.url}
+                                        controls
                                         className="w-full h-auto max-h-96 object-contain"
                                         preload="metadata"
                                         playsInline
@@ -322,41 +375,46 @@ export const ArquivosPreview = ({
                                       </video>
                                     ) : (
                                       <>
-                                        <img 
-                                          src={arquivo.url} 
+                                        <img
+                                          src={arquivo.url}
                                           alt={arquivo.nome_arquivo}
                                           className="w-full h-auto max-h-96 object-contain cursor-pointer"
                                           onClick={(e) => onImageClick(e, arquivo.id)}
                                         />
                                         {pendingPin && pendingPin.arquivoId === arquivo.id && (
-                                          <div 
+                                          <div
                                             className="absolute h-6 w-6 bg-destructive rounded-full border-2 border-white flex items-center justify-center text-destructive-foreground text-xs font-bold animate-pulse"
                                             style={{
                                               left: `${pendingPin.x}%`,
                                               top: `${pendingPin.y}%`,
-                                              transform: 'translate(-50%, -50%)'
+                                              transform: 'translate(-50%, -50%)',
                                             }}
                                           >
                                             ?
                                           </div>
                                         )}
                                         {comentarios
-                                          .filter(c => c.arquivo_id === arquivo.id && c.x_coordenada && c.y_coordenada)
+                                          .filter(
+                                            (c) =>
+                                              c.arquivo_id === arquivo.id &&
+                                              c.x_coordenada &&
+                                              c.y_coordenada,
+                                          )
                                           .map((comentario, pinIndex) => (
-                                            <div 
+                                            <div
                                               key={comentario.id}
+                                              id={`comment-pin-${comentario.id}`}
                                               className="absolute h-6 w-6 bg-primary rounded-full border-2 border-white flex items-center justify-center text-primary-foreground text-xs font-bold cursor-pointer"
                                               style={{
                                                 left: `${comentario.x_coordenada}%`,
                                                 top: `${comentario.y_coordenada}%`,
-                                                transform: 'translate(-50%, -50%)'
+                                                transform: 'translate(-50%, -50%)',
                                               }}
                                               title={comentario.comentario}
                                             >
-                                              {pinIndex + 1}
+                                              {pinNumberById.get(comentario.id)}
                                             </div>
-                                          ))
-                                        }
+                                          ))}
                                       </>
                                     )}
                                   </div>
@@ -389,7 +447,9 @@ export const ArquivosPreview = ({
                                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                                     Título
                                   </label>
-                                  <p className="text-sm font-semibold text-foreground mt-1">{item.titulo}</p>
+                                  <p className="text-sm font-semibold text-foreground mt-1">
+                                    {item.titulo}
+                                  </p>
                                 </div>
                               )}
 
@@ -398,7 +458,9 @@ export const ArquivosPreview = ({
                                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                                     Legenda
                                   </label>
-                                  <p className="text-sm text-foreground mt-1 whitespace-pre-wrap">{item.texto_conteudo}</p>
+                                  <p className="text-sm text-foreground mt-1 whitespace-pre-wrap">
+                                    {item.texto_conteudo}
+                                  </p>
                                 </div>
                               )}
 
@@ -408,11 +470,14 @@ export const ArquivosPreview = ({
                                     Hashtags
                                   </label>
                                   <div className="flex flex-wrap gap-1 mt-1">
-                                    {item.hashtags.split(/[,\s]+/).filter(Boolean).map((tag, i) => (
-                                      <Badge key={i} variant="secondary" className="text-xs">
-                                        #{tag.replace('#', '').trim()}
-                                      </Badge>
-                                    ))}
+                                    {item.hashtags
+                                      .split(/[,\s]+/)
+                                      .filter(Boolean)
+                                      .map((tag, i) => (
+                                        <Badge key={i} variant="secondary" className="text-xs">
+                                          #{tag.replace('#', '').trim()}
+                                        </Badge>
+                                      ))}
                                   </div>
                                 </div>
                               )}
@@ -445,15 +510,22 @@ export const ArquivosPreview = ({
               <div className="bg-muted/50 p-4 rounded-md">
                 <p className="text-foreground whitespace-pre-wrap">{descricao}</p>
               </div>
-              
-              {comentarios.filter(c => c.comentario.startsWith('[LEGENDA]')).map((comentario) => (
-                <div key={comentario.id} className="mt-3 p-3 bg-primary/10 rounded-md border-l-4 border-primary">
-                  <p className="text-sm text-foreground">{comentario.comentario.replace('[LEGENDA] ', '')}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {new Date(comentario.created_at).toLocaleString('pt-BR')}
-                  </p>
-                </div>
-              ))}
+
+              {comentarios
+                .filter((c) => c.comentario.startsWith('[LEGENDA]'))
+                .map((comentario) => (
+                  <div
+                    key={comentario.id}
+                    className="mt-3 p-3 bg-primary/10 rounded-md border-l-4 border-primary"
+                  >
+                    <p className="text-sm text-foreground">
+                      {comentario.comentario.replace('[LEGENDA] ', '')}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(comentario.created_at).toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                ))}
             </div>
           )}
         </div>
@@ -474,13 +546,18 @@ export const ArquivosPreview = ({
             <div key={arquivo.id} className="mb-12">
               <div className="mb-2 flex justify-between items-center">
                 <h3 className="text-sm font-medium text-foreground">
-                  {arquivo.tipo === 'video' ? 'Vídeo' : arquivo.tipo === 'imagem' ? 'Imagem' : 'Documento'} {index + 1} de {arquivos.length}
+                  {arquivo.tipo === 'video'
+                    ? 'Vídeo'
+                    : arquivo.tipo === 'imagem'
+                      ? 'Imagem'
+                      : 'Documento'}{' '}
+                  {index + 1} de {arquivos.length}
                 </h3>
                 <div className="flex space-x-2">
                   <button className="text-muted-foreground hover:text-foreground">
                     <Expand className="w-4 h-4" />
                   </button>
-                  <button 
+                  <button
                     className="text-muted-foreground hover:text-foreground"
                     onClick={() => window.open(arquivo.url, '_blank')}
                   >
@@ -488,13 +565,13 @@ export const ArquivosPreview = ({
                   </button>
                 </div>
               </div>
-              
+
               <div className="relative bg-card rounded-lg shadow-sm overflow-hidden border">
                 {arquivo.tipo === 'video' ? (
                   <div className="relative bg-black">
-                    <video 
-                      src={arquivo.url} 
-                      controls 
+                    <video
+                      src={arquivo.url}
+                      controls
                       className="w-full h-auto"
                       preload="metadata"
                       playsInline
@@ -504,52 +581,51 @@ export const ArquivosPreview = ({
                   </div>
                 ) : arquivo.tipo === 'imagem' ? (
                   <div className="relative">
-                    <img 
-                      className="w-full h-auto cursor-pointer" 
-                      src={arquivo.url} 
+                    <img
+                      className="w-full h-auto cursor-pointer"
+                      src={arquivo.url}
                       alt={arquivo.nome_arquivo}
                       onClick={(e) => onImageClick(e, arquivo.id)}
                       style={{ userSelect: 'none' }}
                     />
-                    
+
                     {pendingPin && pendingPin.arquivoId === arquivo.id && (
-                      <div 
+                      <div
                         className="absolute h-6 w-6 bg-destructive rounded-full border-2 border-white flex items-center justify-center text-destructive-foreground text-xs font-bold animate-pulse cursor-pointer"
                         style={{
                           left: `${pendingPin.x}%`,
                           top: `${pendingPin.y}%`,
-                          transform: 'translate(-50%, -50%)'
+                          transform: 'translate(-50%, -50%)',
                         }}
                       >
                         ?
                       </div>
                     )}
-                    
+
                     {comentarios
-                      .filter(c => c.arquivo_id === arquivo.id && c.x_coordenada && c.y_coordenada)
+                      .filter(
+                        (c) => c.arquivo_id === arquivo.id && c.x_coordenada && c.y_coordenada,
+                      )
                       .map((comentario, pinIndex) => (
-                        <div 
+                        <div
                           key={comentario.id}
+                          id={`comment-pin-${comentario.id}`}
                           className="absolute h-6 w-6 bg-primary rounded-full border-2 border-white flex items-center justify-center text-primary-foreground text-xs font-bold cursor-pointer"
                           style={{
                             left: `${comentario.x_coordenada}%`,
                             top: `${comentario.y_coordenada}%`,
-                            transform: 'translate(-50%, -50%)'
+                            transform: 'translate(-50%, -50%)',
                           }}
                           title={comentario.comentario}
                         >
-                          {pinIndex + 1}
+                          {pinNumberById.get(comentario.id)}
                         </div>
-                      ))
-                    }
+                      ))}
                   </div>
                 ) : (
                   <div className="p-8 text-center">
                     <p className="text-muted-foreground mb-2">{arquivo.nome_arquivo}</p>
-                    <Button 
-                      variant="outline"
-                      onClick={() => window.open(arquivo.url, '_blank')}
-                    >
+                    <Button variant="outline" onClick={() => window.open(arquivo.url, '_blank')}>
                       <Download className="w-4 h-4 mr-2" />
                       Download
                     </Button>
@@ -577,15 +653,22 @@ export const ArquivosPreview = ({
             <div className="bg-muted/50 p-4 rounded-md">
               <p className="text-foreground whitespace-pre-wrap">{descricao}</p>
             </div>
-            
-            {comentarios.filter(c => c.comentario.startsWith('[LEGENDA]')).map((comentario) => (
-              <div key={comentario.id} className="mt-3 p-3 bg-primary/10 rounded-md border-l-4 border-primary">
-                <p className="text-sm text-foreground">{comentario.comentario.replace('[LEGENDA] ', '')}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {new Date(comentario.created_at).toLocaleString('pt-BR')}
-                </p>
-              </div>
-            ))}
+
+            {comentarios
+              .filter((c) => c.comentario.startsWith('[LEGENDA]'))
+              .map((comentario) => (
+                <div
+                  key={comentario.id}
+                  className="mt-3 p-3 bg-primary/10 rounded-md border-l-4 border-primary"
+                >
+                  <p className="text-sm text-foreground">
+                    {comentario.comentario.replace('[LEGENDA] ', '')}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(comentario.created_at).toLocaleString('pt-BR')}
+                  </p>
+                </div>
+              ))}
           </div>
         )}
       </div>
