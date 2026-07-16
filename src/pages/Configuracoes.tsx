@@ -289,7 +289,7 @@ export const Configuracoes = () => {
                     <div className="flex items-center gap-2">
                       <Label>Status da Integração</Label>
                       {isConfigured ? (
-                        <Badge variant="default" className="bg-green-500">
+                        <Badge variant="default" className="bg-success">
                           Configurado
                         </Badge>
                       ) : (

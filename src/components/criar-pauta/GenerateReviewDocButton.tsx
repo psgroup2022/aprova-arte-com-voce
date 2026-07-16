@@ -107,11 +107,11 @@ export const GenerateReviewDocButton: React.FC<GenerateReviewDocButtonProps> = (
             )}
 
             {!generatedUrl && localUrl && (
-              <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-800 dark:text-blue-300 mb-2">
+              <div className="p-4 bg-primary/10 dark:bg-blue-950/30 rounded-lg border border-primary/30 dark:border-primary/30">
+                <p className="text-sm text-primary dark:text-blue-300 mb-2">
                   ℹ️ Download iniciado automaticamente
                 </p>
-                <p className="text-xs text-blue-600 dark:text-blue-400">
+                <p className="text-xs text-primary dark:text-blue-400">
                   O PDF foi gerado localmente. Se o download não iniciou, clique no botão abaixo.
                 </p>
               </div>

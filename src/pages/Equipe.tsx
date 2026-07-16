@@ -121,7 +121,7 @@ export const Equipe = () => {
                     <div className="flex items-center space-x-4">
                       <Avatar className="w-12 h-12">
                         <AvatarImage src={member.avatar_url || undefined} alt={member.nome} />
-                        <AvatarFallback className="bg-primary text-white">
+                        <AvatarFallback className="bg-primary text-primary-foreground">
                           {getInitials(member.nome)}
                         </AvatarFallback>
                       </Avatar>
@@ -145,7 +145,7 @@ export const Equipe = () => {
                     <div className="flex items-center space-x-4">
                       <Badge
                         variant={member.ativo ? 'default' : 'secondary'}
-                        className={member.ativo ? 'bg-green-500' : ''}
+                        className={member.ativo ? 'bg-success' : ''}
                       >
                         {member.ativo ? 'Ativo' : 'Inativo'}
                       </Badge>

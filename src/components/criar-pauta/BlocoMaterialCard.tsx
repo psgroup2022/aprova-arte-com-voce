@@ -55,7 +55,7 @@ const iconMap = {
 const statusColorMap: Record<BlocoStatus, string> = {
   aguardando_midia: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
   pronto: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  enviado_aprovacao: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  enviado_aprovacao: 'bg-primary/15 text-primary dark:bg-blue-900/30 dark:text-blue-400',
   em_revisao: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
   aprovado: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
 };
