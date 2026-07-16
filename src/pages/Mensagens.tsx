@@ -33,7 +33,7 @@ export const Mensagens = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted cursor-pointer">
-                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-medium">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium">
                     JD
                   </div>
                   <div className="flex-1">
@@ -44,7 +44,7 @@ export const Mensagens = () => {
                 </div>
 
                 <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted cursor-pointer">
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-white font-medium">
+                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary-foreground font-medium">
                     MS
                   </div>
                   <div className="flex-1">
@@ -62,7 +62,7 @@ export const Mensagens = () => {
             <Card className="h-[600px] flex flex-col">
               <CardHeader>
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-medium">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium">
                     JD
                   </div>
                   <div>

@@ -28,9 +28,9 @@ export const PautaFormHeader = () => {
         </Button>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-4 w-4" />
-          <span className="absolute -top-1 -right-1 bg-destructive text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
+          <span className="absolute -top-1 -right-1 bg-destructive text-primary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
         </Button>
-        <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium">
+        <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
           {user?.email?.charAt(0).toUpperCase() || 'U'}
         </div>
       </div>

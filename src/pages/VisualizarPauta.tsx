@@ -56,7 +56,7 @@ export const VisualizarPauta = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-card font-sans">
       <PautaHeader
         titulo={pauta.titulo}
         cliente={pauta.cliente}
@@ -76,7 +76,7 @@ export const VisualizarPauta = () => {
         />
 
         {/* Feedback Section */}
-        <div className="w-full md:w-2/5 border-l border-gray-200 flex flex-col md:sticky md:top-[81px] md:self-start md:h-[calc(100vh-81px)] md:overflow-y-auto">
+        <div className="w-full md:w-2/5 border-l border-border flex flex-col md:sticky md:top-[81px] md:self-start md:h-[calc(100vh-81px)] md:overflow-y-auto">
           <ApprovalActions
             selectedApproval={selectedApproval}
             onApprovalClick={handleApprovalClick}
@@ -103,8 +103,8 @@ export const VisualizarPauta = () => {
       </div>
 
       {/* Help Button */}
-      <button className="fixed bottom-6 right-6 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border border-gray-200 hover:bg-gray-50">
-        <HelpCircle className="w-5 h-5 text-slate-600" />
+      <button className="fixed bottom-6 right-6 w-12 h-12 bg-card rounded-full flex items-center justify-center shadow-lg border border-border hover:bg-muted">
+        <HelpCircle className="w-5 h-5 text-foreground" />
       </button>
     </div>
   );
