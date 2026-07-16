@@ -10,7 +10,11 @@ export const useAprovacao = (pautaId: string) => {
 
   const updatePautaMutation = useMutation({
     mutationFn: async ({ status, comentario }: { status: string; comentario?: string }) => {
-      const updateData: Record<string, string | null> = { status };
+      const updateData: {
+        status: string;
+        aprovado_por?: string | null;
+        data_aprovacao?: string | null;
+      } = { status };
 
       if (status === 'aprovada') {
         updateData.aprovado_por = null; // Temporariamente null para testes
