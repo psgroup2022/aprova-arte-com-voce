@@ -97,7 +97,7 @@ const UserTasksTabs = ({
             key={task.id}
             className={`p-4 cursor-pointer transition-all hover:shadow-md ${
               selectedTasks.has(task.id)
-                ? 'border-violet-300 bg-violet-50/50 ring-2 ring-violet-200'
+                ? 'border-primary/30 bg-primary/50 ring-2 ring-primary/30'
                 : 'border-border hover:border-slate-300'
             }`}
             onClick={() => toggleTask(task.id)}
@@ -106,7 +106,7 @@ const UserTasksTabs = ({
               <Checkbox
                 checked={selectedTasks.has(task.id)}
                 onCheckedChange={() => toggleTask(task.id)}
-                className="data-[state=checked]:bg-violet-600 mt-1"
+                className="data-[state=checked]:bg-primary mt-1"
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 flex-wrap">
@@ -194,7 +194,7 @@ const UserTasksTabs = ({
             value={key}
             className="data-[state=active]:bg-card flex items-center gap-2"
           >
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-primary-foreground text-xs font-medium">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-success  flex items-center justify-center text-primary-foreground text-xs font-medium">
               {profile?.nome?.charAt(0) || profile?.email?.charAt(0) || '?'}
             </div>
             <span className="max-w-[120px] truncate">
@@ -304,7 +304,7 @@ export const Integracoes = () => {
     switch (status) {
       case 'concluido':
       case 'done':
-        return { label: 'Concluído', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+        return { label: 'Concluído', className: 'bg-success/10 text-success border-success/30' };
       case 'em_andamento':
       case 'in_progress':
         return { label: 'Em Andamento', className: 'bg-primary/10 text-primary border-primary/30' };
@@ -312,7 +312,7 @@ export const Integracoes = () => {
       case 'todo':
         return { label: 'Pendente', className: 'bg-amber-50 text-amber-700 border-amber-200' };
       case 'cancelado':
-        return { label: 'Cancelado', className: 'bg-rose-50 text-rose-700 border-rose-200' };
+        return { label: 'Cancelado', className: 'bg-destructive/10 text-destructive border-destructive/30' };
       default:
         return { label: status || 'Sem status', className: 'bg-muted text-foreground border-border' };
     }
@@ -339,7 +339,7 @@ export const Integracoes = () => {
                 </p>
               </div>
               <div className="bg-slate-900 rounded-xl p-4 text-left w-full max-w-lg">
-                <code className="text-sm text-emerald-400">
+                <code className="text-sm text-success">
                   VITE_MIRAPAUTA_SUPABASE_URL=https://xxx.supabase.co
                   <br />
                   VITE_MIRAPAUTA_SUPABASE_ANON_KEY=eyJhbG...
@@ -368,7 +368,7 @@ export const Integracoes = () => {
             <Button
               onClick={() => syncTasks.mutate()}
               disabled={syncTasks.isPending}
-              className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700"
+              className="bg-gradient-to-r from-success to-success hover:from-success hover:to-success"
             >
               {syncTasks.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -379,7 +379,7 @@ export const Integracoes = () => {
             </Button>
             <Badge
               variant="outline"
-              className="bg-emerald-50 text-emerald-700 border-emerald-200 px-3 py-1"
+              className="bg-success/10 text-success border-success/30 px-3 py-1"
             >
               <Link2 className="w-3.5 h-3.5 mr-1.5" />
               MiraPauta Conectado
@@ -388,7 +388,7 @@ export const Integracoes = () => {
         </div>
 
         {/* Info sobre sync automático */}
-        <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-primary/30">
+        <Card className="p-4 bg-gradient-to-r from-blue-50 to-primary-deep border-primary/30">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center">
               <Clock className="w-5 h-5 text-primary" />
@@ -404,7 +404,7 @@ export const Integracoes = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="p-5 bg-card border-border">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary-deep flex items-center justify-center shadow-lg shadow-violet-500/20">
                 <Building2 className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
@@ -418,7 +418,7 @@ export const Integracoes = () => {
 
           <Card className="p-5 bg-card border-border">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-warning to-warning flex items-center justify-center shadow-lg shadow-amber-500/20">
                 <FileText className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
@@ -432,7 +432,7 @@ export const Integracoes = () => {
 
           <Card className="p-5 bg-card border-border">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-success to-success flex items-center justify-center shadow-lg shadow-emerald-500/20">
                 <Users className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
@@ -489,7 +489,7 @@ export const Integracoes = () => {
               <Button
                 onClick={handleImportTasks}
                 disabled={selectedTasks.size === 0 || importTasks.isPending}
-                className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
+                className="bg-gradient-to-r from-primary to-primary-deep hover:from-primary hover:to-primary-deep"
               >
                 {importTasks.isPending ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -502,11 +502,11 @@ export const Integracoes = () => {
 
             {tasks.isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
             ) : tasks.error ? (
               <Card className="p-8 text-center">
-                <AlertCircle className="w-12 h-12 mx-auto text-rose-500 mb-4" />
+                <AlertCircle className="w-12 h-12 mx-auto text-destructive mb-4" />
                 <p className="text-foreground">Erro ao carregar tarefas do MiraPauta</p>
                 <p className="text-sm text-muted-foreground mt-1">{String(tasks.error)}</p>
               </Card>
@@ -552,7 +552,7 @@ export const Integracoes = () => {
               <Button
                 onClick={handleImportClientes}
                 disabled={selectedClientes.size === 0 || importClientes.isPending}
-                className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
+                className="bg-gradient-to-r from-primary to-primary-deep hover:from-primary hover:to-primary-deep"
               >
                 {importClientes.isPending ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -565,11 +565,11 @@ export const Integracoes = () => {
 
             {clientes.isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
             ) : clientes.error ? (
               <Card className="p-8 text-center">
-                <AlertCircle className="w-12 h-12 mx-auto text-rose-500 mb-4" />
+                <AlertCircle className="w-12 h-12 mx-auto text-destructive mb-4" />
                 <p className="text-foreground">Erro ao carregar clientes do MiraPauta</p>
               </Card>
             ) : clientes.data?.length === 0 ? (
@@ -584,7 +584,7 @@ export const Integracoes = () => {
                     key={cliente.id}
                     className={`p-4 cursor-pointer transition-all hover:shadow-md ${
                       selectedClientes.has(cliente.id)
-                        ? 'border-violet-300 bg-violet-50/50 ring-2 ring-violet-200'
+                        ? 'border-primary/30 bg-primary/50 ring-2 ring-primary/30'
                         : 'border-border hover:border-slate-300'
                     }`}
                     onClick={() => toggleCliente(cliente.id)}
@@ -593,9 +593,9 @@ export const Integracoes = () => {
                       <Checkbox
                         checked={selectedClientes.has(cliente.id)}
                         onCheckedChange={() => toggleCliente(cliente.id)}
-                        className="data-[state=checked]:bg-violet-600"
+                        className="data-[state=checked]:bg-primary"
                       />
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary-deep flex items-center justify-center">
                         <Building2 className="w-5 h-5 text-primary-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -629,11 +629,11 @@ export const Integracoes = () => {
 
             {profiles.isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
             ) : profiles.error ? (
               <Card className="p-8 text-center">
-                <AlertCircle className="w-12 h-12 mx-auto text-rose-500 mb-4" />
+                <AlertCircle className="w-12 h-12 mx-auto text-destructive mb-4" />
                 <p className="text-foreground">Erro ao carregar usuários do MiraPauta</p>
               </Card>
             ) : profiles.data?.length === 0 ? (
@@ -646,7 +646,7 @@ export const Integracoes = () => {
                 {profiles.data?.map((profile) => (
                   <Card key={profile.id} className="p-4 border-border">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-success  flex items-center justify-center">
                         <span className="text-primary-foreground font-medium text-sm">
                           {profile.nome?.charAt(0) || profile.email?.charAt(0) || '?'}
                         </span>
