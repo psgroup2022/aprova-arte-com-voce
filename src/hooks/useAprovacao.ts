@@ -9,8 +9,12 @@ export const useAprovacao = (pautaId: string) => {
   const [selectedApproval, setSelectedApproval] = useState<string>('');
 
   const updatePautaMutation = useMutation({
-    mutationFn: async ({ status, comentario }: { status: string; comentario?: string }) => {
-      const updateData: Record<string, string | null> = { status };
+    mutationFn: async ({ status, comentario }: { status: 'aguardando_aprovacao' | 'aprovada' | 'rascunho' | 'rejeitada'; comentario?: string }) => {
+      const updateData: {
+        status: 'aguardando_aprovacao' | 'aprovada' | 'rascunho' | 'rejeitada';
+        aprovado_por?: string | null;
+        data_aprovacao?: string | null;
+      } = { status };
 
       if (status === 'aprovada') {
         updateData.aprovado_por = null; // Temporariamente null para testes
@@ -70,7 +74,7 @@ export const useAprovacao = (pautaId: string) => {
   const handleApprovalClick = (type: string) => {
     setSelectedApproval(type);
 
-    let status = '';
+    let status: 'aguardando_aprovacao' | 'aprovada' | 'rascunho' | 'rejeitada' = 'aguardando_aprovacao';
     let comentario = '';
 
     switch (type) {

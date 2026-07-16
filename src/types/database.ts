@@ -91,7 +91,7 @@ export interface CreateClienteData {
   telefone?: string;
   empresa?: string;
   observacoes?: string;
-  criado_por?: string;
+  
 }
 
 export interface UpdateClienteData {

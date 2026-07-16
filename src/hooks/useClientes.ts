@@ -30,7 +30,7 @@ export const useClientes = () => {
     }
     const { data, error } = await supabase
       .from('clientes')
-      .insert({ ...clienteData, criado_por: user.id })
+      .insert(clienteData)
       .select()
       .single();
 
