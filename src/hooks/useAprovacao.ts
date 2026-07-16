@@ -74,7 +74,7 @@ export const useAprovacao = (pautaId: string) => {
   const handleApprovalClick = (type: string) => {
     setSelectedApproval(type);
 
-    let status = '';
+    let status: 'aguardando_aprovacao' | 'aprovada' | 'rascunho' | 'rejeitada' = 'aguardando_aprovacao';
     let comentario = '';
 
     switch (type) {
