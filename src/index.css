@@ -2,116 +2,142 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* =====================================================================
+   Mirador Design System
+   Baseado no Brandbook Mirador (brandbooks-delta.vercel.app/mirador)
+   - Cor proprietária: #FF7000 (laranja Mirador)
+   - Neutros: preto absoluto + creme #F4F1DE
+   - Tipografia: Archivo (display) + Sora (corpo)
+   Todas as cores em HSL.
+   ===================================================================== */
 
 @layer base {
   :root {
-    --background: 250 100% 99%;
-    --foreground: 224 71% 4%;
+    /* Superfícies */
+    --background: 46 44% 96%;          /* creme quase branco derivado de #F4F1DE */
+    --foreground: 0 0% 6%;             /* preto Mirador #0F0F0F */
 
     --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
+    --card-foreground: 0 0% 6%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
+    --popover-foreground: 0 0% 6%;
 
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-    --primary-glow: 226 100% 94%;
+    /* Cor proprietária da marca — #FF7000 */
+    --primary: 26 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 26 100% 88%;       /* laranja pastel para halos/hover suave */
+    --primary-hover: 21 98% 44%;       /* #E05102 */
+    --primary-deep: 12 76% 48%;        /* #D9381E */
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 224 71% 4%;
+    /* Secundárias do brandbook */
+    --secondary: 46 44% 91%;           /* #F4F1DE */
+    --secondary-foreground: 0 0% 6%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 8% 46%;
+    --muted: 46 30% 93%;
+    --muted-foreground: 210 8% 40%;    /* base em #7F8C8D */
 
-    --accent: 220 14% 96%;
-    --accent-foreground: 224 71% 4%;
+    --accent: 26 100% 50%;             /* usa laranja como acento em UI */
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    /* Sinalizadores */
+    --destructive: 12 76% 48%;         /* #D9381E */
+    --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 355 100% 100%;
+    --success: 122 12% 52%;            /* baseado em sage #A0B9A2 aprofundado */
+    --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 355 100% 100%;
+    --warning: 46 76% 52%;             /* âmbar #E3B23C */
+    --warning-foreground: 0 0% 10%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 221 83% 53%;
+    --info: 213 31% 26%;               /* navy #2E4057 */
+    --info-foreground: 0 0% 100%;
 
-    /* Design System Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-hero: linear-gradient(135deg, hsl(221 83% 53%), hsl(250 100% 76%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 14% 98%));
-    
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(var(--primary) / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(var(--primary) / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(var(--primary) / 0.1);
-    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.4);
-    
-    /* Animations */
+    /* Bordas & inputs */
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 26 100% 50%;
+
+    /* Gradientes do sistema */
+    --gradient-primary: linear-gradient(135deg, hsl(26 100% 50%), hsl(21 98% 44%));
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 6%) 0%, hsl(213 31% 20%) 60%, hsl(26 100% 50%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(46 44% 96%));
+    --gradient-ember: linear-gradient(135deg, hsl(46 76% 52%), hsl(26 100% 50%), hsl(12 76% 48%));
+
+    /* Sombras */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.06);
+    --shadow-md: 0 4px 12px -2px hsl(0 0% 0% / 0.08);
+    --shadow-lg: 0 16px 40px -12px hsl(0 0% 0% / 0.18);
+    --shadow-glow: 0 0 40px hsl(26 100% 50% / 0.35);
+    --shadow-brand: 0 12px 30px -12px hsl(26 100% 50% / 0.45);
+
+    /* Motion */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-snap: all 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
 
-    --radius: 0.5rem;
+    /* Radius — Mirador usa cantos moderados/quadrados */
+    --radius: 0.375rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar (segue paleta principal) */
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 46 44% 96%;
+    --sidebar-primary: 26 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 46 44% 96%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 26 100% 50%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 6%;             /* preto Mirador */
+    --foreground: 46 44% 96%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 9%;
+    --card-foreground: 46 44% 96%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 46 44% 96%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 26 100% 55%;
+    --primary-foreground: 0 0% 6%;
+    --primary-glow: 26 100% 70%;
+    --primary-hover: 21 98% 48%;
+    --primary-deep: 12 76% 52%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 46 44% 96%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 210 8% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 26 100% 55%;
+    --accent-foreground: 0 0% 6%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 12 76% 52%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --success: 122 20% 60%;
+    --success-foreground: 0 0% 6%;
+
+    --warning: 46 76% 60%;
+    --warning-foreground: 0 0% 6%;
+
+    --info: 213 40% 55%;
+    --info-foreground: 0 0% 6%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 26 100% 55%;
+
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 46 44% 96%;
+    --sidebar-primary: 26 100% 55%;
+    --sidebar-primary-foreground: 0 0% 6%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 46 44% 96%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 26 100% 55%;
   }
 }
 
@@ -120,7 +146,42 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    font-family: 'Sora', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Archivo', 'Sora', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+
+  h1 { letter-spacing: -0.035em; font-weight: 900; }
+
+  /* Etiqueta técnica (label acima de títulos, como no brandbook) */
+  .eyebrow {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: hsl(var(--primary));
+  }
+
+  ::selection {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
   }
 }
