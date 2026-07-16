@@ -9,9 +9,9 @@ export const useAprovacao = (pautaId: string) => {
   const [selectedApproval, setSelectedApproval] = useState<string>('');
 
   const updatePautaMutation = useMutation({
-    mutationFn: async ({ status, comentario }: { status: string; comentario?: string }) => {
+    mutationFn: async ({ status, comentario }: { status: 'aguardando_aprovacao' | 'aprovada' | 'rascunho' | 'rejeitada'; comentario?: string }) => {
       const updateData: {
-        status: string;
+        status: 'aguardando_aprovacao' | 'aprovada' | 'rascunho' | 'rejeitada';
         aprovado_por?: string | null;
         data_aprovacao?: string | null;
       } = { status };
