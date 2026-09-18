@@ -24,3 +24,8 @@ dist-ssr
 *.sw?
 .gstack/
 coverage
+
+# Variaveis de ambiente locais (use .env.example como modelo)
+.env
+.env.local
+.env.*.local
