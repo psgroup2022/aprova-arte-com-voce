@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Pauta, CreatePautaData, UpdatePautaData } from "@/types/database";
-import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Pauta, CreatePautaData, UpdatePautaData } from '@/types/database';
+import { useToast } from '@/hooks/use-toast';
 
 export const usePautas = () => {
   const { toast } = useToast();
@@ -21,8 +21,10 @@ export const usePautas = () => {
   };
 
   const createPauta = async (pautaData: CreatePautaData): Promise<Pauta> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       throw new Error('Usuário não autenticado');
     }
@@ -43,7 +45,10 @@ export const usePautas = () => {
     return data;
   };
 
-  const updatePauta = async ({ id, ...updateData }: UpdatePautaData & { id: string }): Promise<Pauta> => {
+  const updatePauta = async ({
+    id,
+    ...updateData
+  }: UpdatePautaData & { id: string }): Promise<Pauta> => {
     const { data, error } = await supabase
       .from('pautas')
       .update(updateData)
@@ -59,59 +64,48 @@ export const usePautas = () => {
   };
 
   const deletePauta = async (id: string): Promise<void> => {
-    // 1. Buscar arquivos da tabela pauta_arquivos
-    const { data: pautaArquivos } = await supabase
-      .from('pauta_arquivos')
-      .select('url')
-      .eq('pauta_id', id);
-
-    // 2. Buscar arquivos dos blocos via versões
-    const { data: versoes } = await supabase
-      .from('pauta_versoes')
-      .select('id')
-      .eq('pauta_id', id);
+    // Buscar arquivos dos blocos via versões. A lista plana `pauta_arquivos`
+    // era lida aqui também; saiu com a baseline da Fase 1, que a removeu.
+    const { data: versoes } = await supabase.from('pauta_versoes').select('id').eq('pauta_id', id);
 
     let blocoArquivosUrls: string[] = [];
     if (versoes && versoes.length > 0) {
-      const versaoIds = versoes.map(v => v.id);
-      
+      const versaoIds = versoes.map((v) => v.id);
+
       const { data: blocos } = await supabase
         .from('blocos_material')
         .select('id')
         .in('versao_id', versaoIds);
 
       if (blocos && blocos.length > 0) {
-        const blocoIds = blocos.map(b => b.id);
-        
+        const blocoIds = blocos.map((b) => b.id);
+
         const { data: itens } = await supabase
           .from('bloco_itens')
           .select('id')
           .in('bloco_id', blocoIds);
 
         if (itens && itens.length > 0) {
-          const itemIds = itens.map(i => i.id);
-          
+          const itemIds = itens.map((i) => i.id);
+
           const { data: blocoArquivos } = await supabase
             .from('bloco_arquivos')
             .select('url')
             .in('item_id', itemIds);
 
           if (blocoArquivos) {
-            blocoArquivosUrls = blocoArquivos.map(a => a.url);
+            blocoArquivosUrls = blocoArquivos.map((a) => a.url);
           }
         }
       }
     }
 
-    // 3. Extrair paths e excluir do storage
-    const allUrls = [
-      ...(pautaArquivos?.map(a => a.url) || []),
-      ...blocoArquivosUrls
-    ];
+    // Extrair paths e excluir do storage
+    const allUrls = blocoArquivosUrls;
 
     if (allUrls.length > 0) {
       const paths = allUrls
-        .map(url => {
+        .map((url) => {
           // URL format: https://xxx.supabase.co/storage/v1/object/public/pauta-arquivos/path/to/file
           const match = url.match(/\/pauta-arquivos\/(.+)$/);
           return match ? match[1] : null;
@@ -119,9 +113,7 @@ export const usePautas = () => {
         .filter((path): path is string => path !== null);
 
       if (paths.length > 0) {
-        const { error: storageError } = await supabase.storage
-          .from('pauta-arquivos')
-          .remove(paths);
+        const { error: storageError } = await supabase.storage.from('pauta-arquivos').remove(paths);
 
         if (storageError) {
           console.warn('Erro ao excluir arquivos do storage:', storageError);
@@ -130,10 +122,7 @@ export const usePautas = () => {
     }
 
     // 4. Excluir a pauta (cascade cuida das relações)
-    const { error } = await supabase
-      .from('pautas')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('pautas').delete().eq('id', id);
 
     if (error) {
       throw new Error(error.message);
@@ -144,7 +133,7 @@ export const usePautas = () => {
     data: pautas = [],
     isLoading,
     error,
-    refetch
+    refetch,
   } = useQuery({
     queryKey: ['pautas'],
     queryFn: fetchPautas,
@@ -155,15 +144,15 @@ export const usePautas = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pautas'] });
       toast({
-        title: "Sucesso",
-        description: "Pauta criada com sucesso!",
+        title: 'Sucesso',
+        description: 'Pauta criada com sucesso!',
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Erro",
+        title: 'Erro',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     },
   });
@@ -173,15 +162,15 @@ export const usePautas = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pautas'] });
       toast({
-        title: "Sucesso",
-        description: "Pauta atualizada com sucesso!",
+        title: 'Sucesso',
+        description: 'Pauta atualizada com sucesso!',
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Erro",
+        title: 'Erro',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     },
   });
@@ -191,15 +180,15 @@ export const usePautas = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pautas'] });
       toast({
-        title: "Sucesso",
-        description: "Pauta excluída com sucesso!",
+        title: 'Sucesso',
+        description: 'Pauta excluída com sucesso!',
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Erro",
+        title: 'Erro',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     },
   });
@@ -220,11 +209,7 @@ export const usePautas = () => {
 
 export const usePauta = (id: string) => {
   const fetchPauta = async (): Promise<Pauta | null> => {
-    const { data, error } = await supabase
-      .from('pautas')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data, error } = await supabase.from('pautas').select('*').eq('id', id).single();
 
     if (error) {
       if (error.code === 'PGRST116') {

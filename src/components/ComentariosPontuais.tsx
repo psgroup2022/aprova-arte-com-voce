@@ -2,167 +2,166 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { MessageCircle, User, Clock, Check } from 'lucide-react';
+import { Check, MessageCircle, X } from 'lucide-react';
+import type { ApontamentoPublico, ArteDaPeca } from '@/types/aprovacao-publica';
 
-interface Comentario {
-  id: string;
-  autor: string;
-  tempo: string;
-  texto: string;
-  posicao?: { x: number; y: number };
-  resolvido: boolean;
-  tipo: 'pontual' | 'geral';
-}
+/**
+ * Uma arte com os apontamentos cravados sobre ela.
+ *
+ * O pino é gravado em percentual da largura e da altura, nunca em pixel: o
+ * cliente aponta no celular, a equipe lê no monitor, e o dedo tem de continuar
+ * sobre o mesmo detalhe. O banco prende o valor em 0..100.
+ *
+ * Só imagem aceita pino. Vídeo aparece para ser visto — marcar um ponto sobre
+ * um quadro que passa não diz nada sem o instante, e instante não é o que esta
+ * etapa coleta.
+ */
 
 interface ComentariosPontuaisProps {
-  imagemUrl: string;
-  comentarios: Comentario[];
-  onAdicionarComentario: (comentario: Omit<Comentario, 'id'>) => void;
-  onResolverComentario: (id: string) => void;
+  arte: ArteDaPeca;
+  /** "Slide 2", "Cena 3" — só quando a peça tem mais de uma arte. */
+  rotulo?: string | null;
+  comentarios: ApontamentoPublico[];
+  salvando?: boolean;
+  somenteLeitura?: boolean;
+  onComentar: (x: number, y: number, texto: string) => Promise<unknown> | void;
+}
+
+interface PinoPendente {
+  x: number;
+  y: number;
 }
 
 export const ComentariosPontuais = ({
-  imagemUrl,
+  arte,
+  rotulo,
   comentarios,
-  onAdicionarComentario,
-  onResolverComentario,
+  salvando = false,
+  somenteLeitura = false,
+  onComentar,
 }: ComentariosPontuaisProps) => {
-  const [novoComentario, setNovoComentario] = useState<{
-    x: number;
-    y: number;
-    texto: string;
-  } | null>(null);
-  const [comentarioSelecionado, setComentarioSelecionado] = useState<string | null>(null);
+  const [pendente, setPendente] = useState<PinoPendente | null>(null);
+  const [texto, setTexto] = useState('');
+  const [aberto, setAberto] = useState<string | null>(null);
 
-  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+  const aceitaPino = arte.tipo === 'imagem' && !somenteLeitura;
 
-    setNovoComentario({ x, y, texto: '' });
+  const marcar = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!aceitaPino) return;
+    const area = e.currentTarget.getBoundingClientRect();
+    // `detail === 0` é ativação por teclado: não há ponto clicado, então o pino
+    // vai ao centro em vez de ir parar no canto superior esquerdo.
+    const porTeclado = e.detail === 0;
+    const x = porTeclado ? 50 : ((e.clientX - area.left) / area.width) * 100;
+    const y = porTeclado ? 50 : ((e.clientY - area.top) / area.height) * 100;
+    setPendente({
+      x: Math.min(100, Math.max(0, x)),
+      y: Math.min(100, Math.max(0, y)),
+    });
+    setAberto(null);
   };
 
-  const handleSalvarComentario = () => {
-    if (novoComentario && novoComentario.texto.trim()) {
-      onAdicionarComentario({
-        autor: 'Cliente',
-        tempo: 'Agora',
-        texto: novoComentario.texto,
-        posicao: { x: novoComentario.x, y: novoComentario.y },
-        resolvido: false,
-        tipo: 'pontual',
-      });
-      setNovoComentario(null);
-    }
+  const enviar = async () => {
+    if (!pendente || !texto.trim()) return;
+    await onComentar(pendente.x, pendente.y, texto.trim());
+    setPendente(null);
+    setTexto('');
   };
 
-  const comentariosPontuais = comentarios.filter((c) => c.tipo === 'pontual');
+  const cancelar = () => {
+    setPendente(null);
+    setTexto('');
+  };
 
   return (
-    <div className="space-y-4">
-      {/* Área da Imagem com Comentários */}
+    <div className="space-y-3">
+      {rotulo && <p className="text-xs font-medium uppercase tracking-wide">{rotulo}</p>}
+
       <div className="relative">
-        <div className="relative cursor-crosshair group" onClick={handleImageClick}>
-          <img
-            src={imagemUrl}
-            alt="Arte para revisão"
-            className="w-full h-auto rounded-lg shadow-md"
-          />
+        {arte.tipo === 'video' ? (
+          <video src={arte.url} controls className="w-full rounded-lg border" />
+        ) : (
+          <button
+            type="button"
+            onClick={marcar}
+            disabled={!aceitaPino}
+            aria-label={aceitaPino ? `Marcar um ponto em ${arte.nome}` : `Arte ${arte.nome}`}
+            data-testid="area-da-arte"
+            className={`group relative block w-full overflow-hidden rounded-lg border p-0 ${
+              aceitaPino ? 'cursor-crosshair' : 'cursor-default'
+            }`}
+          >
+            <img
+              src={arte.url}
+              alt={arte.item_titulo || arte.nome}
+              className="block h-auto w-full"
+            />
 
-          {/* Overlay de instrução */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <div className="bg-primary text-primary-foreground px-3 py-1 rounded-md text-sm">
-              Clique em qualquer local para adicionar um comentário
-            </div>
-          </div>
+            {aceitaPino && !pendente && (
+              <span className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-3 opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="rounded-full bg-slate-900/85 px-3 py-1 text-xs text-white">
+                  Clique sobre a arte para pedir um ajuste num ponto
+                </span>
+              </span>
+            )}
 
-          {/* Marcadores de Comentários Existentes */}
-          {comentariosPontuais.map((comentario, index) => (
-            <div
-              key={comentario.id}
-              className={`absolute w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transform -translate-x-1/2 -translate-y-1/2 transition-all hover:scale-110 ${
-                comentario.resolvido
-                  ? 'bg-success text-success-foreground'
-                  : 'bg-primary text-primary-foreground'
-              }`}
-              style={{
-                left: `${comentario.posicao?.x}%`,
-                top: `${comentario.posicao?.y}%`,
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setComentarioSelecionado(
-                  comentario.id === comentarioSelecionado ? null : comentario.id,
-                );
-              }}
-            >
-              {comentario.resolvido ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                <span className="text-xs font-bold">{index + 1}</span>
-              )}
-            </div>
-          ))}
+            {comentarios.map((c, i) => (
+              <span
+                key={c.id}
+                data-testid="pino"
+                title={c.texto}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAberto(aberto === c.id ? null : c.id);
+                }}
+                style={{ left: `${c.x}%`, top: `${c.y}%` }}
+                className={`absolute z-10 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-xs font-bold shadow-md ring-2 ring-white transition-transform hover:scale-110 ${
+                  c.resolvido ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'
+                }`}
+              >
+                {c.resolvido ? <Check className="h-3.5 w-3.5" /> : i + 1}
+              </span>
+            ))}
 
-          {/* Novo Comentário */}
-          {novoComentario && (
-            <div
-              className="absolute w-8 h-8 bg-warning text-warning-foreground rounded-full flex items-center justify-center transform -translate-x-1/2 -translate-y-1/2"
-              style={{
-                left: `${novoComentario.x}%`,
-                top: `${novoComentario.y}%`,
-              }}
-            >
-              <MessageCircle className="w-4 h-4" />
-            </div>
-          )}
-        </div>
+            {pendente && (
+              <span
+                data-testid="pino-pendente"
+                style={{ left: `${pendente.x}%`, top: `${pendente.y}%` }}
+                className="absolute z-10 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 animate-pulse items-center justify-center rounded-full bg-slate-900 text-white ring-2 ring-white"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+              </span>
+            )}
+          </button>
+        )}
 
-        {/* Popup do Comentário Selecionado */}
-        {comentarioSelecionado && (
-          <Card className="absolute top-4 right-4 w-80 z-10 shadow-lg">
-            <CardContent className="p-4">
+        {aberto && (
+          <Card className="absolute right-3 top-3 z-20 w-72 shadow-xl">
+            <CardContent className="space-y-2 p-3">
               {(() => {
-                const comentario = comentarios.find((c) => c.id === comentarioSelecionado);
-                if (!comentario) return null;
-
+                const c = comentarios.find((x) => x.id === aberto);
+                if (!c) return null;
                 return (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium text-sm">{comentario.autor}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">{comentario.tempo}</span>
-                      </div>
-                    </div>
-
-                    <p className="text-sm">{comentario.texto}</p>
-
-                    {!comentario.resolvido && (
-                      <Button
-                        size="sm"
-                        variant="success"
-                        onClick={() => onResolverComentario(comentario.id)}
-                        className="w-full"
+                  <>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs font-semibold">{c.autor || 'Cliente'}</span>
+                      <button
+                        type="button"
+                        onClick={() => setAberto(null)}
+                        aria-label="Fechar"
+                        className="text-muted-foreground hover:text-foreground"
                       >
-                        <Check className="w-4 h-4 mr-2" />
-                        Marcar como Resolvido
-                      </Button>
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <p className="text-sm">{c.texto}</p>
+                    {c.resposta && (
+                      <p className="rounded-md bg-muted p-2 text-xs">
+                        <span className="font-semibold">Resposta: </span>
+                        {c.resposta}
+                      </p>
                     )}
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setComentarioSelecionado(null)}
-                      className="w-full"
-                    >
-                      Fechar
-                    </Button>
-                  </div>
+                  </>
                 );
               })()}
             </CardContent>
@@ -170,75 +169,60 @@ export const ComentariosPontuais = ({
         )}
       </div>
 
-      {/* Formulário de Novo Comentário */}
-      {novoComentario && (
+      {pendente && (
         <Card>
-          <CardContent className="p-4">
-            <div className="space-y-3">
-              <h4 className="font-semibold text-sm">Adicionar Comentário</h4>
-              <Textarea
-                placeholder="Digite seu comentário sobre este ponto da imagem..."
-                value={novoComentario.texto}
-                onChange={(e) => setNovoComentario({ ...novoComentario, texto: e.target.value })}
-                rows={3}
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleSalvarComentario}>
-                  Adicionar
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setNovoComentario(null)}>
-                  Cancelar
-                </Button>
-              </div>
+          <CardContent className="space-y-2 p-3">
+            <Textarea
+              autoFocus
+              rows={3}
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              placeholder="O que precisa mudar neste ponto?"
+              aria-label="Texto do apontamento"
+            />
+            {/* Pedir um ajuste num ponto é pedir que a peça mude. Dizer isso
+                aqui evita o que aconteceu antes: a pessoa apontava três coisas
+                e a peça continuava marcada como aprovada. */}
+            <p className="text-xs text-muted-foreground">
+              Ao apontar, esta peça passa a constar como &ldquo;ajuste pedido&rdquo;.
+            </p>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={enviar} disabled={!texto.trim() || salvando}>
+                {salvando ? 'Enviando...' : 'Pedir este ajuste'}
+              </Button>
+              <Button size="sm" variant="outline" onClick={cancelar} disabled={salvando}>
+                Cancelar
+              </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Lista de Comentários */}
-      <div className="space-y-2">
-        <h4 className="font-semibold text-sm">
-          Comentários nesta Arte ({comentariosPontuais.length})
-        </h4>
-        {comentariosPontuais.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Nenhum comentário ainda. Clique na imagem para adicionar.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {comentariosPontuais.map((comentario, index) => (
-              <Card
-                key={comentario.id}
-                className={`p-3 ${comentario.resolvido ? 'bg-success/5' : ''}`}
+      {comentarios.length > 0 && (
+        <ol className="space-y-2">
+          {comentarios.map((c, i) => (
+            <li key={c.id} className="flex gap-2 text-sm">
+              <span
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                  c.resolvido ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}
               >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                      comentario.resolvido
-                        ? 'bg-success text-success-foreground'
-                        : 'bg-primary text-primary-foreground'
-                    }`}
-                  >
-                    {comentario.resolvido ? <Check className="w-3 h-3" /> : index + 1}
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{comentario.autor}</span>
-                      <span className="text-xs text-muted-foreground">{comentario.tempo}</span>
-                      {comentario.resolvido && (
-                        <Badge variant="default" className="text-xs">
-                          Resolvido
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm">{comentario.texto}</p>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                {c.resolvido ? <Check className="h-3 w-3" /> : i + 1}
+              </span>
+              <span className="min-w-0">
+                <span className="break-words">{c.texto}</span>
+                {c.autor && <span className="text-muted-foreground"> — {c.autor}</span>}
+                {c.resposta && (
+                  <span className="mt-1 block rounded-md bg-muted p-2 text-xs">
+                    <span className="font-semibold">Resposta: </span>
+                    {c.resposta}
+                  </span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 };

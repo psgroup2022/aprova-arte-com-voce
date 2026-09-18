@@ -14,7 +14,9 @@
     "prepare": "husky || true",
     "test": "vitest run --reporter=default",
     "test:coverage": "vitest run --coverage --reporter=default",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:usuarios": "node scripts/seed-usuarios.mjs",
+    "seed:pauta-demo": "node scripts/seed-pauta-demo.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

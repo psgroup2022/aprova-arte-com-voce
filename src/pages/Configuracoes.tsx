@@ -1,67 +1,64 @@
 import React, { useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { User, Bell, Shield, Palette, Globe, Users } from 'lucide-react';
+import { User, Bell, Shield, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { useMirapautaIntegration } from '@/hooks/useMirapauta';
-import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 
-type ConfigTab = 'perfil' | 'notificacoes' | 'seguranca' | 'aparencia' | 'integracao';
+type ConfigTab = 'perfil' | 'notificacoes' | 'seguranca' | 'aparencia';
 
 export const Configuracoes = () => {
-  const { isConfigured, profiles } = useMirapautaIntegration();
   const [activeTab, setActiveTab] = useState<ConfigTab>('perfil');
-  
+
   // Profile state
   const [nome, setNome] = useState('João Silva');
   const [email, setEmail] = useState('joao@agencia.com');
   const [empresa, setEmpresa] = useState('AgencyMaker');
-  
+
   // Notifications state
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [pushNotifications, setPushNotifications] = useState(false);
   const [approvalNotifications, setApprovalNotifications] = useState(true);
-  
+
   // Security state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   // Appearance state
   const [darkMode, setDarkMode] = useState(false);
 
   const handleSaveProfile = () => {
     toast({
-      title: "Perfil atualizado",
-      description: "Suas informações foram salvas com sucesso.",
+      title: 'Perfil atualizado',
+      description: 'Suas informações foram salvas com sucesso.',
     });
   };
 
   const handleChangePassword = () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast({
-        title: "Erro",
-        description: "Preencha todos os campos de senha.",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'Preencha todos os campos de senha.',
+        variant: 'destructive',
       });
       return;
     }
     if (newPassword !== confirmPassword) {
       toast({
-        title: "Erro",
-        description: "As senhas não coincidem.",
-        variant: "destructive",
+        title: 'Erro',
+        description: 'As senhas não coincidem.',
+        variant: 'destructive',
       });
       return;
     }
     toast({
-      title: "Senha alterada",
-      description: "Sua senha foi atualizada com sucesso.",
+      title: 'Senha alterada',
+      description: 'Sua senha foi atualizada com sucesso.',
     });
     setCurrentPassword('');
     setNewPassword('');
@@ -73,7 +70,6 @@ export const Configuracoes = () => {
     { id: 'notificacoes', label: 'Notificações', icon: Bell },
     { id: 'seguranca', label: 'Segurança', icon: Shield },
     { id: 'aparencia', label: 'Aparência', icon: Palette },
-    { id: 'integracao', label: 'Integração', icon: Globe },
   ];
 
   return (
@@ -126,27 +122,19 @@ export const Configuracoes = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="nome">Nome</Label>
-                      <Input 
-                        id="nome" 
-                        value={nome} 
-                        onChange={(e) => setNome(e.target.value)} 
-                      />
+                      <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} />
                     </div>
                     <div>
                       <Label htmlFor="email">Email</Label>
-                      <Input 
-                        id="email" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
-                      />
+                      <Input id="email" value={email} onChange={(e) => setEmail(e.target.value)} />
                     </div>
                   </div>
                   <div>
                     <Label htmlFor="empresa">Empresa</Label>
-                    <Input 
-                      id="empresa" 
-                      value={empresa} 
-                      onChange={(e) => setEmpresa(e.target.value)} 
+                    <Input
+                      id="empresa"
+                      value={empresa}
+                      onChange={(e) => setEmpresa(e.target.value)}
                     />
                   </div>
                   <Button onClick={handleSaveProfile}>Salvar Alterações</Button>
@@ -169,8 +157,8 @@ export const Configuracoes = () => {
                       <Label htmlFor="email-notifications">Notificações por Email</Label>
                       <p className="text-sm text-muted-foreground">Receba atualizações por email</p>
                     </div>
-                    <Switch 
-                      id="email-notifications" 
+                    <Switch
+                      id="email-notifications"
                       checked={emailNotifications}
                       onCheckedChange={setEmailNotifications}
                     />
@@ -181,8 +169,8 @@ export const Configuracoes = () => {
                       <Label htmlFor="push-notifications">Notificações Push</Label>
                       <p className="text-sm text-muted-foreground">Notificações no navegador</p>
                     </div>
-                    <Switch 
-                      id="push-notifications" 
+                    <Switch
+                      id="push-notifications"
                       checked={pushNotifications}
                       onCheckedChange={setPushNotifications}
                     />
@@ -193,8 +181,8 @@ export const Configuracoes = () => {
                       <Label htmlFor="approval-notifications">Aprovações</Label>
                       <p className="text-sm text-muted-foreground">Quando pautas forem aprovadas</p>
                     </div>
-                    <Switch 
-                      id="approval-notifications" 
+                    <Switch
+                      id="approval-notifications"
                       checked={approvalNotifications}
                       onCheckedChange={setApprovalNotifications}
                     />
@@ -215,27 +203,27 @@ export const Configuracoes = () => {
                 <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="current-password">Senha Atual</Label>
-                    <Input 
-                      id="current-password" 
-                      type="password" 
+                    <Input
+                      id="current-password"
+                      type="password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                     />
                   </div>
                   <div>
                     <Label htmlFor="new-password">Nova Senha</Label>
-                    <Input 
-                      id="new-password" 
-                      type="password" 
+                    <Input
+                      id="new-password"
+                      type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                     />
                   </div>
                   <div>
                     <Label htmlFor="confirm-password">Confirmar Senha</Label>
-                    <Input 
-                      id="confirm-password" 
-                      type="password" 
+                    <Input
+                      id="confirm-password"
+                      type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                     />
@@ -260,65 +248,12 @@ export const Configuracoes = () => {
                       <Label>Tema Escuro</Label>
                       <p className="text-sm text-muted-foreground">Alternar para modo escuro</p>
                     </div>
-                    <Switch 
-                      checked={darkMode}
-                      onCheckedChange={setDarkMode}
-                    />
+                    <Switch checked={darkMode} onCheckedChange={setDarkMode} />
                   </div>
                   <Separator />
                   <div>
                     <Label>Idioma</Label>
                     <p className="text-sm text-muted-foreground">Português (Brasil)</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Integração MiraPauta */}
-            {activeTab === 'integracao' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Globe className="h-5 w-5 mr-2" />
-                    Integração MiraPauta
-                  </CardTitle>
-                  <CardDescription>Sincronize usuários e dados do sistema MiraPauta</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Label>Status da Integração</Label>
-                      {isConfigured ? (
-                        <Badge variant="default" className="bg-green-500">
-                          Configurado
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive">Não Configurado</Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <Label>Usuários do MiraPauta</Label>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {profiles.data?.length || 0} usuário(s) encontrado(s) no MiraPauta
-                    </p>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <Label>Sobre a Integração</Label>
-                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                      <li>Importa tarefas e clientes do MiraPauta</li>
-                      <li>Sincroniza dados automaticamente</li>
-                      <li>Mantém histórico de aprovações</li>
-                    </ul>
                   </div>
                 </CardContent>
               </Card>

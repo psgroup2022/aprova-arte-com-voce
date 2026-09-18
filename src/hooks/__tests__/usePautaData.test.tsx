@@ -33,14 +33,17 @@ function createFakeSupabase() {
 }
 
 describe('usePautaData - realtime subscriptions', () => {
-  it('creates a realtime channel for comentarios and arquivos', () => {
+  // Uma inscrição, não duas: a de `pauta_arquivos` caiu junto com a tabela, na
+  // baseline da Fase 1. Ver o comentário em `usePautaData` sobre por que ela não
+  // foi trocada por `bloco_arquivos`.
+  it('creates a realtime channel for comentarios', () => {
     const fake = createFakeSupabase();
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     renderHook(() => usePautaData('p1', fake.client as any), {
       wrapper: ({ children }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider>,
     });
 
-    expect(fake.calls.on).toBe(2);
+    expect(fake.calls.on).toBe(1);
     expect(fake.calls.subscribe).toBe(1);
   });
 });

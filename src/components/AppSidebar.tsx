@@ -1,31 +1,28 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  FilePlus2,
-  CalendarDays,
-  MessageCircle,
-  BarChart3,
-  Users2,
-  Settings,
-  Sparkles,
-  ChevronRight,
-  Link2,
-} from 'lucide-react';
+import { LayoutDashboard, Users2, Settings, Sparkles, ChevronRight } from 'lucide-react';
+import { useProfile } from '@/hooks/useProfile';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Criar Pauta', href: '/criar-pauta', icon: FilePlus2 },
-  { name: 'Agenda', href: '/agenda', icon: CalendarDays },
-  { name: 'Mensagens', href: '/mensagens', icon: MessageCircle },
-  { name: 'Relatórios', href: '/relatorios', icon: BarChart3 },
   { name: 'Equipe', href: '/equipe', icon: Users2 },
-  { name: 'Integrações', href: '/integracoes', icon: Link2 },
   { name: 'Configurações', href: '/configuracoes', icon: Settings },
 ];
 
+const iniciais = (nome: string) =>
+  nome
+    .split(' ')
+    .map((parte) => parte[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
 export const AppSidebar = () => {
   const location = useLocation();
+  // Nome e papel vinham escritos no código — "Jean Carlo / Administrador" para
+  // quem quer que estivesse logado. Agora vêm do perfil de quem está logado.
+  const { perfil, isAdmin } = useProfile();
 
   return (
     <div className="fixed left-0 top-0 h-full w-72 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 flex flex-col z-30 border-r border-slate-800">
@@ -81,12 +78,19 @@ export const AppSidebar = () => {
       {/* User Section */}
       <div className="p-4 border-t border-slate-800/50">
         <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 transition-colors cursor-pointer">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-sm font-bold text-white shadow-lg shadow-emerald-500/20">
-            JC
-          </div>
+          <Avatar className="w-10 h-10 rounded-xl shadow-lg shadow-emerald-500/20">
+            <AvatarImage src={perfil?.avatar_url || undefined} alt="" className="rounded-xl" />
+            <AvatarFallback className="rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 text-sm font-bold text-white">
+              {perfil ? iniciais(perfil.nome) : '—'}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">Jean Carlo</p>
-            <p className="text-xs text-slate-500">Administrador</p>
+            <p className="text-sm font-semibold text-white truncate">
+              {perfil?.nome ?? 'Carregando...'}
+            </p>
+            <p className="text-xs text-slate-500">
+              {perfil ? (isAdmin ? 'Administrador' : 'Membro') : ''}
+            </p>
           </div>
           <Settings className="w-4 h-4 text-slate-500 hover:text-slate-300 transition-colors" />
         </div>

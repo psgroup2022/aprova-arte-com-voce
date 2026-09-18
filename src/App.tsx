@@ -7,27 +7,19 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { lazy, Suspense } from 'react';
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })));
-const CriarPauta = lazy(() =>
-  import('./pages/CriarPauta').then((m) => ({ default: m.CriarPauta })),
-);
-const EditarPauta = lazy(() =>
-  import('./pages/EditarPauta').then((m) => ({ default: m.EditarPauta })),
-);
 const VisualizarPauta = lazy(() =>
   import('./pages/VisualizarPauta').then((m) => ({ default: m.VisualizarPauta })),
 );
 const Auth = lazy(() => import('./pages/Auth').then((m) => ({ default: m.Auth })));
-const Agenda = lazy(() => import('./pages/Agenda').then((m) => ({ default: m.Agenda })));
-const Mensagens = lazy(() => import('./pages/Mensagens').then((m) => ({ default: m.Mensagens })));
-const Relatorios = lazy(() =>
-  import('./pages/Relatorios').then((m) => ({ default: m.Relatorios })),
-);
 const Equipe = lazy(() => import('./pages/Equipe').then((m) => ({ default: m.Equipe })));
 const Configuracoes = lazy(() =>
   import('./pages/Configuracoes').then((m) => ({ default: m.Configuracoes })),
 );
-const Integracoes = lazy(() =>
-  import('./pages/Integracoes').then((m) => ({ default: m.Integracoes })),
+const TrocarSenha = lazy(() =>
+  import('./pages/TrocarSenha').then((m) => ({ default: m.TrocarSenha })),
+);
+const AprovacaoPublica = lazy(() =>
+  import('./pages/AprovacaoPublica').then((m) => ({ default: m.AprovacaoPublica })),
 );
 import NotFound from './pages/NotFound';
 
@@ -51,43 +43,13 @@ const App = () => (
                 }
               />
               <Route path="/auth" element={<Auth />} />
+              {/* Exige login, mas é a única tela que aceita a senha inicial —
+                  senão o redirecionamento apontaria para ela mesma. */}
               <Route
-                path="/criar-pauta"
+                path="/trocar-senha"
                 element={
-                  <ProtectedRoute>
-                    <CriarPauta />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/editar-pauta/:id"
-                element={
-                  <ProtectedRoute>
-                    <EditarPauta />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/agenda"
-                element={
-                  <ProtectedRoute>
-                    <Agenda />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/mensagens"
-                element={
-                  <ProtectedRoute>
-                    <Mensagens />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/relatorios"
-                element={
-                  <ProtectedRoute>
-                    <Relatorios />
+                  <ProtectedRoute permiteSenhaProvisoria>
+                    <TrocarSenha />
                   </ProtectedRoute>
                 }
               />
@@ -107,16 +69,22 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              {/* A tela do cliente. Sem login: o token do link é a credencial, e
+                  cada função do banco confere o token antes de devolver algo. */}
+              <Route path="/aprovacao/:token" element={<AprovacaoPublica />} />
+
+              {/* Interna, apesar do nome. Estava fora do ProtectedRoute, marcada
+                  como "rota pública para clientes" — mas lê `pautas` direto, e o
+                  anônimo recebe "permission denied for table pautas". Para quem
+                  não tem login ela nunca abriu nada. Quem aprova é /aprovacao. */}
               <Route
-                path="/integracoes"
+                path="/pauta/:id"
                 element={
                   <ProtectedRoute>
-                    <Integracoes />
+                    <VisualizarPauta />
                   </ProtectedRoute>
                 }
               />
-              {/* Rota pública para clientes aprovarem pautas */}
-              <Route path="/pauta/:id" element={<VisualizarPauta />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -51,10 +51,14 @@ export const useComentarios = (pautaId: string) => {
           resposta: null,
           // payload enviado pelo cliente
           arquivo_id: comentario.arquivo_id ?? null,
+          bloco_id: comentario.bloco_id ?? null,
+          autor_nome: comentario.autor_nome ?? null,
           comentario: comentario.comentario,
           pauta_id: comentario.pauta_id,
-          x_coordenada: comentario.x_coordenada,
-          y_coordenada: comentario.y_coordenada,
+          // As duas colunas são `not null default 0` no banco; o 0 aqui é o
+          // mesmo valor que o Postgres gravaria, para o otimista não divergir.
+          x_coordenada: comentario.x_coordenada ?? 0,
+          y_coordenada: comentario.y_coordenada ?? 0,
           criado_por: comentario.criado_por ?? null,
         },
         ...old,

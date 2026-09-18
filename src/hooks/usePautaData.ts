@@ -24,40 +24,36 @@ interface BlocoComItens {
   }>;
 }
 
+/**
+ * Um arquivo da pauta, achatado a partir dos blocos.
+ *
+ * Havia uma tabela `pauta_arquivos` — lista plana, anterior à estrutura de
+ * blocos — e este hook lia as duas, preferindo a antiga quando tivesse linhas.
+ * A baseline da Fase 1 removeu essa tabela; não há dado legado a preservar,
+ * porque o projeto nunca rodou. Sobrou o formato, que as telas consomem.
+ */
+export interface ArquivoDaPauta {
+  id: string;
+  pauta_id: string;
+  url: string;
+  tipo: 'imagem' | 'video' | 'documento';
+  nome_arquivo: string;
+  ordem: number;
+  tamanho: number | null;
+  created_at: string;
+}
+
 export const usePautaData = (id: string, client = defaultSupabase) => {
   const queryClient = useQueryClient();
   // Buscar dados reais da pauta
   const { data: pauta, isLoading: pautaLoading, error: pautaError } = usePauta(id);
 
-  // Buscar arquivos da pauta (antigo sistema)
-  const {
-    data: arquivosLegado = [],
-    isLoading: arquivosLegadoLoading,
-  } = useQuery({
-    queryKey: ['pauta-arquivos', id],
-    queryFn: async (): Promise<Tables<'pauta_arquivos'>[]> => {
-      if (!id) return [];
-      const { data, error } = await client
-        .from('pauta_arquivos')
-        .select('*')
-        .eq('pauta_id', id)
-        .order('ordem', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!id,
-  });
-
-  // Buscar versão ativa e seus blocos (novo sistema)
-  const {
-    data: blocosData,
-    isLoading: blocosLoading,
-  } = useQuery({
+  // Buscar versão ativa e seus blocos
+  const { data: blocosData, isLoading: blocosLoading } = useQuery({
     queryKey: ['pauta-blocos', id],
     queryFn: async (): Promise<BlocoComItens[]> => {
       if (!id) return [];
-      
+
       // Buscar versão ativa da pauta
       const { data: versoes, error: versaoError } = await client
         .from('pauta_versoes')
@@ -83,7 +79,7 @@ export const usePautaData = (id: string, client = defaultSupabase) => {
 
       // Para cada bloco, buscar itens e arquivos
       const blocosComItens: BlocoComItens[] = [];
-      
+
       for (const bloco of blocos) {
         const { data: itens, error: itensError } = await client
           .from('bloco_itens')
@@ -122,8 +118,8 @@ export const usePautaData = (id: string, client = defaultSupabase) => {
     enabled: !!id,
   });
 
-  // Converter blocos para formato de arquivos para compatibilidade
-  const arquivosFromBlocos: Tables<'pauta_arquivos'>[] = (blocosData || []).flatMap((bloco, blocoIndex) =>
+  // Achatar os blocos no formato que as telas consomem
+  const arquivos: ArquivoDaPauta[] = (blocosData || []).flatMap((bloco, blocoIndex) =>
     bloco.itens.flatMap((item, itemIndex) =>
       item.arquivos.map((arquivo, arquivoIndex) => ({
         id: arquivo.id,
@@ -134,12 +130,9 @@ export const usePautaData = (id: string, client = defaultSupabase) => {
         ordem: blocoIndex * 100 + itemIndex * 10 + arquivoIndex,
         tamanho: null,
         created_at: new Date().toISOString(),
-      }))
-    )
+      })),
+    ),
   );
-
-  // Combinar arquivos do sistema legado e novo
-  const arquivos = arquivosLegado.length > 0 ? arquivosLegado : arquivosFromBlocos;
 
   // Buscar comentários da pauta
   const {
@@ -162,10 +155,19 @@ export const usePautaData = (id: string, client = defaultSupabase) => {
     enabled: !!id,
   });
 
-  const isLoading = pautaLoading || arquivosLegadoLoading || blocosLoading || comentariosLoading;
+  const isLoading = pautaLoading || blocosLoading || comentariosLoading;
   const error = pautaError || comentariosError || null;
 
-  // Realtime: manter comentários e arquivos atualizados
+  /*
+   * Realtime só para comentários.
+   *
+   * Havia uma segunda inscrição, em `pauta_arquivos`, que morreu com a tabela.
+   * Não a troquei por `bloco_arquivos` porque essa tabela não carrega
+   * `pauta_id` — filtrar por pauta exigiria escutar as alterações de todas elas.
+   * E a granularidade mudou: no desenho novo o material chega publicado de uma
+   * vez pelo Mirador Team, então o evento que interessa é a versão virar ativa,
+   * não um arquivo isolado aparecer. Fica para a Fase 3, que desenha a entrega.
+   */
   useEffect(() => {
     if (!id) return;
     const channel = client
@@ -180,13 +182,6 @@ export const usePautaData = (id: string, client = defaultSupabase) => {
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['comentarios', id] });
-        },
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'pauta_arquivos', filter: `pauta_id=eq.${id}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['pauta-arquivos', id] });
         },
       )
       .subscribe();
