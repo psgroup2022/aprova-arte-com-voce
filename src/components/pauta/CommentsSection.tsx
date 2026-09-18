@@ -50,9 +50,9 @@ export const CommentsSection = ({
   setEditingComment,
 }: CommentsSectionProps) => {
   return (
-    <div className="flex-grow overflow-y-auto bg-gray-50">
+    <div className="flex-grow overflow-y-auto bg-background">
       <div className="p-5">
-        <h3 className="text-base font-medium text-slate-700 mb-4">Comentários</h3>
+        <h3 className="text-base font-medium text-foreground mb-4">Comentários</h3>
 
         {/* Comentários pontuais */}
         {comentarios
@@ -60,18 +60,18 @@ export const CommentsSection = ({
           .map((comentario, index) => (
             <div
               key={comentario.id}
-              className="mb-4 bg-white rounded-lg border border-border shadow-sm p-4 cursor-pointer hover:ring-2 hover:ring-blue-200 transition"
+              className="mb-4 bg-card rounded-lg border shadow-sm p-4 cursor-pointer hover:ring-2 hover:ring-primary/30 transition"
               onClick={() => {
                 const pin = document.getElementById(`comment-pin-${comentario.id}`);
                 pin?.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }}
             >
               <div className="flex items-start mb-2">
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold mr-2">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold mr-2">
                   {index + 1}
                 </div>
                 <div className="flex-grow">
-                  <h4 className="font-medium text-slate-800">Comentário na imagem</h4>
+                  <h4 className="font-medium text-foreground">Comentário na imagem</h4>
                   {editingComment?.id === comentario.id ? (
                     <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                       <Textarea
@@ -95,9 +95,9 @@ export const CommentsSection = ({
                     </div>
                   ) : (
                     <>
-                      <p className="text-sm text-gray-700 mt-1">{comentario.comentario}</p>
+                      <p className="text-sm text-foreground mt-1">{comentario.comentario}</p>
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {new Date(comentario.created_at).toLocaleString('pt-BR')}
                         </span>
                         <div className="flex gap-1">
@@ -119,7 +119,7 @@ export const CommentsSection = ({
                               e.stopPropagation();
                               onDeleteComment(comentario.id);
                             }}
-                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive/80"
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>
@@ -139,16 +139,13 @@ export const CommentsSection = ({
               c.arquivo_id === 'geral' || (!c.arquivo_id && !c.comentario.startsWith('[LEGENDA]')),
           )
           .map((comentario) => (
-            <div
-              key={comentario.id}
-              className="mb-4 bg-white rounded-lg border border-border shadow-sm p-4"
-            >
+            <div key={comentario.id} className="mb-4 bg-card rounded-lg border shadow-sm p-4">
               <div className="flex items-start mb-2">
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-500 text-white text-xs font-bold mr-2">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted-foreground text-card text-xs font-bold mr-2">
                   <MessageCircle className="w-3 h-3" />
                 </div>
                 <div className="flex-grow">
-                  <h4 className="font-medium text-slate-800">Comentário geral</h4>
+                  <h4 className="font-medium text-foreground">Comentário geral</h4>
                   {editingComment?.id === comentario.id ? (
                     <div className="mt-2">
                       <Textarea
@@ -172,9 +169,9 @@ export const CommentsSection = ({
                     </div>
                   ) : (
                     <>
-                      <p className="text-sm text-gray-700 mt-1">{comentario.comentario}</p>
+                      <p className="text-sm text-foreground mt-1">{comentario.comentario}</p>
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {new Date(comentario.created_at).toLocaleString('pt-BR')}
                         </span>
                         <div className="flex gap-1">
@@ -190,7 +187,7 @@ export const CommentsSection = ({
                             size="sm"
                             variant="ghost"
                             onClick={() => onDeleteComment(comentario.id)}
-                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive/80"
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>
@@ -205,30 +202,30 @@ export const CommentsSection = ({
 
         {/* Add New Comment */}
         {showAddComment && (
-          <div className="mb-4 bg-white rounded-lg shadow-sm p-4 border-2 border-blue-200">
-            <h4 className="text-sm font-medium text-slate-700 mb-2">
+          <div className="mb-4 bg-card rounded-lg shadow-sm p-4 border-2 border-primary/30">
+            <h4 className="text-sm font-medium text-foreground mb-2">
               {pendingPin ? (
-                <span className="text-blue-600">
+                <span className="text-primary">
                   ✓ Adicionar comentário na imagem (posição marcada)
                 </span>
               ) : (
                 'Adicionar novo comentário geral'
               )}
             </h4>
-            <div className="bg-gray-50 rounded-lg p-3">
+            <div className="bg-secondary rounded-lg p-3">
               <Textarea
                 placeholder="Digite seu comentário aqui..."
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm min-h-[100px] mb-3 bg-white"
+                className="w-full border border-input rounded-md px-3 py-2 text-sm min-h-[100px] mb-3 bg-card"
                 value={newComment}
                 onChange={(e) => onNewCommentChange(e.target.value)}
                 autoFocus
               />
               <div className="flex justify-between items-center">
                 <div className="flex space-x-2">
-                  <button className="text-gray-500 hover:text-gray-700 p-1 rounded">
+                  <button className="text-muted-foreground hover:text-foreground p-1 rounded">
                     <ImageIcon className="w-4 h-4" />
                   </button>
-                  <button className="text-gray-500 hover:text-gray-700 p-1 rounded">
+                  <button className="text-muted-foreground hover:text-foreground p-1 rounded">
                     <AtSign className="w-4 h-4" />
                   </button>
                 </div>
@@ -240,7 +237,6 @@ export const CommentsSection = ({
                     onClick={onAddComment}
                     size="sm"
                     disabled={isPending || !newComment.trim()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Postar Comentário
