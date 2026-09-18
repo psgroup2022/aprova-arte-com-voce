@@ -179,7 +179,7 @@ export const Equipe = () => {
                       <div className="flex items-center space-x-4 min-w-0">
                         <Avatar className="w-12 h-12 shrink-0">
                           <AvatarImage src={membro.avatar_url || undefined} alt="" />
-                          <AvatarFallback className="bg-primary text-white">
+                          <AvatarFallback className="bg-primary text-primary-foreground">
                             {iniciais(membro.nome)}
                           </AvatarFallback>
                         </Avatar>
@@ -197,7 +197,7 @@ export const Equipe = () => {
                             </div>
                           )}
                           {membro.senha_provisoria && membro.ativo && (
-                            <p className="text-xs text-amber-600 mt-1">
+                            <p className="text-xs text-warning-foreground mt-1">
                               ainda não trocou a senha inicial
                             </p>
                           )}

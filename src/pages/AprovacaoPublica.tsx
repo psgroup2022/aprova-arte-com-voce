@@ -136,7 +136,9 @@ const CartaoPeca = ({
           {data && <span className="text-xs text-muted-foreground">{data}</span>}
           <span className="ml-auto">
             {peca.decisao === 'aprovada' && (
-              <Badge className="bg-emerald-600 hover:bg-emerald-600">Aprovada</Badge>
+              <Badge className="bg-success text-success-foreground hover:bg-success">
+                Aprovada
+              </Badge>
             )}
             {peca.decisao === 'reprovada' && <Badge variant="destructive">Ajuste pedido</Badge>}
             {peca.decisao === 'pendente' && <Badge variant="outline">A decidir</Badge>}

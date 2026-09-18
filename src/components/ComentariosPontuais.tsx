@@ -99,7 +99,7 @@ export const ComentariosPontuais = ({
 
             {aceitaPino && !pendente && (
               <span className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-3 opacity-0 transition-opacity group-hover:opacity-100">
-                <span className="rounded-full bg-slate-900/85 px-3 py-1 text-xs text-white">
+                <span className="rounded-full bg-foreground/85 px-3 py-1 text-xs text-card">
                   Clique sobre a arte para pedir um ajuste num ponto
                 </span>
               </span>
@@ -127,7 +127,7 @@ export const ComentariosPontuais = ({
               <span
                 data-testid="pino-pendente"
                 style={{ left: `${pendente.x}%`, top: `${pendente.y}%` }}
-                className="absolute z-10 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 animate-pulse items-center justify-center rounded-full bg-slate-900 text-white ring-2 ring-white"
+                className="absolute z-10 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 animate-pulse items-center justify-center rounded-full bg-foreground text-card ring-2 ring-white"
               >
                 <MessageCircle className="h-3.5 w-3.5" />
               </span>
@@ -203,7 +203,7 @@ export const ComentariosPontuais = ({
           {comentarios.map((c, i) => (
             <li key={c.id} className="flex gap-2 text-sm">
               <span
-                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-foreground ${
                   c.resolvido ? 'bg-emerald-500' : 'bg-amber-500'
                 }`}
               >
