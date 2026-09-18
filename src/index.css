@@ -58,21 +58,18 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* A trilha fica clara, como a do Mirasquad. Os valores de estrutura vêm da
+       chrome (styles/reference.css:145-192) porque a superfície de Produção não
+       tem trilha, mas os laranjas são os de Produção, para não misturar duas
+       famílias na mesma tela. */
+    --sidebar-background: 31 24% 98%;
+    --sidebar-foreground: 26 5% 34%;
+    --sidebar-primary: 19 72% 39%;
+    --sidebar-primary-foreground: 31 33% 99%;
+    --sidebar-accent: 31 12% 92%;
+    --sidebar-accent-foreground: 26 13% 11%;
+    --sidebar-border: 31 8% 84%;
+    --sidebar-ring: 19 72% 39%;
   }
 
   .dark {
