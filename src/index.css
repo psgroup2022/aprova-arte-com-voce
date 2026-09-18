@@ -8,40 +8,48 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 250 100% 99%;
-    --foreground: 224 71% 4%;
+    /* Convertidos da superfície de Produção do Mirasquad
+       (dashboard/src/work/workflow.css), a única camada em oklch.
+       A escada de superfícies tem quatro degraus, e nenhum pode colapsar:
+       card 99% > canvas 96% > secondary/muted 94% > accent 92%. */
 
-    --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
+    --background: 31 24% 96%;
+    --foreground: 26 13% 11%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
+    --card: 31 33% 99%;
+    --card-foreground: 26 13% 11%;
 
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-    --primary-hover: 221 83% 45%;
+    --popover: 31 33% 99%;
+    --popover-foreground: 26 13% 11%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 224 71% 4%;
+    --primary: 19 72% 39%;
+    --primary-foreground: 31 33% 99%;
+    --primary-hover: 21 87% 30%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 8% 46%;
+    --secondary: 31 16% 94%;
+    --secondary-foreground: 26 13% 11%;
 
-    --accent: 220 14% 96%;
-    --accent-foreground: 224 71% 4%;
+    --muted: 31 16% 94%;
+    --muted-foreground: 26 5% 34%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: 31 12% 92%;
+    --accent-foreground: 26 13% 11%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 355 100% 100%;
+    --destructive: 360 59% 35%;
+    --destructive-foreground: 31 33% 99%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 355 100% 100%;
+    --success: 144 40% 25%;
+    --success-foreground: 31 33% 99%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 221 83% 53%;
+    /* O Mirasquad não tem cor de aviso: .notice é fundo quieto com texto
+       legível, e a variante de erro muda só o texto. Fundo suave, tinta
+       escura — 7,7:1, no lugar dos 2,16:1 de branco sobre âmbar. */
+    --warning: 38 55% 92%;
+    --warning-foreground: 28 62% 26%;
+
+    --border: 31 8% 84%;
+    --input: 31 8% 84%;
+    --ring: 19 72% 39%;
 
     /* Shadows */
     --shadow-sm: 0 0 #0000;
