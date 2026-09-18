@@ -60,7 +60,7 @@ export const CommentsSection = ({
           .map((comentario, index) => (
             <div
               key={comentario.id}
-              className="mb-4 bg-white rounded-lg shadow-sm p-4 cursor-pointer hover:ring-2 hover:ring-blue-200 transition"
+              className="mb-4 bg-white rounded-lg border border-border shadow-sm p-4 cursor-pointer hover:ring-2 hover:ring-blue-200 transition"
               onClick={() => {
                 const pin = document.getElementById(`comment-pin-${comentario.id}`);
                 pin?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -139,7 +139,10 @@ export const CommentsSection = ({
               c.arquivo_id === 'geral' || (!c.arquivo_id && !c.comentario.startsWith('[LEGENDA]')),
           )
           .map((comentario) => (
-            <div key={comentario.id} className="mb-4 bg-white rounded-lg shadow-sm p-4">
+            <div
+              key={comentario.id}
+              className="mb-4 bg-white rounded-lg border border-border shadow-sm p-4"
+            >
               <div className="flex items-start mb-2">
                 <div className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-500 text-white text-xs font-bold mr-2">
                   <MessageCircle className="w-3 h-3" />
