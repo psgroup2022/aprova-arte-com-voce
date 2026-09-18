@@ -36,12 +36,12 @@ export const Dashboard = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center animate-pulse">
-            <Loader2 className="h-6 w-6 animate-spin text-white" />
+          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center animate-pulse">
+            <Loader2 className="h-6 w-6 animate-spin text-primary-foreground" />
           </div>
-          <p className="text-slate-500 text-sm">Carregando...</p>
+          <p className="text-muted-foreground text-sm">Carregando...</p>
         </div>
       </div>
     );
@@ -49,19 +49,17 @@ export const Dashboard = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-6">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-violet-500/30">
-            <FileCheck2 className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary flex items-center justify-center shadow-lg">
+            <FileCheck2 className="w-8 h-8 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white">AprovaArte</h1>
-            <p className="text-slate-400 mt-2">Faça login para acessar o sistema</p>
+            <h1 className="text-3xl font-bold text-foreground">AprovaArte</h1>
+            <p className="text-muted-foreground mt-2">Faça login para acessar o sistema</p>
           </div>
           <Link to="/auth">
-            <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25">
-              Fazer Login
-            </Button>
+            <Button>Fazer Login</Button>
           </Link>
         </div>
       </div>
@@ -72,16 +70,11 @@ export const Dashboard = () => {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center py-24 space-y-4">
-          <div className="w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center">
-            <XCircle className="w-8 h-8 text-rose-500" />
+          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+            <XCircle className="w-8 h-8 text-destructive" />
           </div>
-          <p className="text-slate-600 font-medium">Erro ao carregar pautas</p>
-          <Button
-            onClick={() => window.location.reload()}
-            className="bg-slate-900 hover:bg-slate-800"
-          >
-            Tentar novamente
-          </Button>
+          <p className="text-muted-foreground font-medium">Erro ao carregar pautas</p>
+          <Button onClick={() => window.location.reload()}>Tentar novamente</Button>
         </div>
       </Layout>
     );
@@ -93,12 +86,12 @@ export const Dashboard = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-            <p className="text-slate-500 mt-1">Gerencie suas pautas de aprovação</p>
+            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Gerencie suas pautas de aprovação</p>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/criar-pauta">
-              <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all">
+              <Button>
                 <Plus className="w-4 h-4 mr-2" />
                 Nova Pauta
               </Button>
@@ -108,50 +101,50 @@ export const Dashboard = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl border border-slate-200/60 p-5 hover:shadow-lg hover:shadow-slate-200/50 transition-all">
+          <div className="bg-card rounded-2xl border p-5 hover:shadow-md transition-all">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                <FileCheck2 className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-md">
+                <FileCheck2 className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
-                <p className="text-sm text-slate-500">Total de Pautas</p>
+                <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+                <p className="text-sm text-muted-foreground">Total de Pautas</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200/60 p-5 hover:shadow-lg hover:shadow-slate-200/50 transition-all">
+          <div className="bg-card rounded-2xl border p-5 hover:shadow-md transition-all">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                <Clock className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-xl bg-warning flex items-center justify-center shadow-md">
+                <Clock className="w-6 h-6 text-warning-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900">{stats.aguardando}</p>
-                <p className="text-sm text-slate-500">Aguardando</p>
+                <p className="text-2xl font-bold text-foreground">{stats.aguardando}</p>
+                <p className="text-sm text-muted-foreground">Aguardando</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200/60 p-5 hover:shadow-lg hover:shadow-slate-200/50 transition-all">
+          <div className="bg-card rounded-2xl border p-5 hover:shadow-md transition-all">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <CheckCircle2 className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-xl bg-success flex items-center justify-center shadow-md">
+                <CheckCircle2 className="w-6 h-6 text-success-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900">{stats.aprovadas}</p>
-                <p className="text-sm text-slate-500">Aprovadas</p>
+                <p className="text-2xl font-bold text-foreground">{stats.aprovadas}</p>
+                <p className="text-sm text-muted-foreground">Aprovadas</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200/60 p-5 hover:shadow-lg hover:shadow-slate-200/50 transition-all">
+          <div className="bg-card rounded-2xl border p-5 hover:shadow-md transition-all">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center shadow-lg shadow-rose-500/20">
-                <XCircle className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-xl bg-destructive flex items-center justify-center shadow-md">
+                <XCircle className="w-6 h-6 text-destructive-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900">{stats.rejeitadas}</p>
-                <p className="text-sm text-slate-500">Rejeitadas</p>
+                <p className="text-2xl font-bold text-foreground">{stats.rejeitadas}</p>
+                <p className="text-sm text-muted-foreground">Rejeitadas</p>
               </div>
             </div>
           </div>
@@ -160,26 +153,15 @@ export const Dashboard = () => {
         {/* Search and Filter Bar */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder="Buscar pautas..."
-              className="pl-10 bg-white border-slate-200 focus:border-violet-300 focus:ring-violet-200"
-            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Buscar pautas..." className="pl-10 bg-card" />
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="bg-white border-slate-200 hover:bg-slate-50"
-            >
-              <Filter className="w-4 h-4 text-slate-500" />
+            <Button variant="outline" size="icon">
+              <Filter className="w-4 h-4 text-muted-foreground" />
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="bg-white border-slate-200 hover:bg-slate-50"
-            >
-              <LayoutGrid className="w-4 h-4 text-slate-500" />
+            <Button variant="outline" size="icon">
+              <LayoutGrid className="w-4 h-4 text-muted-foreground" />
             </Button>
           </div>
         </div>
@@ -188,10 +170,7 @@ export const Dashboard = () => {
         {isLoading ? (
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-2xl border border-slate-200/60 p-5 space-y-4"
-              >
+              <div key={i} className="bg-card rounded-2xl border p-5 space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
                     <Skeleton className="h-5 w-40" />
@@ -216,15 +195,15 @@ export const Dashboard = () => {
           </div>
         ) : pautas.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 space-y-6">
-            <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center">
-              <FileCheck2 className="w-10 h-10 text-slate-300" />
+            <div className="w-20 h-20 rounded-2xl bg-card border flex items-center justify-center">
+              <FileCheck2 className="w-10 h-10 text-muted-foreground" />
             </div>
             <div className="text-center">
-              <p className="text-slate-600 font-medium text-lg">Nenhuma pauta encontrada</p>
-              <p className="text-slate-400 mt-1">Crie sua primeira pauta para começar</p>
+              <p className="text-foreground font-medium text-lg">Nenhuma pauta encontrada</p>
+              <p className="text-muted-foreground mt-1">Crie sua primeira pauta para começar</p>
             </div>
             <Link to="/criar-pauta">
-              <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25">
+              <Button>
                 <Plus className="w-4 h-4 mr-2" />
                 Criar primeira pauta
               </Button>
