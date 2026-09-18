@@ -110,7 +110,20 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  :root {
+    font-synthesis: none;
+  }
+
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  p {
+    text-wrap: pretty;
   }
 }

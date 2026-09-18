@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { initSentry } from '@/lib/monitoring/sentry';
 import App from './App.tsx';
+import '@fontsource-variable/dm-sans/standard.css';
 import './index.css';
 
 // Inicializa monitoramento de erros o mais cedo possível
