@@ -420,8 +420,12 @@ export const ArquivosPreview = ({
                                   </div>
                                 ))
                               ) : (
-                                <div className="aspect-square flex items-center justify-center text-muted-foreground">
-                                  Sem mídia enviada
+                                /* Item sem arquivo é pauta, não peça com mídia
+                                   faltando: publicar na etapa final recusa peça
+                                   sem arte. Chamar de "sem mídia" fazia a pauta
+                                   parecer um briefing pela metade. */
+                                <div className="aspect-square flex items-center justify-center p-6 text-center text-sm text-muted-foreground">
+                                  Pauta: a ideia aprovada aqui vira arte nas etapas seguintes.
                                 </div>
                               )}
                             </div>
@@ -456,7 +460,7 @@ export const ArquivosPreview = ({
                               {item.texto_conteudo && (
                                 <div>
                                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                    Legenda
+                                    {item.arquivos.length === 0 ? 'Abordagem' : 'Legenda'}
                                   </label>
                                   <p className="text-sm text-foreground mt-1 whitespace-pre-wrap">
                                     {item.texto_conteudo}
