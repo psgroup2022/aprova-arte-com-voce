@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseUntyped } from '@/integrations/supabase/untyped';
 import { useAuth } from '@/hooks/useAuth';
-import type { Database } from '@/integrations/supabase/types';
 
-export type Papel = Database['public']['Enums']['papel_usuario'];
+export type Papel = 'admin' | 'moderator' | 'user';
 
 /** O perfil de quem está logado — papel, retrato e pendência de senha. */
 export interface Perfil {
