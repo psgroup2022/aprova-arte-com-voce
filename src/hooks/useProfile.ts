@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseUntyped } from '@/integrations/supabase/untyped';
 import { useAuth } from '@/hooks/useAuth';
-import type { Database } from '@/integrations/supabase/types';
 
-export type Papel = Database['public']['Enums']['papel_usuario'];
+export type Papel = 'admin' | 'moderator' | 'user' | 'membro';
 
 /** O perfil de quem está logado — papel, retrato e pendência de senha. */
 export interface Perfil {
@@ -32,13 +31,13 @@ export const useProfile = () => {
     queryKey: [...PERFIL_QUERY_KEY, user?.id],
     enabled: Boolean(user),
     queryFn: async (): Promise<Perfil | null> => {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseUntyped
         .from('profiles')
         .select('id, nome, email, avatar_url, papel, senha_provisoria, ativo')
         .eq('auth_user_id', user!.id)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      return (data as Perfil | null) ?? null;
     },
   });
 

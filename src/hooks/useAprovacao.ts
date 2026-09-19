@@ -19,7 +19,7 @@ export const useAprovacao = (pautaId: string) => {
 
       const { data, error } = await supabase
         .from('pautas')
-        .update(updateData)
+        .update(updateData as never)
         .eq('id', pautaId)
         .select();
 

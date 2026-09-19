@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { supabaseUntyped } from '@/integrations/supabase/untyped';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile, PERFIL_QUERY_KEY } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
@@ -58,7 +59,7 @@ export const TrocarSenha = () => {
       // A senha já mudou. Baixar a bandeira é o segundo passo, e se ele falhar a
       // pessoa apenas volta para cá no próximo acesso — com a senha nova, que é
       // a que vale. Por isso a ordem: primeiro o que não pode se perder.
-      const { error: erroPerfil } = await supabase
+      const { error: erroPerfil } = await supabaseUntyped
         .from('profiles')
         .update({ senha_provisoria: false })
         .eq('auth_user_id', user!.id);

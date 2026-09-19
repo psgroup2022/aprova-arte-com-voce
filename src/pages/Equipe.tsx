@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseUntyped } from '@/integrations/supabase/untyped';
 import { useProfile, type Papel, PERFIL_QUERY_KEY } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 
@@ -45,12 +45,12 @@ export const Equipe = () => {
   const equipe = useQuery({
     queryKey: ['equipe'],
     queryFn: async (): Promise<MembroDaEquipe[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseUntyped
         .from('profiles')
         .select('id, nome, email, avatar_url, papel, ativo, senha_provisoria')
         .order('nome', { ascending: true });
       if (error) throw error;
-      return data ?? [];
+      return (data as MembroDaEquipe[] | null) ?? [];
     },
   });
 
@@ -64,7 +64,7 @@ export const Equipe = () => {
    */
   const alterar = useMutation({
     mutationFn: async ({ id, campos }: { id: string; campos: Partial<MembroDaEquipe> }) => {
-      const { error } = await supabase.from('profiles').update(campos).eq('id', id);
+      const { error } = await supabaseUntyped.from('profiles').update(campos).eq('id', id);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {

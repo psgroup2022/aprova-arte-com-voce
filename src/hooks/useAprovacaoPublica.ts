@@ -27,8 +27,8 @@ export const useAprovacaoPublica = (token: string, client: Cliente = defaultSupa
   const consulta = useQuery({
     queryKey: chave,
     queryFn: async (): Promise<PautaPublica | null> => {
-      const { data, error } = await client.rpc('pauta_publica', { p_token: token });
-      if (error) throw error;
+      const { data, error } = await (client.rpc as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)('pauta_publica', { p_token: token });
+      if (error) throw error as Error;
       // Token desconhecido, curto demais ou pauta sem versão ativa: a função
       // devolve nulo, não erro. Link inválido não é falha de rede.
       return (data as unknown as PautaPublica | null) ?? null;
@@ -50,7 +50,7 @@ export const useAprovacaoPublica = (token: string, client: Cliente = defaultSupa
       nota?: string;
       por: string;
     }) => {
-      const { data, error } = await client.rpc('decidir_bloco', {
+      const { data, error } = await (client.rpc as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)('decidir_bloco', {
         p_token: token,
         p_bloco_id: args.blocoId,
         p_status: args.status,
@@ -58,7 +58,7 @@ export const useAprovacaoPublica = (token: string, client: Cliente = defaultSupa
         p_nota: args.nota ?? '',
         p_por: args.por,
       });
-      if (error) throw error;
+      if (error) throw error as Error;
       return data;
     },
     onSuccess: guardar,
@@ -73,7 +73,7 @@ export const useAprovacaoPublica = (token: string, client: Cliente = defaultSupa
       texto: string;
       por: string;
     }) => {
-      const { data, error } = await client.rpc('comentar_bloco', {
+      const { data, error } = await (client.rpc as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)('comentar_bloco', {
         p_token: token,
         p_bloco_id: args.blocoId,
         p_arquivo_id: args.arquivoId,
@@ -82,7 +82,7 @@ export const useAprovacaoPublica = (token: string, client: Cliente = defaultSupa
         p_texto: args.texto,
         p_por: args.por,
       });
-      if (error) throw error;
+      if (error) throw error as Error;
       return data;
     },
     onSuccess: guardar,
@@ -97,11 +97,11 @@ export const useAprovacaoPublica = (token: string, client: Cliente = defaultSupa
    */
   const enviarRevisao = useMutation({
     mutationFn: async (args: { por: string }) => {
-      const { data, error } = await client.rpc('enviar_revisao', {
+      const { data, error } = await (client.rpc as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)('enviar_revisao', {
         p_token: token,
         p_por: args.por,
       });
-      if (error) throw error;
+      if (error) throw error as Error;
       return data;
     },
     onSuccess: guardar,
