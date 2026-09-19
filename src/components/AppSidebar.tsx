@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users2, Settings, Sparkles, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users2, Settings, ChevronRight } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -26,22 +26,12 @@ export const AppSidebar = () => {
 
   return (
     <div className="fixed left-0 top-0 h-full w-72 bg-sidebar flex flex-col z-30 border-r border-sidebar-border">
-      {/* Logo */}
+      {/* A marca da barra lateral. Ela aparece em toda tela logada, então é
+          aqui que o nome se estabelece — trocar só o título do Dashboard
+          deixava "AprovaArte" visível em Equipe e Configurações. */}
       <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-sidebar-primary rounded-xl flex items-center justify-center text-sidebar-primary-foreground font-bold text-lg shadow-md">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-sidebar-accent-foreground font-bold text-xl tracking-tight">
-              Aprova
-            </span>
-            <span className="text-sidebar-primary font-bold text-xl">Arte</span>
-            <p className="text-sidebar-foreground text-xs font-medium -mt-0.5">
-              Sistema de Aprovação
-            </p>
-          </div>
-        </div>
+        <img src="/miracheck.svg" alt="MiraCheck" className="h-7 w-auto" />
+        <p className="text-sidebar-foreground text-xs font-medium mt-2">Aprovação de conteúdo</p>
       </div>
 
       {/* Navigation */}
