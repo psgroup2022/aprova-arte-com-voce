@@ -182,7 +182,11 @@ const CartaoPeca = ({
         {peca.chamada && (
           <div>
             <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Chamada
+              {/* Na pauta este campo é o tema do post, não a chamada — a
+                  chamada nasce no briefing. Chamar as duas coisas de "Chamada"
+                  fazia a palavra "pauta" não existir em lugar nenhum da tela
+                  de quem está justamente aprovando uma pauta. */}
+              {ehPauta ? 'Pauta' : 'Chamada'}
             </p>
             {/* A quebra de linha é decisão editorial — é assim que ela vai sobre
                 a arte. Colapsar em parágrafo corrido descaracterizaria. */}

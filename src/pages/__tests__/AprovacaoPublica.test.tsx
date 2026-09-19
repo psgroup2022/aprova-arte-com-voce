@@ -289,6 +289,20 @@ describe('AprovacaoPublica', () => {
     expect(screen.queryByText(/ainda não tem arte publicada/)).toBeNull();
   });
 
+  // Pauta é o tema do post mais a abordagem. Card, chamada e legenda são
+  // briefing, e vêm depois. O tema chegava rotulado "Chamada", e a palavra
+  // "pauta" não existia em lugar nenhum da tela de quem aprova uma pauta.
+  it('na pauta, o texto do topo é rotulado Pauta e não Chamada', () => {
+    sessionStorage.setItem('aprovaarte:revisor', 'Ana');
+    preparar({ pecas: [peca({ arquivos: [] })] });
+    montar();
+
+    expect(screen.getByText('Pauta')).toBeInTheDocument();
+    expect(screen.queryByText('Chamada')).toBeNull();
+    expect(screen.getByText('Abordagem')).toBeInTheDocument();
+    expect(screen.queryByText('Legenda')).toBeNull();
+  });
+
   it('com arte, o texto continua rotulado como legenda', () => {
     sessionStorage.setItem('aprovaarte:revisor', 'Ana');
     preparar({
