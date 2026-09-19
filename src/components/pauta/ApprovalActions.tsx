@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, Edit3, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 
 interface ApprovalActionsProps {
   selectedApproval: string;
@@ -21,17 +21,11 @@ export const ApprovalActions = ({ selectedApproval, onApprovalClick }: ApprovalA
           <Check className="w-4 h-4 mr-2" />
           Aprovar
         </Button>
-        <Button
-          onClick={() => onApprovalClick('approved-changes')}
-          className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md ${
-            selectedApproval === 'approved-changes'
-              ? 'bg-warning'
-              : 'bg-warning/60 hover:bg-warning'
-          } text-warning-foreground`}
-        >
-          <Edit3 className="w-4 h-4 mr-2" />
-          Aprovar com alterações
-        </Button>
+        {/* Duas decisões, não três. "Aprovar com alterações" devolvia a pauta
+            ao mesmo `aguardando_aprovacao` de antes do clique e gravava um
+            comentário pronto: parecia decisão e não registrava nenhuma. Quem
+            aprova com ressalva escreve a ressalva no comentário, que já
+            existe, e aprova. Quem quer mudança pede ajuste. */}
         <Button
           onClick={() => onApprovalClick('rejected')}
           className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md ${
@@ -41,7 +35,7 @@ export const ApprovalActions = ({ selectedApproval, onApprovalClick }: ApprovalA
           } text-destructive-foreground`}
         >
           <X className="w-4 h-4 mr-2" />
-          Reprovar
+          Pedir ajuste
         </Button>
       </div>
     </div>

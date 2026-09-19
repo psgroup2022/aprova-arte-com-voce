@@ -77,13 +77,9 @@ export const useAprovacao = (pautaId: string) => {
       case 'approved':
         status = 'aprovada';
         break;
-      case 'approved-changes':
-        status = 'aguardando_aprovacao'; // Continua aguardando até as alterações serem feitas
-        comentario = 'Aprovado com alterações solicitadas nos comentários.';
-        break;
       case 'rejected':
         status = 'rejeitada';
-        comentario = 'Rejeitado. Por favor, verificar os comentários para mais detalhes.';
+        comentario = 'Ajuste pedido. O que precisa mudar está nos comentários.';
         break;
     }
 
