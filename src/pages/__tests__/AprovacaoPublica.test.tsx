@@ -250,11 +250,41 @@ describe('AprovacaoPublica', () => {
     expect(erros[0]).toHaveTextContent('Diga no comentário o que precisa mudar.');
   });
 
-  it('avisa quando a peça chegou sem arte', () => {
+  // Bloco sem arquivo é pauta, não peça defeituosa: publicar na etapa final
+  // recusa peça sem arte. O cliente precisa saber que está aprovando a ideia e
+  // que a arte volta para ele depois — antes isto aparecia como aviso de arte
+  // faltando, que lê como defeito.
+  it('sem arte, o cartão se apresenta como pauta e explica o que vem depois', () => {
     sessionStorage.setItem('aprovaarte:revisor', 'Ana');
     preparar({ pecas: [peca({ arquivos: [] })] });
     montar();
 
-    expect(screen.getByText(/ainda não tem arte publicada/)).toBeInTheDocument();
+    expect(screen.getByText(/aprova a ideia/)).toBeInTheDocument();
+    expect(screen.getByText(/a arte vem depois/i)).toBeInTheDocument();
+    expect(screen.queryByText(/ainda não tem arte publicada/)).toBeNull();
+  });
+
+  it('com arte, o texto continua rotulado como legenda', () => {
+    sessionStorage.setItem('aprovaarte:revisor', 'Ana');
+    preparar({
+      pecas: [
+        peca({
+          arquivos: [
+            {
+              id: 'a1',
+              url: 'https://exemplo/p01.png',
+              tipo: 'imagem',
+              nome: 'p01.png',
+              item_ordem: 0,
+              item_titulo: null,
+            },
+          ],
+        }),
+      ],
+    });
+    montar();
+
+    expect(screen.getByText('Legenda')).toBeInTheDocument();
+    expect(screen.queryByText('Abordagem')).toBeNull();
   });
 });

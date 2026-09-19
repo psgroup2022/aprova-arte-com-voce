@@ -121,6 +121,20 @@ const CartaoPeca = ({
   const [pedindoAjuste, setPedindoAjuste] = useState(false);
   const [motivo, setMotivo] = useState('');
 
+  /**
+   * Isto é uma pauta, não uma peça pronta.
+   *
+   * O cliente entra duas vezes no ciclo: valida a ideia antes de a redação
+   * começar, e valida a peça no fim. São materiais diferentes, e mostrar a
+   * ideia com a ficha da peça — "Chamada", "Legenda", e um aviso de arte
+   * faltando — faz a pauta parecer um briefing pela metade.
+   *
+   * A ausência de arquivo é sinal confiável do estágio: publicar na etapa
+   * final recusa peça sem arte, com erro, em `publicar.ts`. Bloco publicado
+   * sem arquivo só pode ter vindo da pauta.
+   */
+  const ehPauta = peca.arquivos.length === 0;
+
   const data = formatarData(peca.data_postagem);
   const varias = peca.arquivos.length > 1;
   const rotuloItem = ITEM_LABEL[peca.tipo];
@@ -151,9 +165,9 @@ const CartaoPeca = ({
           </span>
         </div>
 
-        {peca.arquivos.length === 0 ? (
+        {ehPauta ? (
           <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-            Esta peça ainda não tem arte publicada.
+            Nesta etapa você aprova a ideia. A arte vem depois, e volta para você aprovar de novo.
           </p>
         ) : (
           <div className="space-y-5">
@@ -189,7 +203,7 @@ const CartaoPeca = ({
         {(peca.legenda || peca.hashtags) && (
           <div>
             <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Legenda
+              {ehPauta ? 'Abordagem' : 'Legenda'}
             </p>
             {peca.legenda && <p className="whitespace-pre-wrap text-sm">{peca.legenda}</p>}
             {peca.hashtags && <p className="mt-2 text-sm text-muted-foreground">{peca.hashtags}</p>}
