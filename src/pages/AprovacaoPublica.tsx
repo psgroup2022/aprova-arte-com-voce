@@ -40,7 +40,13 @@ const formatarData = (iso: string | null) => {
 
 const Moldura = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen bg-muted/30">
-    <div className="mx-auto max-w-3xl px-4 py-10">{children}</div>
+    <div className="mx-auto max-w-3xl px-4 py-10">
+      {/* A marca vive aqui, e não em cada tela: `Moldura` envolve todos os
+          estados desta página — pedir nome, revisar, link inválido, enviado —
+          e o cliente precisa saber onde está em todos eles. */}
+      <img src="/miracheck.svg" alt="MiraCheck" className="mb-8 h-6 w-auto" />
+      {children}
+    </div>
   </div>
 );
 

@@ -55,7 +55,7 @@ export const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">ApprovalHub</CardTitle>
+          <img src="/miracheck.svg" alt="MiraCheck" className="mx-auto h-7 w-auto" />
           <CardDescription>{isLogin ? 'Entre na sua conta' : 'Crie sua conta'}</CardDescription>
         </CardHeader>
         <CardContent>

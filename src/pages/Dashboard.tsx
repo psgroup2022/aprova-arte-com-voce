@@ -55,7 +55,7 @@ export const Dashboard = () => {
             <FileCheck2 className="w-8 h-8 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">AprovaArte</h1>
+            <img src="/miracheck.svg" alt="MiraCheck" className="h-8 w-auto" />
             <p className="text-muted-foreground mt-2">Faça login para acessar o sistema</p>
           </div>
           <Link to="/auth">
