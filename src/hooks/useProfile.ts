@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabaseUntyped } from '@/integrations/supabase/untyped';
 import { useAuth } from '@/hooks/useAuth';
 
-export type Papel = 'admin' | 'moderator' | 'user';
+export type Papel = 'admin' | 'moderator' | 'user' | 'membro';
 
 /** O perfil de quem está logado — papel, retrato e pendência de senha. */
 export interface Perfil {

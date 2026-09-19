@@ -35,7 +35,7 @@ export const useComentarios = (pautaId: string) => {
     mutationFn: async (comentario: ComentarioInsert) => {
       const { data, error } = await supabase
         .from('comentarios_pontuais')
-        .insert(comentario)
+        .insert(comentario as never)
         .select()
         .single();
 
