@@ -17,8 +17,14 @@ export const useComentarios = (pautaId: string) => {
   const [pendingPin, setPendingPin] = useState<PendingPin | null>(null);
   const [editingComment, setEditingComment] = useState<{ id: string; text: string } | null>(null);
 
-  type ComentarioRow = Tables<'comentarios_pontuais'>;
-  type ComentarioInsert = TablesInsert<'comentarios_pontuais'>;
+  type ComentarioRow = Tables<'comentarios_pontuais'> & {
+    bloco_id?: string | null;
+    autor_nome?: string | null;
+  };
+  type ComentarioInsert = TablesInsert<'comentarios_pontuais'> & {
+    bloco_id?: string | null;
+    autor_nome?: string | null;
+  };
 
   const addComentarioMutation = useMutation<
     ComentarioRow,
