@@ -86,7 +86,7 @@ const montar = () =>
 
 const identificar = (nome = 'Ana Beatriz') => {
   fireEvent.change(screen.getByLabelText('Seu nome'), { target: { value: nome } });
-  fireEvent.click(screen.getByRole('button', { name: 'Começar' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 };
 
 const espiaoDe = (m: unknown) => (m as { mutateAsync: ReturnType<typeof vi.fn> }).mutateAsync;
@@ -94,21 +94,46 @@ const espiaoDe = (m: unknown) => (m as { mutateAsync: ReturnType<typeof vi.fn> }
 describe('AprovacaoPublica', () => {
   beforeEach(() => sessionStorage.clear());
 
-  it('pede o nome antes de mostrar as peças', () => {
+  // Antes isto era uma tela inteira barrando a entrada: o cliente abria o link e
+  // a primeira coisa era um formulário, sem ter visto nada do que veio revisar.
+  // O nome continua obrigatório — só deixou de ser pedágio.
+  it('mostra as peças de saída, sem exigir o nome para ler', () => {
     preparar();
     montar();
 
+    expect(screen.getByTestId('peca-P01')).toBeInTheDocument();
     expect(screen.getByLabelText('Seu nome')).toBeInTheDocument();
-    expect(screen.queryByTestId('peca-P01')).not.toBeInTheDocument();
   });
 
-  it('mostra as peças depois que o revisor se identifica', async () => {
+  // Ler não exige nome; decidir exige, porque a decisão fica assinada e é como a
+  // equipe sabe com quem falar sobre ela.
+  it('não deixa decidir enquanto ninguém se identificou', () => {
+    preparar();
+    montar();
+
+    expect(screen.getByRole('button', { name: 'Aprovar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Pedir ajuste/ })).toBeDisabled();
+  });
+
+  it('libera as decisões depois que o revisor se identifica', async () => {
     preparar();
     montar();
     identificar();
 
-    expect(await screen.findByTestId('peca-P01')).toBeInTheDocument();
-    expect(screen.getByText(/Revisando como Ana Beatriz/)).toBeInTheDocument();
+    expect(await screen.findByText(/Revisando como Ana Beatriz/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Aprovar' })).toBeEnabled();
+    expect(screen.queryByLabelText('Seu nome')).not.toBeInTheDocument();
+  });
+
+  // "Aprovar assim mesmo" lia como *ignore o que eu mesmo pedi*. Aprovar depois
+  // de pedir ajuste é retirar o pedido, e o botão passa a dizer isso.
+  it('depois de pedir ajuste, aprovar se apresenta como retirar o pedido', () => {
+    sessionStorage.setItem('aprovaarte:revisor', 'Ana');
+    preparar({ pecas: [peca({ decisao: 'reprovada', decisao_nota: 'Escurecer o fundo' })] });
+    montar();
+
+    expect(screen.getByRole('button', { name: /Retirar o pedido e aprovar/ })).toBeInTheDocument();
+    expect(screen.queryByText(/assim mesmo/)).toBeNull();
   });
 
   // O nome dura a sessão. Perguntar a cada peça seria pedágio; perguntar a cada

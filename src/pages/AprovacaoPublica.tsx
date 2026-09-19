@@ -52,50 +52,36 @@ const Moldura = ({ children }: { children: React.ReactNode }) => (
 
 // ── Identificação ───────────────────────────────────────────────────────────
 
-const PedirNome = ({
-  titulo,
-  cliente,
-  onDeclarar,
-}: {
-  titulo: string;
-  cliente: string;
-  onDeclarar: (nome: string) => boolean;
-}) => {
+const PedirNome = ({ onDeclarar }: { onDeclarar: (nome: string) => boolean }) => {
   const [valor, setValor] = useState('');
 
   return (
-    <Moldura>
-      <Card>
-        <CardContent className="space-y-4 p-6">
-          <div>
-            <p className="text-sm text-muted-foreground">{cliente}</p>
-            <h1 className="text-xl font-semibold">{titulo}</h1>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Antes de começar: quem está revisando? O nome fica junto de cada aprovação e de cada
-            apontamento, para a equipe saber com quem falar.
-          </p>
-          <form
-            className="flex flex-col gap-2 sm:flex-row"
-            onSubmit={(e) => {
-              e.preventDefault();
-              onDeclarar(valor);
-            }}
-          >
-            <Input
-              autoFocus
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              placeholder="Seu nome"
-              aria-label="Seu nome"
-            />
-            <Button type="submit" disabled={!valor.trim()}>
-              Começar
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </Moldura>
+    <Card>
+      <CardContent className="space-y-3 p-5">
+        <p className="text-sm text-muted-foreground">
+          Quem está revisando? O nome fica junto de cada aprovação e de cada apontamento, para a
+          equipe saber com quem falar.
+        </p>
+        <form
+          className="flex flex-col gap-2 sm:flex-row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onDeclarar(valor);
+          }}
+        >
+          <Input
+            autoFocus
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+            placeholder="Seu nome"
+            aria-label="Seu nome"
+          />
+          <Button type="submit" disabled={!valor.trim()}>
+            Continuar
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -103,6 +89,9 @@ const PedirNome = ({
 
 interface CartaoPecaProps {
   peca: PecaPublica;
+  /** Sem nome não se decide: ele fica junto da decisão e é como a equipe sabe
+   *  com quem falar. O pedido está no topo da página, junto do conteúdo. */
+  identificado: boolean;
   salvandoDecisao: boolean;
   salvandoComentario: boolean;
   erro: string | null;
@@ -112,6 +101,7 @@ interface CartaoPecaProps {
 
 const CartaoPeca = ({
   peca,
+  identificado,
   salvandoDecisao,
   salvandoComentario,
   erro,
@@ -266,10 +256,10 @@ const CartaoPeca = ({
                 size="sm"
                 variant="success"
                 onClick={() => onDecidir('aprovada')}
-                disabled={salvandoDecisao}
+                disabled={salvandoDecisao || !identificado}
               >
                 <Check className="h-4 w-4" />
-                {peca.decisao === 'reprovada' ? 'Aprovar assim mesmo' : 'Aprovar'}
+                {peca.decisao === 'reprovada' ? 'Retirar o pedido e aprovar' : 'Aprovar'}
               </Button>
             )}
             <Button
@@ -279,7 +269,7 @@ const CartaoPeca = ({
                 setMotivo(peca.decisao_nota ?? '');
                 setPedindoAjuste(true);
               }}
-              disabled={salvandoDecisao}
+              disabled={salvandoDecisao || !identificado}
             >
               <PenLine className="h-4 w-4" />
               {peca.decisao === 'reprovada' ? 'Editar o pedido' : 'Pedir ajuste'}
@@ -357,10 +347,6 @@ export const AprovacaoPublica = () => {
     );
   }
 
-  if (!identificado) {
-    return <PedirNome titulo={pauta.titulo} cliente={pauta.cliente} onDeclarar={declarar} />;
-  }
-
   // As mutações são uma só para todas as peças, então o erro precisa voltar
   // para a peça que o provocou — senão o cartão errado fica vermelho.
   const erroDe = (blocoId: string) => {
@@ -387,10 +373,18 @@ export const AprovacaoPublica = () => {
             <span data-testid="progresso">
               {decididas} de {total} decididas
             </span>
-            <span className="text-muted-foreground">Revisando como {nome}</span>
+            {identificado && <span className="text-muted-foreground">Revisando como {nome}</span>}
           </div>
           <Progress value={total ? (decididas / total) * 100 : 0} />
         </div>
+
+        {/* O nome vem junto do conteúdo, não antes dele.
+            Era uma tela inteira barrando a entrada: o cliente abria o link e a
+            primeira coisa era um formulário, sem ter visto nada do que veio
+            revisar. Aqui ele lê primeiro e se identifica na hora de decidir —
+            que é quando o nome passa a servir para alguma coisa, porque fica
+            junto de cada aprovação e de cada apontamento. */}
+        {!identificado && <PedirNome onDeclarar={declarar} />}
 
         {entregue && (
           <Alert data-testid="revisao-entregue">
@@ -415,6 +409,7 @@ export const AprovacaoPublica = () => {
             <CartaoPeca
               key={peca.id}
               peca={peca}
+              identificado={identificado}
               salvandoDecisao={decidir.isPending && decidir.variables?.blocoId === peca.id}
               salvandoComentario={comentar.isPending && comentar.variables?.blocoId === peca.id}
               erro={erroDe(peca.id)}
