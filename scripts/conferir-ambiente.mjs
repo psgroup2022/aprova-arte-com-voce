@@ -73,8 +73,31 @@ export function resolverAmbiente({ modo, arquivos, shell = {} }) {
   return {
     url: valores.VITE_SUPABASE_URL ?? '',
     temChave: Boolean(valores.VITE_SUPABASE_ANON_KEY),
+    // Só o nome do papel sai daqui. O valor da chave não circula.
+    papel: papelDaChave(valores.VITE_SUPABASE_ANON_KEY),
+    origemDaChave: origens.VITE_SUPABASE_ANON_KEY ?? 'lugar nenhum',
     origem: origens.VITE_SUPABASE_URL ?? 'lugar nenhum',
   };
+}
+
+/**
+ * O papel declarado dentro do JWT, sem verificar assinatura.
+ *
+ * A `anon` é pública por desenho e viaja dentro do bundle. A `service_role`
+ * ignora o RLS: no bundle, ela entrega o banco inteiro a quem abrir o site.
+ * As duas são strings parecidas, e a troca não daria erro em lugar nenhum —
+ * o build passaria e o site funcionaria, melhor do que deveria.
+ */
+export function papelDaChave(token) {
+  if (!token) return "";
+  try {
+    const corpo = token.split(".")[1];
+    if (!corpo) return "";
+    const json = Buffer.from(corpo.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString();
+    return JSON.parse(json).role ?? "";
+  } catch {
+    return "";
+  }
 }
 
 export function ehLocal(url) {
@@ -86,7 +109,18 @@ export function ehLocal(url) {
   }
 }
 
-export function veredito({ url, temChave, origem, modo, permitirLocal }) {
+export function veredito({ url, temChave, papel, origem, origemDaChave, modo, permitirLocal }) {
+  // A service_role no bundle é grave em qualquer modo, inclusive em
+  // desenvolvimento: o arquivo compilado sai da máquina do mesmo jeito.
+  if (papel && papel !== 'anon')
+    return {
+      ok: false,
+      mensagem:
+        `VITE_SUPABASE_ANON_KEY carrega o papel "${papel}", e não "anon" (vinda de ${origemDaChave}).\n` +
+        'Essa chave ignora o RLS. Dentro do bundle, ela entrega o banco inteiro a quem abrir o site.\n' +
+        'Troque pela chave anon do projeto, em Settings › API.',
+    };
+
   if (modo !== 'production') return { ok: true };
 
   if (!url || !temChave)

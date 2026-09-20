@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error script de build em JS puro, sem tipos
-import { ehLocal, lerEnv, resolverAmbiente, veredito } from '../../scripts/conferir-ambiente.mjs';
+import {
+  ehLocal,
+  lerEnv,
+  papelDaChave,
+  resolverAmbiente,
+  veredito,
+} from '../../scripts/conferir-ambiente.mjs';
+
+/** JWT sintético, só com o corpo que importa. Assinatura não é verificada. */
+const jwt = (papel: string) =>
+  `cabecalho.${Buffer.from(JSON.stringify({ role: papel })).toString('base64url')}.assinatura`;
 
 const REMOTO = 'https://exemplo.supabase.co';
 const LOCAL = 'http://127.0.0.1:54321';
@@ -76,6 +86,44 @@ describe('conferir-ambiente', () => {
     });
     expect(url).toBe(REMOTO);
     expect(origem).toBe('.env.production');
+  });
+
+  // A anon e a service_role são strings parecidas. A troca não daria erro:
+  // o build passaria e o site funcionaria, melhor do que deveria.
+  it('lê o papel declarado dentro do JWT', () => {
+    expect(papelDaChave(jwt('anon'))).toBe('anon');
+    expect(papelDaChave(jwt('service_role'))).toBe('service_role');
+    expect(papelDaChave('nao-e-jwt')).toBe('');
+    expect(papelDaChave('')).toBe('');
+  });
+
+  it('recusa chave service_role, que ignora o RLS', () => {
+    const r = veredito(producao({ url: REMOTO, papel: 'service_role' }));
+    expect(r.ok).toBe(false);
+    expect(r.mensagem).toMatch(/ignora o RLS/);
+  });
+
+  // O bundle sai da máquina mesmo num build de desenvolvimento.
+  it('recusa service_role também fora de produção', () => {
+    expect(veredito(producao({ url: REMOTO, papel: 'service_role', modo: 'development' })).ok).toBe(
+      false,
+    );
+  });
+
+  it('aceita a chave anon', () => {
+    expect(veredito(producao({ url: REMOTO, papel: 'anon' })).ok).toBe(true);
+  });
+
+  it('resolverAmbiente devolve o papel, nunca a chave', () => {
+    const r = resolverAmbiente({
+      modo: 'production',
+      arquivos: {
+        '.env.production': { VITE_SUPABASE_URL: REMOTO, VITE_SUPABASE_ANON_KEY: jwt('anon') },
+      },
+    });
+    expect(r.papel).toBe('anon');
+    expect(r.temChave).toBe(true);
+    expect(JSON.stringify(r)).not.toContain('assinatura');
   });
 
   it('lê pares com aspas e ignora comentário', () => {
