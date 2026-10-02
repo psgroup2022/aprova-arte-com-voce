@@ -40,13 +40,13 @@ const formatarData = (iso: string | null) => {
 
 const Moldura = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen bg-muted/30">
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      {/* A marca vive aqui, e não em cada tela: `Moldura` envolve todos os
-          estados desta página — pedir nome, revisar, link inválido, enviado —
-          e o cliente precisa saber onde está em todos eles. */}
-      <img src="/miracheck.svg" alt="MiraCheck" className="mb-8 h-6 w-auto" />
-      {children}
+    {/* A marca vive aqui, e não em cada tela: `Moldura` envolve todos os
+        estados desta página — pedir nome, revisar, link inválido, enviado —
+        e o cliente precisa saber onde está em todos eles. */}
+    <div className="sticky top-0 z-20 border-b bg-card px-6 py-3">
+      <img src="/miracheck.svg" alt="MiraCheck" className="h-6 w-auto" />
     </div>
+    <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">{children}</div>
   </div>
 );
 
@@ -137,150 +137,166 @@ const CartaoPeca = ({
     setMotivo('');
   };
 
+  /* Duas colunas, como na visualização interna do MiraCheck: o material à
+     esquerda, a decisão à direita. Numa coluna só, a arte, a legenda e os
+     botões empilhavam, e o cliente rolava para longe da imagem para decidir
+     sobre ela. */
   return (
-    <Card data-testid={`peca-${peca.peca ?? peca.id}`}>
-      <CardContent className="space-y-4 p-5">
-        <div className="flex flex-wrap items-center gap-2">
-          {peca.peca && <Badge variant="secondary">{peca.peca}</Badge>}
-          <Badge variant="outline">{TIPO_LABEL[peca.tipo] ?? peca.tipo}</Badge>
-          {data && <span className="text-xs text-muted-foreground">{data}</span>}
-          <span className="ml-auto">
-            {peca.decisao === 'aprovada' && (
-              <Badge className="bg-success text-success-foreground hover:bg-success">
-                Aprovada
-              </Badge>
+    <Card data-testid={`peca-${peca.peca ?? peca.id}`} className="overflow-hidden">
+      <div className="flex items-center gap-2 border-b bg-muted/40 px-5 py-3">
+        {peca.peca && <Badge variant="secondary">{peca.peca}</Badge>}
+        <Badge variant="outline">{TIPO_LABEL[peca.tipo] ?? peca.tipo}</Badge>
+        {data && <span className="text-xs text-muted-foreground">{data}</span>}
+        <span className="ml-auto">
+          {peca.decisao === 'aprovada' && (
+            <Badge className="bg-success text-success-foreground hover:bg-success">Aprovada</Badge>
+          )}
+          {peca.decisao === 'reprovada' && <Badge variant="destructive">Ajuste pedido</Badge>}
+          {peca.decisao === 'pendente' && <Badge variant="outline">A decidir</Badge>}
+        </span>
+      </div>
+
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid gap-0 md:grid-cols-2">
+          <div className="bg-muted/50 p-4">
+            {ehPauta ? (
+              <div className="flex h-full min-h-56 items-center justify-center rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                Nesta etapa você aprova a ideia. A arte vem depois, e volta para você aprovar de
+                novo.
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {peca.arquivos.map((arte, i) => (
+                  <ComentariosPontuais
+                    key={arte.id}
+                    arte={arte}
+                    rotulo={varias ? `${rotuloItem ?? 'Arte'} ${i + 1}` : null}
+                    comentarios={peca.comentarios.filter((c) => c.arquivo_id === arte.id)}
+                    salvando={salvandoComentario}
+                    onComentar={(x, y, texto) => onComentar(arte.id, x, y, texto)}
+                  />
+                ))}
+              </div>
             )}
-            {peca.decisao === 'reprovada' && <Badge variant="destructive">Ajuste pedido</Badge>}
-            {peca.decisao === 'pendente' && <Badge variant="outline">A decidir</Badge>}
-          </span>
+          </div>
+
+          <div className="space-y-4 p-5">
+            {/* A chamada aparece duas vezes: gravada na arte e aqui como texto.
+                Com rótulo vira ficha da peça. Na pauta o campo é o tema do post,
+                e se chama Pauta. */}
+            {peca.chamada && (
+              <div>
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {ehPauta ? 'Pauta' : 'Chamada'}
+                </p>
+                <p className="whitespace-pre-line text-lg font-semibold leading-snug">
+                  {peca.chamada}
+                </p>
+              </div>
+            )}
+
+            {(peca.legenda || peca.hashtags) && (
+              <div>
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {ehPauta ? 'Abordagem' : 'Legenda'}
+                </p>
+                {peca.legenda && <p className="whitespace-pre-wrap text-sm">{peca.legenda}</p>}
+                {peca.hashtags && (
+                  <p className="mt-2 text-sm text-muted-foreground">{peca.hashtags}</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {ehPauta ? (
-          <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-            Nesta etapa você aprova a ideia. A arte vem depois, e volta para você aprovar de novo.
-          </p>
-        ) : (
-          <div className="space-y-5">
-            {peca.arquivos.map((arte, i) => (
-              <ComentariosPontuais
-                key={arte.id}
-                arte={arte}
-                rotulo={varias ? `${rotuloItem ?? 'Arte'} ${i + 1}` : null}
-                comentarios={peca.comentarios.filter((c) => c.arquivo_id === arte.id)}
-                salvando={salvandoComentario}
-                onComentar={(x, y, texto) => onComentar(arte.id, x, y, texto)}
-              />
-            ))}
-          </div>
-        )}
+        <aside className="space-y-4 border-t bg-card p-5 lg:border-l lg:border-t-0">
+          <h3 className="text-base font-medium">Revisar este conteúdo</h3>
 
-        {/* A chamada aparece duas vezes: gravada na arte e aqui como texto. Sem
-            rótulo isso parece defeito de renderização. Com rótulo vira ficha da
-            peça — e fica claro que a legenda é o que acompanha o post, não algo
-            que já estivesse na imagem. Vale também para a peça cuja arte ainda
-            não foi composta: aí este é o único lugar onde a chamada existe. */}
-        {peca.chamada && (
-          <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {/* Na pauta este campo é o tema do post, não a chamada — a
-                  chamada nasce no briefing. Chamar as duas coisas de "Chamada"
-                  fazia a palavra "pauta" não existir em lugar nenhum da tela
-                  de quem está justamente aprovando uma pauta. */}
-              {ehPauta ? 'Pauta' : 'Chamada'}
-            </p>
-            {/* A quebra de linha é decisão editorial — é assim que ela vai sobre
-                a arte. Colapsar em parágrafo corrido descaracterizaria. */}
-            <p className="whitespace-pre-line text-lg font-semibold leading-snug">{peca.chamada}</p>
-          </div>
-        )}
+          {erro && (
+            <Alert variant="destructive" data-testid="erro-decisao">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{erro}</AlertDescription>
+            </Alert>
+          )}
 
-        {(peca.legenda || peca.hashtags) && (
-          <div>
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {ehPauta ? 'Abordagem' : 'Legenda'}
-            </p>
-            {peca.legenda && <p className="whitespace-pre-wrap text-sm">{peca.legenda}</p>}
-            {peca.hashtags && <p className="mt-2 text-sm text-muted-foreground">{peca.hashtags}</p>}
-          </div>
-        )}
-
-        {erro && (
-          <Alert variant="destructive" data-testid="erro-decisao">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{erro}</AlertDescription>
-          </Alert>
-        )}
-
-        {peca.decisao !== 'pendente' && !pedindoAjuste && (
-          <div className="rounded-md bg-muted p-3 text-sm">
-            <p>
-              {peca.decisao === 'aprovada' ? 'Aprovada' : 'Ajuste pedido'}
-              {peca.decisao_por ? ` por ${peca.decisao_por}` : ''}.
-            </p>
-            {peca.decisao_nota && <p className="mt-1 italic">&ldquo;{peca.decisao_nota}&rdquo;</p>}
-          </div>
-        )}
-
-        {pedindoAjuste ? (
-          <div className="space-y-2">
-            <Textarea
-              autoFocus
-              rows={3}
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
-              placeholder="O que precisa mudar nesta peça?"
-              aria-label="Motivo do ajuste"
-            />
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={pedirAjuste}
-                disabled={!motivo.trim() || salvandoDecisao}
-              >
-                {salvandoDecisao ? 'Enviando...' : 'Enviar pedido'}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setPedindoAjuste(false);
-                  setMotivo('');
-                }}
-                disabled={salvandoDecisao}
-              >
-                Cancelar
-              </Button>
+          {peca.decisao !== 'pendente' && !pedindoAjuste && (
+            <div className="rounded-md bg-muted p-3 text-sm">
+              <p>
+                {peca.decisao === 'aprovada' ? 'Aprovada' : 'Ajuste pedido'}
+                {peca.decisao_por ? ` por ${peca.decisao_por}` : ''}.
+              </p>
+              {peca.decisao_nota && (
+                <p className="mt-1 italic">&ldquo;{peca.decisao_nota}&rdquo;</p>
+              )}
             </div>
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {peca.decisao !== 'aprovada' && (
+          )}
+
+          {pedindoAjuste ? (
+            <div className="space-y-2">
+              <Textarea
+                autoFocus
+                rows={4}
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                placeholder="O que precisa mudar nesta peça?"
+                aria-label="Motivo do ajuste"
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={pedirAjuste}
+                  disabled={!motivo.trim() || salvandoDecisao}
+                >
+                  {salvandoDecisao ? 'Enviando...' : 'Enviar pedido'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setPedindoAjuste(false);
+                    setMotivo('');
+                  }}
+                  disabled={salvandoDecisao}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              {peca.decisao !== 'aprovada' && (
+                <Button
+                  variant="success"
+                  className="flex-1"
+                  onClick={() => onDecidir('aprovada')}
+                  disabled={salvandoDecisao || !identificado}
+                >
+                  <Check className="h-4 w-4" />
+                  {peca.decisao === 'reprovada' ? 'Retirar o pedido e aprovar' : 'Aprovar'}
+                </Button>
+              )}
               <Button
-                size="sm"
-                variant="success"
-                onClick={() => onDecidir('aprovada')}
+                variant="destructive"
+                className="flex-1"
+                onClick={() => {
+                  setMotivo(peca.decisao_nota ?? '');
+                  setPedindoAjuste(true);
+                }}
                 disabled={salvandoDecisao || !identificado}
               >
-                <Check className="h-4 w-4" />
-                {peca.decisao === 'reprovada' ? 'Retirar o pedido e aprovar' : 'Aprovar'}
+                <PenLine className="h-4 w-4" />
+                {peca.decisao === 'reprovada' ? 'Editar o pedido' : 'Pedir ajuste'}
               </Button>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setMotivo(peca.decisao_nota ?? '');
-                setPedindoAjuste(true);
-              }}
-              disabled={salvandoDecisao || !identificado}
-            >
-              <PenLine className="h-4 w-4" />
-              {peca.decisao === 'reprovada' ? 'Editar o pedido' : 'Pedir ajuste'}
-            </Button>
-          </div>
-        )}
-      </CardContent>
+            </div>
+          )}
+
+          {!ehPauta && peca.arquivos.some((a) => a.tipo === 'imagem') && (
+            <p className="text-xs text-muted-foreground">
+              Para comentar um detalhe, clique sobre a arte no ponto exato.
+            </p>
+          )}
+        </aside>
+      </div>
     </Card>
   );
 };
